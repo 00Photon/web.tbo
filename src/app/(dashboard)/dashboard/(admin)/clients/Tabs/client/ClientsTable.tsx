@@ -14,6 +14,7 @@ import Link from "next/link";
 import CustomTextField from "@/@core/component/mui/text-field";
 import { TableCellStyled } from "@/@core/component/mui/tableStyled";
 import StyledImage from "@/@core/component/mui/image";
+import { getClients } from "@/app/(dashboard)/dashboard/(admin)/clients/Tabs/client/ClientService";
 
 // ** Third Party Imports
 import { Controller, useForm } from "react-hook-form";
@@ -123,6 +124,8 @@ const ClientListTable: React.FC = () => {
   const [anchorEl, setAnchorEl] = React.useState<(HTMLElement | null)[]>(
     Array(data?.length)?.fill(null)
   );
+  const [clients, setClients] = React.useState<MockData[]>([]);
+  const [loading, setLoading] = React.useState<boolean>(true);
 
   const smallScreen = useMediaQuery((theme: Theme) =>
     theme.breakpoints.up("md")
@@ -155,6 +158,22 @@ const ClientListTable: React.FC = () => {
   };
 
   const toggleFilter = () => setOpenFilter(!openFilter);
+
+  // Fetch client data on component mount
+  React.useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const response = await getClients();
+        setClients(response.data.data);
+      } catch (error) {
+        console.error("Error fetching clients:", error);
+      } finally {
+        setLoading(false); // Set loading to false after fetching
+      }
+    };
+
+    fetchClients();
+  }, []);
 
   return (
     <Card
@@ -353,7 +372,8 @@ const ClientListTable: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {data.map((item, i) => {
+              {/* WORK HERE */}
+              {clients.map((item, i) => {
                 return (
                   <TableRow key={i}>
                     <TableCell>
