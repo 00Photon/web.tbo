@@ -164,7 +164,7 @@ const ClientListTable: React.FC = () => {
     const fetchClients = async () => {
       try {
         const response = await getClients();
-        setClients(response.data.data);
+        setClients(response.data);
       } catch (error) {
         console.error("Error fetching clients:", error);
       } finally {

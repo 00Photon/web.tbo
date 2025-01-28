@@ -1,5 +1,5 @@
 // *React Imports
-import { SetStateAction, useState } from "react";
+import { SetStateAction, useState, useEffect } from "react";
 
 // * Icon Imports
 import Icon from "@/@core/component/icon";
@@ -12,6 +12,7 @@ import CustomChip from "@/@core/component/mui/chip";
 // * Component Import
 import EditAdmin from "./EditAdmin";
 import ViewAdmin from "./ViewAdmin";
+import { getAdmins } from "./adminService";
 
 // ** Third Party Imports
 import { Controller, useForm } from "react-hook-form";
@@ -51,6 +52,15 @@ export type MockData = {
   avatarColor?: string;
   avatar?: string | undefined;
   sx?: object;
+};
+
+export type AdminData = {
+  id: number;
+  name: string;
+  email: string;
+  level: string;
+  role: string;
+  status: boolean;
 };
 
 const data: MockData[] = [
@@ -110,6 +120,8 @@ const AdminsTable = () => {
   const [status, setStatus] = useState<string>("");
   const [page, setPage] = useState(2);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [admins, setAdmins] = useState<AdminData[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [anchorEl, setAnchorEl] = useState<(HTMLElement | null)[]>(
     Array(data?.length)?.fill(null)
   );
@@ -120,6 +132,23 @@ const AdminsTable = () => {
   const smallScreen = useMediaQuery((theme: Theme) =>
     theme.breakpoints.up("md")
   );
+
+  // Fetch admin data on component mount
+  useEffect(() => {
+    const fetchAdmins = async () => {
+      try {
+        const data = await getAdmins();
+        setAdmins(data); // Set the fetched data
+        setAnchorEl(Array(data.length).fill(null)); // Initialize anchorEl array
+      } catch (error) {
+        console.error("Error fetching admins:", error);
+      } finally {
+        setLoading(false); // Set loading to false after fetching
+      }
+    };
+
+    fetchAdmins();
+  }, []);
 
   const toggleEditAdminModal = () => setEditAdminModal(!editAdminModal);
 
@@ -373,7 +402,7 @@ const AdminsTable = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {data.map((item, i) => {
+              {admins.map((item, i) => {
                 return (
                   <TableRow key={i}>
                     <TableCell align="left">
@@ -395,11 +424,16 @@ const AdminsTable = () => {
                         // }}
                       />
                     </TableCell>
-                    <TableCell>{item.id}</TableCell>
+                    <TableCell>{item.title}</TableCell>
+                    <TableCell>{item.job_type}</TableCell>
+                    <TableCell>{item.location}</TableCell>
+                    <TableCell align="center">{item.description}</TableCell>
+                    <TableCell>{item.is_active}</TableCell>
+                    {/* <TableCell>{item.id}</TableCell>
                     <TableCell>{item.name}</TableCell>
                     <TableCell>{item.email}</TableCell>
                     <TableCell align="center">{item.level}</TableCell>
-                    <TableCell>{item.role}</TableCell>
+                    <TableCell>{item.role}</TableCell> */}
                     <TableCell
                       align="center"
                       sx={{
