@@ -70,8 +70,7 @@ const availableSkills = [
   "MARKETER",
   "MANAGER",
   "WRITER",
-  // "Node.js",
-  // "Python",
+
 ];
 
 const NewJob = ({ open, close }: Props) => {
