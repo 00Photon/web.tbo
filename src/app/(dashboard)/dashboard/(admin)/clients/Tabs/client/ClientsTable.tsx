@@ -14,7 +14,8 @@ import Link from "next/link";
 import CustomTextField from "@/@core/component/mui/text-field";
 import { TableCellStyled } from "@/@core/component/mui/tableStyled";
 import StyledImage from "@/@core/component/mui/image";
-import { getClients } from "@/app/(dashboard)/dashboard/(admin)/clients/Tabs/client/ClientService";
+// import { getClients } from "@/app/(dashboard)/dashboard/(admin)/clients/Tabs/client/ClientService";
+import { getClients } from "./ClientService";
 
 // ** Third Party Imports
 import { Controller, useForm } from "react-hook-form";
@@ -163,12 +164,12 @@ const ClientListTable: React.FC = () => {
   React.useEffect(() => {
     const fetchClients = async () => {
       try {
-        const response = await getClients();
-        setClients(response);
+        const data = await getClients();
+        setClients(data);
       } catch (error) {
         console.error("Error fetching clients:", error);
       } finally {
-        setLoading(false); // Set loading to false after fetching
+        setLoading(false);
       }
     };
 
@@ -363,7 +364,7 @@ const ClientListTable: React.FC = () => {
               >
                 <TableCellStyled>Company</TableCellStyled>
                 <TableCellStyled>ID</TableCellStyled>
-                <TableCellStyled>Contact Person</TableCellStyled>
+                <TableCellStyled>Name</TableCellStyled>
                 <TableCellStyled>Email</TableCellStyled>
                 <TableCellStyled>Active Jobs</TableCellStyled>
                 <TableCellStyled>Date(Registered)</TableCellStyled>
@@ -387,10 +388,10 @@ const ClientListTable: React.FC = () => {
                       </Box>
                     </TableCell>
                     <TableCell>{item.id}</TableCell>
-                    <TableCell>{item.contactPerson}</TableCell>
+                    <TableCell>{item.name}</TableCell>
                     <TableCell>{item.email}</TableCell>
-                    <TableCell>{item.activeJobs}</TableCell>
-                    <TableCell>{item.registrationDate}</TableCell>
+                    <TableCell>{item.account_type}</TableCell>
+                    <TableCell>{item.created_at}</TableCell>
                     <TableCell
                       align="center"
                       sx={{

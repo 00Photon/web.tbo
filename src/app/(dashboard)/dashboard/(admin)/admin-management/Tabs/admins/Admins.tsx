@@ -138,12 +138,12 @@ const AdminsTable = () => {
     const fetchAdmins = async () => {
       try {
         const data = await getAdmins();
-        setAdmins(data); // Set the fetched data
-        setAnchorEl(Array(data.length).fill(null)); // Initialize anchorEl array
+        setAdmins(data);
+        setAnchorEl(Array(data.length).fill(null));
       } catch (error) {
         console.error("Error fetching admins:", error);
       } finally {
-        setLoading(false); // Set loading to false after fetching
+        setLoading(false);
       }
     };
 
@@ -395,16 +395,17 @@ const AdminsTable = () => {
                   Name
                 </TableCellStyled>
                 <TableCellStyled align="left">Email</TableCellStyled>
-                <TableCellStyled align="center">Level</TableCellStyled>
+                <TableCellStyled align="center">Account Type</TableCellStyled>
                 <TableCellStyled align="left">Role</TableCellStyled>
                 <TableCellStyled align="center">Status</TableCellStyled>
                 <TableCellStyled align="left">Actions</TableCellStyled>
               </TableRow>
             </TableHead>
             <TableBody>
+              {/* Work Here */}
               {admins.map((item, i) => {
                 return (
-                  <TableRow key={i}>
+                  <TableRow key={item.id}>
                     <TableCell align="left">
                       <Checkbox
                         size="small"
@@ -424,11 +425,11 @@ const AdminsTable = () => {
                         // }}
                       />
                     </TableCell>
-                    <TableCell>{item.title}</TableCell>
-                    <TableCell>{item.job_type}</TableCell>
-                    <TableCell>{item.location}</TableCell>
-                    <TableCell align="center">{item.description}</TableCell>
-                    <TableCell>{item.is_active}</TableCell>
+                    <TableCell>{item.id}</TableCell>
+                    <TableCell>{item.name}</TableCell>
+                    <TableCell>{item.email}</TableCell>
+                    <TableCell align="center">{item.account_type}</TableCell>
+                    <TableCell>{item.status}</TableCell>
                     {/* <TableCell>{item.id}</TableCell>
                     <TableCell>{item.name}</TableCell>
                     <TableCell>{item.email}</TableCell>
