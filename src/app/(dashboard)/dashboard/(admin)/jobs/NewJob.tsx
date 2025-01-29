@@ -41,12 +41,12 @@ interface IFormInput {
   type: string;
   description: string;
   requirement: string;
-  skills: string[];
+  skill: string[];
   location: string;
   currency: string;
   minSalary: string;
   maxSalary: string;
-  deadline: string;
+  application_deadline: string;
   information: string;
 }
 
@@ -55,23 +55,23 @@ const defaultValues = {
   type: "",
   description: "",
   requirement: "",
-  skills: [],
+  skill: [],
   location: "",
   currency: "",
   minSalary: "",
   maxSalary: "",
-  deadline: "",
+  application_deadline: "",
   information: "",
 };
 
 const availableSkills = [
-  "JavaScript",
-  "React",
-  "TypeScript",
-  "CSS",
-  "HTML",
-  "Node.js",
-  "Python",
+  "DEVELOPER",
+  "DESIGNER",
+  "MARKETER",
+  "MANAGER",
+  "WRITER",
+  // "Node.js",
+  // "Python",
 ];
 
 const NewJob = ({ open, close }: Props) => {
@@ -94,8 +94,31 @@ const NewJob = ({ open, close }: Props) => {
   });
 
   const submitForm: SubmitHandler<IFormInput> = (values) => {
-    console.log(values);
+    const jobData = {
+      title: values.title,
+      job_type: values.type,
+      description: values.description,
+      requirements: values.requirement,
+      skill: values.skill.join(", "), // Join the selected skills as a string
+      currency: values.currency,
+      minimum_salary: parseInt(values.minSalary),
+      maximum_salary: parseInt(values.maxSalary),
+      location: values.location,
+      application_deadline: dayjs(selectedDate).format("YYYY-MM-DD"), // Convert the selected date to the required format
+      additional_info: values.information,
+    };
+  
+    createJob(jobData)
+      .then((response) => {
+        console.log("Job created:", response);
+        reset();
+        close();
+      })
+      .catch((error) => {
+        console.error("Error creating job:", error);
+      });
   };
+  
 
   return (
     <div>
@@ -197,12 +220,13 @@ const NewJob = ({ open, close }: Props) => {
                         error={Boolean(errors.type)}
                         helperText={errors.type?.message}
                       >
-                        <MenuItem value="full-time">Full Time</MenuItem>
-                        <MenuItem value="part-time">Part Time</MenuItem>
-                        <MenuItem value="contract">Contract</MenuItem>
-                        <MenuItem value="internship">Internship</MenuItem>
-                        <MenuItem value="freelance">Freelance</MenuItem>
+                        <MenuItem value="FULLTIME">Full Time</MenuItem>
+                        <MenuItem value="PARTTIME">Part Time</MenuItem>
+                        <MenuItem value="CONTRACT">Contract</MenuItem>
+                        <MenuItem value="INTERNSHIP">Internship</MenuItem>
+                        <MenuItem value="FREELANCE">Freelance</MenuItem>
                       </CustomTextField>
+                           
                     )}
                   />
                 </Grid>
@@ -287,7 +311,7 @@ const NewJob = ({ open, close }: Props) => {
                   </Typography>
 
                   <Controller
-                    name="skills"
+                    name="skill"
                     control={control}
                     rules={{ required: true }}
                     render={({ field: { value, onChange } }) => (
@@ -330,8 +354,8 @@ const NewJob = ({ open, close }: Props) => {
                                 },
                               },
                             }}
-                            error={Boolean(errors.skills)}
-                            helperText={errors.skills?.message}
+                            error={Boolean(errors.skill)}
+                            helperText={errors.skill?.message}
                           />
                         )}
                       />
@@ -378,10 +402,10 @@ const NewJob = ({ open, close }: Props) => {
                         error={Boolean(errors.currency)}
                         helperText={errors.currency?.message}
                       >
-                        <MenuItem value="naira">₦</MenuItem>
-                        <MenuItem value="pound">£</MenuItem>
-                        <MenuItem value="dollar">$</MenuItem>
-                        <MenuItem value="yen">¥</MenuItem>
+                        <MenuItem value="NGN">₦</MenuItem>
+                        <MenuItem value="EUR">£</MenuItem>
+                        <MenuItem value="USD">$</MenuItem>
+                        <MenuItem value="GBP">¥</MenuItem>
                       </CustomTextField>
                     )}
                   />
@@ -469,7 +493,7 @@ const NewJob = ({ open, close }: Props) => {
                     Application Deadline
                   </Typography>
                   <Controller
-                    name="deadline"
+                    name="application_deadline"
                     control={control}
                     rules={{ required: true }}
                     render={({ field: { value, onChange } }) => (
@@ -535,8 +559,9 @@ const NewJob = ({ open, close }: Props) => {
               }}
             >
               <Button
-                type="button"
+                type="submit"
                 variant="contained"
+                disabled={isSubmitting}
                 sx={{ textTransform: "capitalize", width: "30%" }}
               >
                 Post

@@ -67,12 +67,12 @@ export const newJobSchema = yup.object().shape({
   type: yup.string().required("Job type is required"),
   description: yup.string().required("Job description is required"),
   requirement: yup.string().required("Job requirement is required"),
-  skills: yup.array().required("Please add at least one skill"),
+  skill: yup.array().required("Please add at least one skill"),
   location: yup.string().required("Job location is required"),
   currency: yup.string().required("Job currency is required"),
   minSalary: yup.string().required("Minimum salary is required"),
   maxSalary: yup.string().required("Maximum salary is required"),
-  deadline: yup.string().required("Job deadline is required"),
+  application_deadline: yup.string().required("Job deadline is required"),
   information: yup.string().required("Job information is required"),
 });
 

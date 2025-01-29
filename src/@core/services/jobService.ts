@@ -46,28 +46,27 @@ export const fetchJobsById = async (id: string) => {
   return data;
 };
 
+
 export const createJob = async (jobDetails: {
   title: string;
-  job_type: string; // 'Full-time', 'Part-time', etc.
+  job_type: string; 
   description: string;
   requirements: string;
-  skills: string;
-  currency: string; // e.g., 'USD'
+  skill: string;
+  currency: string;
   minimum_salary: number;
   maximum_salary: number;
-  location: string; // e.g., 'Remote', 'On-site'
-  application_deadline: string; // 'YYYY-MM-DD'
-  additional_information?: string; // Optional field
+  location: string;
+  application_deadline: string;
+  additional_info?: string;
 }) => {
   try {
     const session = await getSession();
-    if (!session || !session.user) {
-      throw new Error("User is not authenticated");
-    }
-
+    if (!session || !session.user) throw new Error("User is not authenticated");
+  
     const token = session.user.accessToken;
-
-    const response = await fetch(`${API_BASE_URL}/api/v1/jobs`, {
+  
+    const response = await fetch(`${API_BASE_URL}/admin/jobs`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -76,15 +75,70 @@ export const createJob = async (jobDetails: {
       body: JSON.stringify(jobDetails),
     });
 
+    // Log the raw response to see what's being returned
+    const responseText = await response.text();
+    console.log("Response Text: ", responseText);
+
+    // If the response is not JSON, throw an error
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Failed to create the job");
+      throw new Error(`Error creating job: ${responseText}`);
     }
 
-    const data = await response.json();
-    return data;
+    // Try parsing the JSON if it's valid
+    try {
+      const data = JSON.parse(responseText);
+      return data;
+    } catch (error) {
+      throw new Error("Failed to parse JSON response.");
+    }
   } catch (error: any) {
     console.error("Error creating job:", error.message);
     throw new Error(error.message || "Something went wrong while creating the job");
   }
+};
+
+
+
+export const deactivateJob = async (jobId: number): Promise<any> => {
+  const session = await getSession(); 
+  if (!session || !session.user) throw new Error("User is not authenticated");
+
+  const token = session.user.accessToken; 
+
+  const response = await fetch(`${API_BASE_URL}/admin/jobs/${jobId}/deactivate`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to deactivate job');
+  }
+
+  const data = await response.json();
+  return data; 
+};
+
+
+export const deleteJob = async (jobId: number) => {
+  const session = await getSession(); // Get the session, which includes the token
+  if (!session || !session.user) throw new Error("User is not authenticated");
+
+  const token = session.user.accessToken;
+
+  const response = await fetch(`${API_BASE_URL}/admin/jobs/${jobId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`, 
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to delete job');
+  }
+
+  return response.json(); 
 };

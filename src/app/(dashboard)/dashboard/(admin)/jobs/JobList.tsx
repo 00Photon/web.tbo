@@ -39,7 +39,7 @@ import TableBody from "@mui/material/TableBody";
 import TablePagination from "@mui/material/TablePagination";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { Theme } from "@mui/material/styles";
-import { fetchJobs } from "@/@core/services/jobService"; 
+import { fetchJobs, deactivateJob, deleteJob   } from "@/@core/services/jobService"; 
 // * Component Imports
 import JobDialog from "./JobDialog";
 import NewJob from "./NewJob";
@@ -124,6 +124,40 @@ const JobListTable: React.FC = () => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
+
+  const handleDeleteJob = async (jobId: number) => {
+    try {
+      await deleteJob(jobId); // Call the deleteJob service to delete the job
+      console.log("Job deleted:", jobId);
+
+      // After deleting, remove the job from the local state
+      const updatedJobs = jobs.filter(job => job.id !== jobId);
+      setJobs(updatedJobs); // Update the state to reflect the deletion
+    } catch (error) {
+      console.error("Failed to delete job:", error instanceof Error ? error.message : error);
+    }
+  };
+
+    // Function to handle deactivate job
+    const handleDeactivateJob = async (jobId: number) => {
+      try {
+        const result = await deactivateJob(jobId); // Call the deactivateJob service
+        console.log("Job deactivated:", result); // Optionally log or use the response data
+    
+        // After deactivating, update the job status in the local state
+        const updatedJobs = jobs.map(job =>
+          job.id === jobId ? { ...job, status: "inactive" } : job
+        );
+        setJobs(updatedJobs); // Update the state with the new job data
+      } catch (error: unknown) { // Explicitly type 'error' as 'unknown'
+        if (error instanceof Error) { // Check if the error is an instance of the Error class
+          console.error("Failed to deactivate job:", error.message);
+        } else {
+          console.error("Failed to deactivate job: Unknown error");
+        }
+      }
+    };
+    
   const handleRowOptionsClick = (event: React.MouseEvent<HTMLButtonElement>, jobId: number) => {
     setAnchorEl((prev) => ({
       ...prev,
@@ -282,23 +316,32 @@ return (
                       fontWeight: "semibold",
                     }}
                   >
-                    {job.status === "active" ? (
-                      <CustomChip
-                        label="Active"
-                        color="success"
-                        skin="light"
-                        size="small"
-                        sx={{ width: "100%", borderRadius: "5px" }}
-                      />
-                    ) : (
-                      <CustomChip
-                        color="error"
-                        label="Expired"
-                        skin="light"
-                        size="small"
-                        sx={{ width: "100%", borderRadius: "5px" }}
-                      />
-                    )}
+                   {job.status === "active" ? (
+                    <CustomChip
+                      label="Active"
+                      color="success"
+                      skin="light"
+                      size="small"
+                      sx={{ width: "100%", borderRadius: "5px" }}
+                    />
+                  ) : job.status === "inactive" ? (
+                    <CustomChip
+                      label="Inactive"
+                      color="warning"
+                      skin="light"
+                      size="small"
+                      sx={{ width: "100%", borderRadius: "5px" }}
+                    />
+                  ) : job.status === "expired" ? (
+                    <CustomChip
+                      label="Expired"
+                      color="error"
+                      skin="light"
+                      size="small"
+                      sx={{ width: "100%", borderRadius: "5px" }}
+                    />
+                  ) : null}
+
                   </TableCell>
                   <TableCell>
                     <Box sx={{ alignSelf: "end" }}>
@@ -330,15 +373,21 @@ return (
                               View
                             </MenuItem>
 
-                          <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
+                            <MenuItem
+                            sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
+                            onClick={() => handleDeactivateJob(job.id)} // Call the deactivate function
+                          >
                             <Icon icon="tabler:eye-off" />
                             Deactivate
                           </MenuItem>
 
-                          <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
-                            <Icon icon="fluent:delete-24-regular" fontSize={20} />
-                            Delete
-                          </MenuItem>
+                           <MenuItem 
+                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }} 
+                              onClick={() => handleDeleteJob(job.id)} // Call delete when clicked
+                            >
+                              <Icon icon="fluent:delete-24-regular" fontSize={20} />
+                              Delete
+                            </MenuItem>
                         </Menu>
                       </Avatar>
                     </Box>
