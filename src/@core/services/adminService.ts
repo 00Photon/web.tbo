@@ -1,9 +1,11 @@
 // import { API_BASE_URL } from "@/@core/utils/constants";
 
 import axios, { AxiosResponse } from "axios";
+import { ReactNode } from "react";
 
 // Admin data Interface
 export interface AdminData {
+  account_type: ReactNode;
   id: number;
   name: string;
   email: string;
