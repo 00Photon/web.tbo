@@ -9,6 +9,8 @@ export interface CandidateData {
   dateApplied: string;
   status: boolean;
   clients: string;
+  applications: number;
+  date: string;
 }
 
 // API response interface

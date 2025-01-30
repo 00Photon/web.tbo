@@ -2,6 +2,7 @@ import axios, { AxiosResponse } from "axios";
 
 // Admin data Interface
 export interface ClientData {
+  created_at: any;
   Avatar: any;
   registrationDate: any;
   applications: any;
