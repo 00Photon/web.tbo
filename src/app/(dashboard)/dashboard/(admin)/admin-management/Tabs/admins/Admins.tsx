@@ -1,5 +1,5 @@
 // *React Imports
-import { SetStateAction, useState } from "react";
+import { SetStateAction, useState, useEffect, ReactNode } from "react";
 
 // * Icon Imports
 import Icon from "@/@core/component/icon";
@@ -12,6 +12,7 @@ import CustomChip from "@/@core/component/mui/chip";
 // * Component Import
 import EditAdmin from "./EditAdmin";
 import ViewAdmin from "./ViewAdmin";
+import { getAdmins } from "@/@core/services/adminService";
 
 // ** Third Party Imports
 import { Controller, useForm } from "react-hook-form";
@@ -51,6 +52,16 @@ export type MockData = {
   avatarColor?: string;
   avatar?: string | undefined;
   sx?: object;
+};
+
+export type AdminData = {
+  account_type: ReactNode;
+  id: number;
+  name: string;
+  email: string;
+  level: string;
+  role: string;
+  status: boolean;
 };
 
 const data: MockData[] = [
@@ -110,6 +121,8 @@ const AdminsTable = () => {
   const [status, setStatus] = useState<string>("");
   const [page, setPage] = useState(2);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [admins, setAdmins] = useState<AdminData[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [anchorEl, setAnchorEl] = useState<(HTMLElement | null)[]>(
     Array(data?.length)?.fill(null)
   );
@@ -120,6 +133,23 @@ const AdminsTable = () => {
   const smallScreen = useMediaQuery((theme: Theme) =>
     theme.breakpoints.up("md")
   );
+
+  // Fetch admin data on component mount
+  useEffect(() => {
+    const fetchAdmins = async () => {
+      try {
+        const data: AdminData[] = await getAdmins();
+        setAdmins(data);
+        setAnchorEl(Array(data.length).fill(null));
+      } catch (error) {
+        console.error("Error fetching admins:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAdmins();
+  }, []);
 
   const toggleEditAdminModal = () => setEditAdminModal(!editAdminModal);
 
@@ -366,16 +396,17 @@ const AdminsTable = () => {
                   Name
                 </TableCellStyled>
                 <TableCellStyled align="left">Email</TableCellStyled>
-                <TableCellStyled align="center">Level</TableCellStyled>
+                <TableCellStyled align="center">Account Type</TableCellStyled>
                 <TableCellStyled align="left">Role</TableCellStyled>
                 <TableCellStyled align="center">Status</TableCellStyled>
                 <TableCellStyled align="left">Actions</TableCellStyled>
               </TableRow>
             </TableHead>
             <TableBody>
-              {data.map((item, i) => {
+              {/* Work Here */}
+              {admins.map((item, i) => {
                 return (
-                  <TableRow key={i}>
+                  <TableRow key={item.id}>
                     <TableCell align="left">
                       <Checkbox
                         size="small"
@@ -398,8 +429,13 @@ const AdminsTable = () => {
                     <TableCell>{item.id}</TableCell>
                     <TableCell>{item.name}</TableCell>
                     <TableCell>{item.email}</TableCell>
+                    <TableCell align="center">{item.account_type}</TableCell>
+                    <TableCell>{item.status}</TableCell>
+                    {/* <TableCell>{item.id}</TableCell>
+                    <TableCell>{item.name}</TableCell>
+                    <TableCell>{item.email}</TableCell>
                     <TableCell align="center">{item.level}</TableCell>
-                    <TableCell>{item.role}</TableCell>
+                    <TableCell>{item.role}</TableCell> */}
                     <TableCell
                       align="center"
                       sx={{

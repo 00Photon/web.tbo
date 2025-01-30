@@ -1,5 +1,5 @@
 // *React Imports
-import React from "react";
+import React, { ReactNode } from "react";
 
 // * Icon Imports
 import Icon from "@/@core/component/icon";
@@ -14,6 +14,7 @@ import Link from "next/link";
 import CustomTextField from "@/@core/component/mui/text-field";
 import { TableCellStyled } from "@/@core/component/mui/tableStyled";
 import StyledImage from "@/@core/component/mui/image";
+import { ClientData, getClients } from "@/@core/services/ClientService";
 
 // ** Third Party Imports
 import { Controller, useForm } from "react-hook-form";
@@ -45,11 +46,14 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import { Theme } from "@mui/material/styles";
 
 interface MockData {
+  created_at: ReactNode;
+  name: ReactNode;
+  id: number;
+  account_type: string | undefined;
   company: string;
   contactPerson: string;
   email: string;
   activeJobs: number;
-  id: number;
   applications: number;
   registrationDate: string;
   status: boolean;
@@ -67,6 +71,9 @@ const data: MockData[] = [
     registrationDate: "12-05-2022",
     status: true,
     Avatar: Google.src,
+    account_type: undefined,
+    created_at: undefined,
+    name: undefined
   },
   {
     company: "Google",
@@ -78,6 +85,9 @@ const data: MockData[] = [
     registrationDate: "12-05-2022",
     status: false,
     Avatar: Google.src,
+    account_type: undefined,
+    name: undefined,
+    created_at: undefined
   },
   {
     company: "Google",
@@ -89,6 +99,9 @@ const data: MockData[] = [
     registrationDate: "12-05-2022",
     status: true,
     Avatar: Google.src,
+    account_type: undefined,
+    name: undefined,
+    created_at: undefined
   },
   {
     company: "Google",
@@ -100,6 +113,9 @@ const data: MockData[] = [
     registrationDate: "12-05-2022",
     status: false,
     Avatar: Google.src,
+    account_type: undefined,
+    name: undefined,
+    created_at: undefined
   },
   {
     company: "Google",
@@ -111,6 +127,9 @@ const data: MockData[] = [
     registrationDate: "12-05-2022",
     status: true,
     Avatar: Google.src,
+    account_type: undefined,
+    name: undefined,
+    created_at: undefined
   },
 ];
 
@@ -123,6 +142,8 @@ const ClientListTable: React.FC = () => {
   const [anchorEl, setAnchorEl] = React.useState<(HTMLElement | null)[]>(
     Array(data?.length)?.fill(null)
   );
+  const [clients, setClients] = React.useState<MockData[]>([]);
+  const [loading, setLoading] = React.useState<boolean>(true);
 
   const smallScreen = useMediaQuery((theme: Theme) =>
     theme.breakpoints.up("md")
@@ -155,6 +176,36 @@ const ClientListTable: React.FC = () => {
   };
 
   const toggleFilter = () => setOpenFilter(!openFilter);
+
+  // Fetch client data on component mount
+  React.useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const data = await getClients();
+        const formattedData = data.map((client: ClientData) => ({
+          company: client.company,
+          contactPerson: client.contactPerson,
+          email: client.email,
+          activeJobs: client.activeJobs,
+          id: client.id,
+          applications: client.applications,
+          registrationDate: client.registrationDate,
+          status: client.status === "active",
+          Avatar: client.Avatar,
+          account_type: client.account_type,
+          created_at: client.created_at,
+          name: client.name
+        }));
+        setClients(formattedData);
+      } catch (error) {
+        console.error("Error fetching clients:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchClients();
+  }, []);
 
   return (
     <Card
@@ -344,7 +395,7 @@ const ClientListTable: React.FC = () => {
               >
                 <TableCellStyled>Company</TableCellStyled>
                 <TableCellStyled>ID</TableCellStyled>
-                <TableCellStyled>Contact Person</TableCellStyled>
+                <TableCellStyled>Name</TableCellStyled>
                 <TableCellStyled>Email</TableCellStyled>
                 <TableCellStyled>Active Jobs</TableCellStyled>
                 <TableCellStyled>Date(Registered)</TableCellStyled>
@@ -353,7 +404,8 @@ const ClientListTable: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {data.map((item, i) => {
+              {/* WORK HERE */}
+              {clients.map((item, i) => {
                 return (
                   <TableRow key={i}>
                     <TableCell>
@@ -361,16 +413,19 @@ const ClientListTable: React.FC = () => {
                         sx={{ display: "flex", alignItems: "center", gap: 1 }}
                       >
                         <Box sx={{ maxWidth: 25, maxHeight: 25 }}>
-                          <StyledImage src={item.Avatar} alt={item.company} />
+                          <StyledImage
+                            src={item.Avatar}
+                            alt={item.account_type}
+                          />
                         </Box>
-                        {item.company}
+                        {/* {item.company} */}
                       </Box>
                     </TableCell>
                     <TableCell>{item.id}</TableCell>
-                    <TableCell>{item.contactPerson}</TableCell>
+                    <TableCell>{item.name}</TableCell>
                     <TableCell>{item.email}</TableCell>
-                    <TableCell>{item.activeJobs}</TableCell>
-                    <TableCell>{item.registrationDate}</TableCell>
+                    <TableCell>{item.account_type}</TableCell>
+                    <TableCell>{item.created_at}</TableCell>
                     <TableCell
                       align="center"
                       sx={{
@@ -378,7 +433,7 @@ const ClientListTable: React.FC = () => {
                         fontWeight: "semibold",
                       }}
                     >
-                      {item.status === true ? (
+                      {item.status ? (
                         <CustomChip
                           label="Active"
                           color="success"
