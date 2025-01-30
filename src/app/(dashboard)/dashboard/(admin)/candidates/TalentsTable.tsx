@@ -9,6 +9,10 @@ import { useRouter } from "next/router";
 import CustomTextField from "@/@core/component/mui/text-field";
 import { TableCellStyled } from "@/@core/component/mui/tableStyled";
 import CustomChip from "@/@core/component/mui/chip";
+import {
+  CandidateData,
+  getCandidates,
+} from "@/@core/services/CandidateService";
 
 // ** Third Party Imports
 import { Controller, useForm } from "react-hook-form";
@@ -47,9 +51,18 @@ interface MockData {
   status: boolean;
 }
 
+// interface CandidateData {
+//   id: number;
+//   name: string;
+//   email: string;
+//   applications?: number;
+//   date?: string;
+//   status?: boolean;
+// }
+
 const data: MockData[] = [
   {
-    id: 1289,
+    id: 0,
     name: "John Doe",
     email: "DqkR8@example.com",
     applications: 5,
@@ -107,6 +120,7 @@ const TalentTable = () => {
   const [anchorEl, setAnchorEl] = React.useState<(HTMLElement | null)[]>(
     Array(data?.length)?.fill(null)
   );
+  const [candidate, setCandidate] = React.useState<MockData[]>([]);
 
   const smallScreen = useMediaQuery((theme: Theme) =>
     theme.breakpoints.up("md")
@@ -139,6 +153,30 @@ const TalentTable = () => {
   };
 
   const toggleFilter = () => setOpenFilter(!openFilter);
+
+  // Fetch client data on component mount
+  React.useEffect(() => {
+    const fetchCandidate = async () => {
+      try {
+        const data = await getCandidates();
+        const formattedData = data.map((candidate: CandidateData) => ({
+          id: candidate.id,
+          name: candidate.name,
+          email: candidate.email,
+          applications: candidate.applications || 0,
+          date: candidate.date || "",
+          status: candidate.status || false,
+        }));
+        setCandidate(formattedData);
+      } catch (error) {
+        console.error("Error fetching clients:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCandidate();
+  }, []);
 
   return (
     <Card
@@ -352,7 +390,7 @@ const TalentTable = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {data.map((item, i) => {
+              {candidate.map((item, i) => {
                 return (
                   <TableRow key={i}>
                     <TableCell align="left">
@@ -475,3 +513,7 @@ const TalentTable = () => {
 };
 
 export default TalentTable;
+function setLoading(arg0: boolean) {
+  throw new Error("Function not implemented.");
+}
+
