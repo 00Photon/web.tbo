@@ -1,5 +1,5 @@
 // *React Imports
-import { SetStateAction, useState, useEffect } from "react";
+import { SetStateAction, useState, useEffect, ReactNode } from "react";
 
 // * Icon Imports
 import Icon from "@/@core/component/icon";
@@ -12,7 +12,7 @@ import CustomChip from "@/@core/component/mui/chip";
 // * Component Import
 import EditAdmin from "./EditAdmin";
 import ViewAdmin from "./ViewAdmin";
-import { getAdmins } from "./adminService";
+import { getAdmins } from "@/@core/services/adminService";
 
 // ** Third Party Imports
 import { Controller, useForm } from "react-hook-form";
@@ -55,6 +55,7 @@ export type MockData = {
 };
 
 export type AdminData = {
+  account_type: ReactNode;
   id: number;
   name: string;
   email: string;
@@ -137,7 +138,7 @@ const AdminsTable = () => {
   useEffect(() => {
     const fetchAdmins = async () => {
       try {
-        const data = await getAdmins();
+        const data: AdminData[] = await getAdmins();
         setAdmins(data);
         setAnchorEl(Array(data.length).fill(null));
       } catch (error) {

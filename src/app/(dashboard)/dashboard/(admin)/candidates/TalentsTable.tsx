@@ -9,6 +9,7 @@ import { useRouter } from "next/router";
 import CustomTextField from "@/@core/component/mui/text-field";
 import { TableCellStyled } from "@/@core/component/mui/tableStyled";
 import CustomChip from "@/@core/component/mui/chip";
+import { getCandidates } from "@/@core/services/CandidateService";
 
 // ** Third Party Imports
 import { Controller, useForm } from "react-hook-form";
@@ -49,7 +50,7 @@ interface MockData {
 
 const data: MockData[] = [
   {
-    id: 1289,
+    id: "0000",
     name: "John Doe",
     email: "DqkR8@example.com",
     applications: 5,
@@ -107,6 +108,7 @@ const TalentTable = () => {
   const [anchorEl, setAnchorEl] = React.useState<(HTMLElement | null)[]>(
     Array(data?.length)?.fill(null)
   );
+  const [candidate, setCandidate] = React.useState<MockData[]>([]);
 
   const smallScreen = useMediaQuery((theme: Theme) =>
     theme.breakpoints.up("md")
@@ -139,6 +141,22 @@ const TalentTable = () => {
   };
 
   const toggleFilter = () => setOpenFilter(!openFilter);
+
+  // Fetch client data on component mount
+  React.useEffect(() => {
+    const fetchCandidate = async () => {
+      try {
+        const data = await getCandidates();
+        setCandidate(data);
+      } catch (error) {
+        console.error("Error fetching clients:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCandidate();
+  }, []);
 
   return (
     <Card
@@ -352,7 +370,7 @@ const TalentTable = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {data.map((item, i) => {
+              {candidate.map((item, i) => {
                 return (
                   <TableRow key={i}>
                     <TableCell align="left">

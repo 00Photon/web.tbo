@@ -139,7 +139,6 @@ const InterviewedTalents = () => {
   };
 
   const toggleFilter = () => setOpenFilter(!openFilter);
-
   return (
     <Card
       sx={{

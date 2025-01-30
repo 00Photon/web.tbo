@@ -14,8 +14,7 @@ import Link from "next/link";
 import CustomTextField from "@/@core/component/mui/text-field";
 import { TableCellStyled } from "@/@core/component/mui/tableStyled";
 import StyledImage from "@/@core/component/mui/image";
-// import { getClients } from "@/app/(dashboard)/dashboard/(admin)/clients/Tabs/client/ClientService";
-import { getClients } from "./ClientService";
+import { getClients } from "@/@core/services/ClientService";
 
 // ** Third Party Imports
 import { Controller, useForm } from "react-hook-form";
@@ -382,9 +381,12 @@ const ClientListTable: React.FC = () => {
                         sx={{ display: "flex", alignItems: "center", gap: 1 }}
                       >
                         <Box sx={{ maxWidth: 25, maxHeight: 25 }}>
-                          <StyledImage src={item.Avatar} alt={item.company} />
+                          <StyledImage
+                            src={item.Avatar}
+                            alt={item.account_type}
+                          />
                         </Box>
-                        {item.company}
+                        {/* {item.company} */}
                       </Box>
                     </TableCell>
                     <TableCell>{item.id}</TableCell>
@@ -399,7 +401,7 @@ const ClientListTable: React.FC = () => {
                         fontWeight: "semibold",
                       }}
                     >
-                      {item.status === true ? (
+                      {item.status === "active" ? (
                         <CustomChip
                           label="Active"
                           color="success"
