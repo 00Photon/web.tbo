@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 
 // Admin data Interface
 export interface ClientData {
@@ -11,6 +11,11 @@ export interface ClientData {
   level: string;
 }
 
+// API response interface
+interface APIResponse {
+  clients: ClientData[];
+}
+
 // API base URL API
 const API_BASE_URL = "https://api.tbo-taas.com/api/v1/admin";
 console.log(API_BASE_URL);
@@ -18,7 +23,9 @@ console.log(API_BASE_URL);
 // Function to fetch admin data
 export const getClients = async (): Promise<ClientData[]> => {
   try {
-    const response = await axios.get<ClientData[]>(`${API_BASE_URL}/clients`);
+    const response: AxiosResponse<APIResponse> = await axios.get(
+      `${API_BASE_URL}/clients`
+    );
     console.log(response);
     console.log(response.data.clients);
     return response.data.clients; // Return the fetched data
