@@ -44,3 +44,65 @@ export const getProfile = async (): Promise<User> => {
 };
 
 console.log(getProfile());
+
+// Function to update user profile
+export const updateProfile = async (updatedData: {
+  name: string;
+  email: string;
+  phone_number: string;
+}): Promise<User> => {
+  try {
+    const session = await getSession();
+    if (!session || !session.user) throw new Error("User is not authenticated");
+
+    const token = session.user.accessToken;
+
+    const response = await axios.put<ApiResponse>(
+      `${API_BASE_URL}/update`,
+      updatedData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("Profile updated successfully:", response.data.status);
+    return response.data.user;
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    throw error;
+  }
+};
+
+// Function to upload a document
+export const uploadDocument = async (
+  file: File,
+  documentType: string
+): Promise<void> => {
+  try {
+    const session = await getSession();
+    if (!session || !session.user) throw new Error("User is not authenticated");
+
+    const token = session.user.accessToken;
+
+    // Create a FormData object to send the file
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("documentType", documentType);
+
+    // Make the PUT request
+    const response = await axios.put(`${API_BASE_URL}/upload`, formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data", // Required for file uploads
+      },
+    });
+
+    console.log("Document uploaded successfully:", response.data);
+  } catch (error) {
+    console.error("Error uploading document:", error);
+    throw error;
+  }
+};
