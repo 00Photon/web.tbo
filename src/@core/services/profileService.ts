@@ -28,7 +28,7 @@ export const getProfile = async (): Promise<User> => {
 
     const token = session.user.accessToken;
 
-    const response = await axios.post<ApiResponse>(`${API_BASE_URL}/user-me`, {
+    const response = await axios.get<ApiResponse>(`${API_BASE_URL}/user-me`, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -42,3 +42,5 @@ export const getProfile = async (): Promise<User> => {
     throw error;
   }
 };
+
+console.log(getProfile());
