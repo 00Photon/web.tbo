@@ -2,13 +2,21 @@ import DocumentPreviewModal from "@/app/(dashboard)/dashboard/talent/profile/com
 import { CloudUpload, Delete } from "@mui/icons-material";
 import { Box, Button, Typography } from "@mui/material";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { uploadDocument } from "@/@core/services/profileService";
 
 const DocumentUpload: React.FC<{ label: string }> = ({ label }) => {
   const [openPreviewModal, setOpenPreviewModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null); // Track the uploaded file URL
+
+  // Load the uploaded file URL from local storage on component mount
+  useEffect(() => {
+    const savedFileUrl = localStorage.getItem(`uploadedFileUrl_${label}`);
+    if (savedFileUrl) {
+      setUploadedFileUrl(savedFileUrl);
+    }
+  }, [label]);
 
   // Handle file selection
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,6 +50,7 @@ const DocumentUpload: React.FC<{ label: string }> = ({ label }) => {
   // Handle file deletion
   const handleDelete = () => {
     setUploadedFileUrl(null); // Clear the uploaded file URL
+    localStorage.removeItem(`uploadedFileUrl_${label}`); // Remove from local storage
     setSelectedFile(null); // Clear the selected file
   };
 
