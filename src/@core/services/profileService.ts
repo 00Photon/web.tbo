@@ -19,6 +19,7 @@ interface ApiResponse {
 
 // Base URL for the API
 const API_BASE_URL = "https://api.tbo-taas.com/api/v1";
+const API_PUT_URL = "https://api.tbo-taas.com/api/v1/user/update/1";
 
 // Function to fetch user profile
 export const getProfile = async (): Promise<User> => {
@@ -58,7 +59,7 @@ export const updateProfile = async (updatedData: {
     const token = session.user.accessToken;
 
     const response = await axios.put<ApiResponse>(
-      `${API_BASE_URL}/update`,
+      `${API_PUT_URL}/update`,
       updatedData,
       {
         headers: {
@@ -78,6 +79,7 @@ export const updateProfile = async (updatedData: {
 
 // Function to upload a document
 export const uploadDocument = async (
+  userId: number,
   file: File,
   documentType: string
 ): Promise<void> => {
@@ -93,12 +95,16 @@ export const uploadDocument = async (
     formData.append("documentType", documentType);
 
     // Make the PUT request
-    const response = await axios.put(`${API_BASE_URL}/upload`, formData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "multipart/form-data", // Required for file uploads
-      },
-    });
+    const response = await axios.put(
+      `${API_BASE_URL}/user/update/${userId}`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data", // Required for file uploads
+        },
+      }
+    );
 
     console.log("Document uploaded successfully:", response.data);
   } catch (error) {
