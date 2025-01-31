@@ -12,9 +12,9 @@ import {
 const DocumentPreviewModal: React.FC<{
   open: boolean;
   onClose: () => void;
-  onSave: () => Promise<void>;
+  onSave: () => void;
   file: File | null;
-}> = ({ open, onClose }) => {
+}> = ({ open, onClose, onSave, file }) => {
   return (
     <Dialog
       sx={{
@@ -62,10 +62,12 @@ const DocumentPreviewModal: React.FC<{
             >
               <Stack flexGrow={1}>
                 <Typography sx={{ fontSize: "18px", fontWeight: 600 }}>
-                  Jane Doe Cover Letter
+                  {file ? file.name : "No File Selected"}
                 </Typography>
                 <Typography sx={{ fontSize: "13px", fontWeight: 400 }}>
-                  PDF {"(49KB)"}
+                  {file
+                    ? `${file.type} (${(file.size / 1024).toFixed(2)} KB)`
+                    : "N/A"}
                 </Typography>
               </Stack>
               <Stack
@@ -103,11 +105,19 @@ const DocumentPreviewModal: React.FC<{
             <Divider />
             <Stack alignItems="center">
               <Box sx={{ width: { xs: "auto", sm: "350px" } }}>
-                <img
-                  src="/document_preview_placeholder.svg"
-                  alt="Document Preview Placeholder"
-                  style={{ width: "100%" }}
-                />
+                {file ? (
+                  <img
+                    src={URL.createObjectURL(file)}
+                    alt="Document Preview"
+                    style={{ width: "100%" }}
+                  />
+                ) : (
+                  <img
+                    src="/document_preview_placeholder.svg"
+                    alt="Document Preview Placeholder"
+                    style={{ width: "100%" }}
+                  />
+                )}
               </Box>
             </Stack>
             <Divider />
@@ -118,6 +128,7 @@ const DocumentPreviewModal: React.FC<{
                   textTransform: "none",
                   width: { xs: "100%", sm: "300px" },
                 }}
+                onClick={onSave} // Trigger the upload function
               >
                 Save Changes
               </Button>
