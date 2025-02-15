@@ -1,4 +1,4 @@
-import { Close, Delete } from '@mui/icons-material';
+import { Close, Delete } from "@mui/icons-material";
 import {
   Box,
   Button,
@@ -7,17 +7,19 @@ import {
   Divider,
   Stack,
   Typography,
-} from '@mui/material';
+} from "@mui/material";
 
 const DocumentPreviewModal: React.FC<{
   open: boolean;
   onClose: () => void;
-}> = ({ open, onClose }) => {
+  onSave: () => void;
+  file: File | null;
+}> = ({ open, onClose, onSave, file }) => {
   return (
     <Dialog
       sx={{
-        '.mui-1t1j96h-MuiPaper-root-MuiDialog-paper': {
-          maxHeight: 'fit-content',
+        ".mui-1t1j96h-MuiPaper-root-MuiDialog-paper": {
+          maxHeight: "fit-content",
         },
       }}
       open={open}
@@ -25,26 +27,26 @@ const DocumentPreviewModal: React.FC<{
     >
       <Box
         sx={{
-          width: { xs: 'auto', md: '700px' },
+          width: { xs: "auto", md: "700px" },
         }}
       >
         <DialogContent>
           <Stack gap={3}>
             <Stack
-              sx={{ position: 'relative' }}
-              direction='row'
-              justifyContent='center'
-              width='100%'
+              sx={{ position: "relative" }}
+              direction="row"
+              justifyContent="center"
+              width="100%"
             >
-              <Typography sx={{ fontSize: '20px', fontWeight: 600 }}>
+              <Typography sx={{ fontSize: "20px", fontWeight: 600 }}>
                 Document Preview
               </Typography>
               <Close
                 onClick={() => onClose()}
                 sx={{
-                  display: { xs: 'none', sm: 'block' },
-                  cursor: 'pointer',
-                  position: 'absolute',
+                  display: { xs: "none", sm: "block" },
+                  cursor: "pointer",
+                  position: "absolute",
                   top: 0,
                   right: 0,
                 }}
@@ -52,44 +54,46 @@ const DocumentPreviewModal: React.FC<{
             </Stack>
             <Divider />
             <Stack
-              display='flex'
-              direction='row'
-              alignItems='center'
-              flexWrap='wrap'
+              display="flex"
+              direction="row"
+              alignItems="center"
+              flexWrap="wrap"
               gap={2}
             >
               <Stack flexGrow={1}>
-                <Typography sx={{ fontSize: '18px', fontWeight: 600 }}>
-                  Jane Doe Cover Letter
+                <Typography sx={{ fontSize: "18px", fontWeight: 600 }}>
+                  {file ? file.name : "No File Selected"}
                 </Typography>
-                <Typography sx={{ fontSize: '13px', fontWeight: 400 }}>
-                  PDF {'(49KB)'}
+                <Typography sx={{ fontSize: "13px", fontWeight: 400 }}>
+                  {file
+                    ? `${file.type} (${(file.size / 1024).toFixed(2)} KB)`
+                    : "N/A"}
                 </Typography>
               </Stack>
               <Stack
                 gap={2}
-                direction='row'
-                alignItems='center'
-                flexWrap='wrap'
+                direction="row"
+                alignItems="center"
+                flexWrap="wrap"
               >
                 {[
-                  { icon: <Delete />, label: 'Delete' },
-                  { icon: null, label: 'Replace' },
+                  { icon: <Delete />, label: "Delete" },
+                  { icon: null, label: "Replace" },
                   {
                     icon: null,
-                    label: 'Export PDF',
+                    label: "Export PDF",
                   },
                 ].map((button, index) => (
                   <Button
                     key={index}
                     {...(index === 2
-                      ? { variant: 'contained' }
-                      : { variant: 'outlined' })}
+                      ? { variant: "contained" }
+                      : { variant: "outlined" })}
                     sx={{
-                      display: 'flex',
-                      alignItems: 'center',
+                      display: "flex",
+                      alignItems: "center",
                       gap: 1,
-                      textTransform: 'none',
+                      textTransform: "none",
                     }}
                   >
                     {button.icon}
@@ -99,23 +103,32 @@ const DocumentPreviewModal: React.FC<{
               </Stack>
             </Stack>
             <Divider />
-            <Stack alignItems='center'>
-              <Box sx={{ width: { xs: 'auto', sm: '350px' } }}>
-                <img
-                  src='/document_preview_placeholder.svg'
-                  alt='Document Preview Placeholder'
-                  style={{ width: '100%' }}
-                />
+            <Stack alignItems="center">
+              <Box sx={{ width: { xs: "auto", sm: "350px" } }}>
+                {file ? (
+                  <img
+                    src={URL.createObjectURL(file)}
+                    alt="Document Preview"
+                    style={{ width: "100%" }}
+                  />
+                ) : (
+                  <img
+                    src="/document_preview_placeholder.svg"
+                    alt="Document Preview Placeholder"
+                    style={{ width: "100%" }}
+                  />
+                )}
               </Box>
             </Stack>
             <Divider />
-            <Stack alignItems='center'>
+            <Stack alignItems="center">
               <Button
-                variant='contained'
+                variant="contained"
                 sx={{
-                  textTransform: 'none',
-                  width: { xs: '100%', sm: '300px' },
+                  textTransform: "none",
+                  width: { xs: "100%", sm: "300px" },
                 }}
+                onClick={onSave} // Trigger the upload function
               >
                 Save Changes
               </Button>
