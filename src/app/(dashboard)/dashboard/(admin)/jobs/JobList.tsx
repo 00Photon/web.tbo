@@ -78,12 +78,12 @@ const JobListTable: React.FC = () => {
     const loadJobs = async () => {
       try {
         setLoading(true);
-        const response = await fetchJobs(); // Fetch the jobs from API
-        console.log("Fetched data:", response); // Check the structure of the data
+        const response = await fetchJobs();  
+        console.log("Fetched data:", response); 
         if (response && Array.isArray(response.jobs)) {
-          setJobs(response.jobs); // Access the jobs array correctly
+          setJobs(response.jobs); 
         } else {
-          setJobs([]); // If there's no jobs array, set it to empty
+          setJobs([]); 
         }
       } catch (err) {
         setError("Failed to load jobs. Please try again.");
