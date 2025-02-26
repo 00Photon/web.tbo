@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import { getAdminStats } from "@/@core/services/stats";
+
 // *Icon Import
 import Icon from "@/@core/component/icon";
 
@@ -5,9 +8,7 @@ import Icon from "@/@core/component/icon";
 import Paper from "@mui/material/Paper";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import IconButton from "@mui/material/IconButton";
 import Button from "@mui/material/Button";
-// import Button from "@mui/material/Button"
 
 interface Activity {
   icon: string;
@@ -18,69 +19,6 @@ interface Activity {
 interface ActivityProps {
   activity: Activity;
 }
-
-const activities: Activity[] = [
-  {
-    icon: "tabler:user",
-    activity: "user24 updated their status",
-    timeline: "5 min ago",
-  },
-  {
-    icon: "tabler:user",
-    activity: "user24 updated their status",
-    timeline: "5 min ago",
-  },
-  {
-    icon: "tabler:user",
-    activity: "user24 updated their status",
-    timeline: "5 min ago",
-  },
-  {
-    icon: "tabler:user",
-    activity: "user24 updated their status",
-    timeline: "5 min ago",
-  },
-  {
-    icon: "tabler:user",
-    activity: "user24 updated their status",
-    timeline: "5 min ago",
-  },
-  {
-    icon: "tabler:user",
-    activity: "user24 updated their status",
-    timeline: "5 min ago",
-  },
-  {
-    icon: "tabler:user",
-    activity: "user24 updated their status",
-    timeline: "5 min ago",
-  },
-  {
-    icon: "tabler:user",
-    activity: "user24 updated their status",
-    timeline: "5 min ago",
-  },
-  {
-    icon: "tabler:user",
-    activity: "user24 updated their status",
-    timeline: "5 min ago",
-  },
-  {
-    icon: "tabler:user",
-    activity: "user24 updated their status",
-    timeline: "5 min ago",
-  },
-  {
-    icon: "tabler:user",
-    activity: "user24 updated their status",
-    timeline: "5 min ago",
-  },
-  {
-    icon: "tabler:user",
-    activity: "user24 updated their status",
-    timeline: "5 min ago",
-  },
-];
 
 const ActivityLog: React.FC<ActivityProps> = ({ activity }) => {
   return (
@@ -106,6 +44,28 @@ const ActivityLog: React.FC<ActivityProps> = ({ activity }) => {
 };
 
 const ActivityLogs = () => {
+  const [activities, setActivities] = useState<Activity[]>([]);
+
+  useEffect(() => {
+    const fetchActivities = async () => {
+      try {
+        const response = await getAdminStats();
+        if (response && response.recent_users) {
+          const formattedActivities = response.recent_users.map((user) => ({
+            icon: "tabler:user",
+            activity: `${user.name} joined`,
+            timeline: new Date(user.joined_date).toLocaleDateString(),
+          }));
+          setActivities(formattedActivities);
+        }
+      } catch (error) {
+        console.error("Error fetching activities:", error);
+      }
+    };
+
+    fetchActivities();
+  }, []);
+
   return (
     <Paper sx={{ p: 3, width: "100%", my: 4 }}>
       <Box
@@ -115,11 +75,7 @@ const ActivityLogs = () => {
         }}
       >
         <Typography sx={{ fontWeight: 600 }}>Recent Activities</Typography>
-        <Button
-          variant="text"
-          size="small"
-          sx={{ textTransform: "capitalize" }}
-        >
+        <Button variant="text" size="small" sx={{ textTransform: "capitalize" }}>
           View more
         </Button>
       </Box>
@@ -135,9 +91,13 @@ const ActivityLogs = () => {
           },
         }}
       >
-        {activities.map((activity, i) => (
-          <ActivityLog key={i} activity={activity} />
-        ))}
+        {activities.length > 0 ? (
+          activities.map((activity, i) => <ActivityLog key={i} activity={activity} />)
+        ) : (
+          <Typography sx={{ textAlign: "center", color: "gray", mt: 3 }}>
+            No recent activities
+          </Typography>
+        )}
       </Box>
     </Paper>
   );

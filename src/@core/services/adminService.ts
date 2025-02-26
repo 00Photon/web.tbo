@@ -1,5 +1,4 @@
-// import { API_BASE_URL } from "@/@core/utils/constants";
-
+import { API_BASE_URL } from "@/@core/utils/constants"
 import axios, { AxiosResponse } from "axios";
 import { ReactNode } from "react";
 
@@ -16,25 +15,33 @@ export interface AdminData {
 
 // API response interface
 interface APIResponse {
-  clients: AdminData[];
+  admins: AdminData[];
 }
 
 // API base URL API
-
-const API_BASE_URL = "https://api.tbo-taas.com/api/v1/admin";
-console.log(API_BASE_URL);
 
 // Function to fetch admin data
 export const getAdmins = async (): Promise<AdminData[]> => {
   try {
     const response: AxiosResponse<APIResponse> = await axios.get(
-      `${API_BASE_URL}/clients`
+      `${API_BASE_URL}/admin/admins`
     );
-    console.log(response);
-    console.log(response.data.clients);
-    return response.data.clients; // Return the fetched data
+    console.log(response); // Log the full response for debugging
+    console.log(response.data.admins); // Log the correct data field
+
+    return response.data.admins; // Return the correct field from the response
   } catch (error) {
     console.error("Error fetching admin data:", error);
+    throw error;
+  }
+};
+
+export const getAdminById = async (adminId: string) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/admin/${adminId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching admin:", error);
     throw error;
   }
 };

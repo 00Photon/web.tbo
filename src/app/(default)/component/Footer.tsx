@@ -60,11 +60,12 @@ const Footer: React.FC = () => {
                 <Icon icon="ph:phone-call-fill" />
               </IconButton>
               <Stack>
+             
                 <Typography sx={{ fontSize: { xs: ".75rem", sm: ".875rem" } }}>
-                  +1 (555) 555-5555
+                +234 803 391 8955
                 </Typography>
                 <Typography sx={{ fontSize: { xs: ".75rem", sm: ".875rem" } }}>
-                  +1 (555) 555-5555
+                02016348889
                 </Typography>
               </Stack>
             </Box>
@@ -73,7 +74,8 @@ const Footer: React.FC = () => {
                 <Icon icon="ic:sharp-my-location" />
               </IconButton>
               <Typography sx={{ fontSize: { xs: ".75rem", sm: ".875rem" } }}>
-                23 Ademola Adetukumbo Street, <br /> Wuse 2, Abuja, Nigeria
+          
+              Propertygate Center, 2 Rock Drive, <br />Lekki Phase 1, Lagos.
               </Typography>
             </Box>
             <Box sx={{ mb: 2, display: "flex", gap: 2, alignItems: "center" }}>
@@ -82,7 +84,7 @@ const Footer: React.FC = () => {
               </IconButton>
               <Stack>
                 <Typography sx={{ fontSize: { xs: ".75rem", sm: ".875rem" } }}>
-                  support@TBO.ng
+                sales@tboisl.com
                 </Typography>
                 <Typography sx={{ fontSize: { xs: ".75rem", sm: ".875rem" } }}>
                   contact@TBO.ng
@@ -219,22 +221,23 @@ const Footer: React.FC = () => {
           }}
         >
           <Typography sx={{ fontSize: { xs: ".75rem", sm: ".875rem" } }}>
-            @ 2024 TBO - Job Portal. All rights Reserved
+            @ 2025 TBO - Job Portal. All rights Reserved
           </Typography>
           <Typography>
-            <IconButton color="inherit">
-              <Icon icon="ri:facebook-fill" fontSize="1.375rem" />
-            </IconButton>
-            <IconButton color="inherit">
-              <Icon icon="mdi:youtube" fontSize="1.375rem" />
-            </IconButton>
-            <IconButton color="inherit">
-              <Icon icon="ph:instagram-logo" fontSize="1.375rem" />
-            </IconButton>
-            <IconButton color="inherit">
-              <Icon icon="hugeicons:new-twitter" fontSize="1.375rem" />
-            </IconButton>
-          </Typography>
+        <IconButton color="inherit" component="a" href="https://facebook.com/people/TBO-Integrated-Services-Limited/100093247320175/" target="_blank" rel="noopener noreferrer">
+          <Icon icon="ri:facebook-fill" fontSize="1.375rem" />
+        </IconButton>
+        <IconButton color="inherit" component="a" href="https://instagram.com/tbo.isl" target="_blank" rel="noopener noreferrer">
+          <Icon icon="ph:instagram-logo" fontSize="1.375rem" />
+        </IconButton>
+        <IconButton color="inherit" component="a" href="https://twitter.com/consulting_tbo" target="_blank" rel="noopener noreferrer">
+          <Icon icon="hugeicons:new-twitter" fontSize="1.375rem" />
+        </IconButton>
+        <IconButton color="inherit" component="a" href="https://www.linkedin.com/company/tbo-consulting-group/" target="_blank" rel="noopener noreferrer">
+          <Icon icon="mdi:linkedin" fontSize="1.375rem" />
+        </IconButton>
+      </Typography>
+
         </Box>
       </Box>
     </>

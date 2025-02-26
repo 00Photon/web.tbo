@@ -47,8 +47,9 @@ import NewJob from "./NewJob";
 interface Job {
   id: number;
   title: string;
-  applications: number;
+  // applications: number;
   application_deadline: string;
+  applicant_count: number; 
   created_at : string;
   postingDate: string;
   expirationDate: string;
@@ -78,12 +79,12 @@ const JobListTable: React.FC = () => {
     const loadJobs = async () => {
       try {
         setLoading(true);
-        const response = await fetchJobs(); // Fetch the jobs from API
-        console.log("Fetched data:", response); // Check the structure of the data
+        const response = await fetchJobs();  
+        console.log("Fetched data:", response); 
         if (response && Array.isArray(response.jobs)) {
-          setJobs(response.jobs); // Access the jobs array correctly
+          setJobs(response.jobs); 
         } else {
-          setJobs([]); // If there's no jobs array, set it to empty
+          setJobs([]); 
         }
       } catch (err) {
         setError("Failed to load jobs. Please try again.");
@@ -306,8 +307,8 @@ return (
                 <TableRow key={job.id}>
                   <TableCell>{job.id}</TableCell>
                   <TableCell>{job.title}</TableCell>
-                  <TableCell>{job.applications}</TableCell>
-                  <TableCell>{job.created_at}</TableCell>
+                  <TableCell>{job.applicant_count}</TableCell>
+                  <TableCell>{new Date(job.created_at).toISOString().split("T")[0]}</TableCell>
                   <TableCell>{job.application_deadline}</TableCell>
                   <TableCell
                     align="center"

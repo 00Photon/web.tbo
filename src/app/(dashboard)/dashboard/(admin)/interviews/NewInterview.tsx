@@ -27,6 +27,8 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import MenuItem from "@mui/material/MenuItem";
 
+import { scheduleInterview }from "@/@core/services/interviewService"
+
 interface Props {
   open: boolean;
   close: () => void;
@@ -62,6 +64,7 @@ const defaultValues = {
   interviewerEmail: "",
   interviewerPhone: "",
   interviewDate: "",
+
   interviewTime: "",
   duration: "",
   format: "",
@@ -83,14 +86,39 @@ const NewInterview = ({ open, close }: Props) => {
     resolver: yupResolver(interviewSchema),
   });
 
-  const submitForm: SubmitHandler<IFormInput> = (values) => {
-    try {
-      console.log(values); // Check if values are correctly logged
-      // You can perform your API call here
-    } catch (error) {
-      console.error("Submission Error:", error); // Log any errors during submission
-    }
-  };
+const submitForm: SubmitHandler<IFormInput> = async (values) => {
+  try {
+    // Format the data for API request
+    const formattedData = {
+      application_id: 123, // Replace with actual application ID
+      user_id: 456, // Replace with actual user ID
+      interview_date: values.interviewDate,
+      interview_time: values.interviewTime,
+      interview_location: "Virtual", // Replace if needed
+      interviewer_department: values.interviewerDepartment,
+      interviewer_name: values.interviewerName,
+      interviewer_role: "Hiring Manager", // Replace if needed
+      interviewer_email: values.interviewerEmail,
+      interviewer_phone: values.interviewerPhone,
+    };
+
+    // Call API service
+    const response = await scheduleInterview(formattedData);
+
+    console.log("Interview scheduled successfully:", response);
+
+    // Show success message (optional)
+    alert("Interview scheduled successfully!");
+
+    // Reset form and close modal
+    reset();
+    close();
+  } catch (error) {
+    console.error("Error scheduling interview:", error);
+    alert("Failed to schedule interview. Please try again.");
+  }
+};
+
 
   return (
     <div>

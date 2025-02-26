@@ -1,6 +1,6 @@
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-
+import { API_BASE_URL } from "@/@core/utils/constants"
 interface APIResponse {
   status: boolean;
   access_token: string;
@@ -27,11 +27,13 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const res = await fetch('https://api.tbo-taas.com/api/v1/login', {
+        const res = await fetch(`${API_BASE_URL}/login`, {
           method: 'POST',
           body: JSON.stringify(credentials),
           headers: { 'Content-Type': 'application/json' },
         });
+        
+        
 
         const data = (await res.json()) as APIResponse;
 

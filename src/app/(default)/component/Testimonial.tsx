@@ -26,71 +26,19 @@ import StyledImage from "@/@core/component/mui/image";
 
 interface DataProps {
   name: string;
-  title: string;
-  image: any;
   testimony: string;
 }
-
 const data: DataProps[] = [
   {
-    name: "James Ronald",
-    title: "Full Stack Developer",
-    image: cheerful,
-    testimony: `LinkPath has been a game-changer for my business. I used to struggle with sharing multiple links to my portfolio, social media profiles, and contact information. Now, with just one link, my clients can easily access everything they need. I highly recommend LinkPath to any freelancer looking to streamline their online presence!`,
+    name: "Petrocam",
+    testimony: `TBO Integrated Services Ltd. has provided us with a resolute team of experts to oversee the day-to-day management and maintenance of our IT infrastructure. This proactive approach ensures our systems’ reliability, security, and performance, allowing our internal IT team to concentrate on strategic initiatives rather than routine maintenance tasks.`,
   },
+
   {
-    name: "James Ronald",
-    title: "Full Stack Developer",
-    image: cheerful,
-    testimony: `LinkPath has been a game-changer for my business. I used to struggle with sharing multiple links to my portfolio, social media profiles, and contact information. Now, with just one link, my clients can easily access everything they need. I highly recommend LinkPath to any freelancer looking to streamline their online presence!`,
-  },
-  {
-    name: "James Ronald",
-    title: "Full Stack Developer",
-    image: cheerful,
-    testimony: `LinkPath has been a game-changer for my business. I used to struggle with sharing multiple links to my portfolio, social media profiles, and contact information. Now, with just one link, my clients can easily access everything they need. I highly recommend LinkPath to any freelancer looking to streamline their online presence!`,
-  },
-  {
-    name: "James Ronald",
-    title: "Full Stack Developer",
-    image: cheerful,
-    testimony: `LinkPath has been a game-changer for my business. I used to struggle with sharing multiple links to my portfolio, social media profiles, and contact information. Now, with just one link, my clients can easily access everything they need. I highly recommend LinkPath to any freelancer looking to streamline their online presence!`,
-  },
-  {
-    name: "James Ronald",
-    title: "Full Stack Developer",
-    image: cheerful,
-    testimony: `LinkPath has been a game-changer for my business. I used to struggle with sharing multiple links to my portfolio, social media profiles, and contact information. Now, with just one link, my clients can easily access everything they need. I highly recommend LinkPath to any freelancer looking to streamline their online presence!`,
-  },
-  {
-    name: "James Ronald",
-    title: "Full Stack Developer",
-    image: cheerful,
-    testimony: `LinkPath has been a game-changer for my business. I used to struggle with sharing multiple links to my portfolio, social media profiles, and contact information. Now, with just one link, my clients can easily access everything they need. I highly recommend LinkPath to any freelancer looking to streamline their online presence!`,
-  },
-  {
-    name: "James Ronald",
-    title: "Full Stack Developer",
-    image: cheerful,
-    testimony: `LinkPath has been a game-changer for my business. I used to struggle with sharing multiple links to my portfolio, social media profiles, and contact information. Now, with just one link, my clients can easily access everything they need. I highly recommend LinkPath to any freelancer looking to streamline their online presence!`,
-  },
-  {
-    name: "James Ronald",
-    title: "Full Stack Developer",
-    image: cheerful,
-    testimony: `LinkPath has been a game-changer for my business. I used to struggle with sharing multiple links to my portfolio, social media profiles, and contact information. Now, with just one link, my clients can easily access everything they need. I highly recommend LinkPath to any freelancer looking to streamline their online presence!`,
-  },
-  {
-    name: "James Ronald",
-    title: "Full Stack Developer",
-    image: cheerful,
-    testimony: `LinkPath has been a game-changer for my business. I used to struggle with sharing multiple links to my portfolio, social media profiles, and contact information. Now, with just one link, my clients can easily access everything they need. I highly recommend LinkPath to any freelancer looking to streamline their online presence!`,
-  },
-  {
-    name: "James Ronald",
-    title: "Full Stack Developer",
-    image: cheerful,
-    testimony: `LinkPath has been a game-changer for my business. I used to struggle with sharing multiple links to my portfolio, social media profiles, and contact information. Now, with just one link, my clients can easily access everything they need. I highly recommend LinkPath to any freelancer looking to streamline their online presence!`,
+    name: "ATOS",
+    testimony: ` TBO Integrated Services Ltd. deliver Talent as a Service where they recruit tech talents for our multinational clients across Africa. These services include tech talent recruitment, staff onboarding, payroll management.
+
+  The team has helped our digital transformation growth.`,
   },
 ];
 
@@ -222,10 +170,10 @@ const Testimonial: React.FC = () => {
                 <Box
                   sx={{ display: "flex", alignItems: "center", gap: 2, mt: 2 }}
                 >
-                  <Avatar
+                  {/* <Avatar
                     src={item.image.src}
                     alt="cheerful face guy holding a laptop"
-                  />
+                  /> */}
                   <Stack>
                     <Typography
                       sx={{
@@ -235,14 +183,14 @@ const Testimonial: React.FC = () => {
                     >
                       {item.name}
                     </Typography>
-                    <Typography
+                    {/* <Typography
                       sx={{
                         fontSize: { xs: "0.6rem", sm: ".8rem" },
                         color: (theme) => theme.palette.primary.main,
                       }}
                     >
                       {item.title}
-                    </Typography>
+                    </Typography> */}
                   </Stack>
                 </Box>
               </Card>

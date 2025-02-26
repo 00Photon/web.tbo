@@ -141,8 +141,7 @@ const TalentBanner: React.FC = () => {
               fontWeight: { xs: 200, sm: 500 },
             }}
           >
-            With over 301,567 organizations on out list, we&apos;ve got you
-            covered!
+           With numerous jobseekers, we've got your organization covered!
           </Typography>
 
           <Box

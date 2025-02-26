@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from "axios";
-
+import { API_BASE_URL } from "@/@core/utils/constants"
 // Admin data Interface
 export interface ClientData {
   created_at: any;
@@ -23,15 +23,14 @@ interface APIResponse {
   clients: ClientData[];
 }
 
-// API base URL API
-const API_BASE_URL = "https://api.tbo-taas.com/api/v1/admin";
-console.log(API_BASE_URL);
+
+
 
 // Function to fetch admin data
 export const getClients = async (): Promise<ClientData[]> => {
   try {
     const response: AxiosResponse<APIResponse> = await axios.get(
-      `${API_BASE_URL}/clients`
+      `${API_BASE_URL}/admin/clients`
     );
     console.log(response);
     console.log(response.data.clients);
