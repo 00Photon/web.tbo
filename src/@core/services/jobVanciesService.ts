@@ -1,7 +1,7 @@
 import axios from "axios";
 
 import { getSession } from "next-auth/react";
-
+import { API_BASE_URL } from "@/@core/utils/constants"
 export interface Job {
   id: number;
   title: string;
@@ -27,9 +27,6 @@ interface ApiResponse {
   jobs: Job[];
 }
 
-// Base URL for the API
-const API_BASE_URL = "https://api.tbo-taas.com/api/v1";
-console.log(API_BASE_URL);
 
 export const getJobs = async (): Promise<Job[]> => {
   try {
@@ -41,7 +38,7 @@ export const getJobs = async (): Promise<Job[]> => {
     const response = await axios.get<ApiResponse>(`${API_BASE_URL}/jobs`, {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${token}`, // Add the token to the Authorization header
+        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
     });

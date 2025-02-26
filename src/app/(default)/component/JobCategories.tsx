@@ -33,19 +33,19 @@ interface Jobs {
 
 //**Temporary Mock Data */
 const jobs: Jobs[] = [
-  { title: "Graphics Design", number: 234, icon: "ph:pen-nib-light" },
-  { title: "Programming", number: 234, icon: "ph:code-light" },
-  { title: "Digital Marketing", number: 234, icon: "ph:lightning" },
-  { title: "Animations", number: 234, icon: "ph:video" },
-  { title: "Music", number: 234, icon: "ph:music-notes-plus-light" },
-  {
-    title: "Accounting",
-    number: 234,
-    icon: "material-symbols-light:finance-mode-rounded",
-  },
-  { title: "Health Care", number: 234, icon: "ph:heart-light" },
-  { title: "Data Science", number: 234, icon: "ph:brain-light" },
-  { title: "Management", number: 234, icon: "ph:chart-pie-light" },
+  { title: "Information Technology", number: 234, icon: "ph:pen-nib-light" },
+  { title: "Business", number: 234, icon: "ph:code-light" },
+  { title: "Sales", number: 234, icon: "ph:lightning" },
+  { title: "Human Resourse", number: 234, icon: "ph:video" },
+  { title: "Finance", number: 234, icon: "ph:music-notes-plus-light" },
+  // {
+  //   title: "Accounting",
+  //   number: 234,
+  //   icon: "material-symbols-light:finance-mode-rounded",
+  // },
+  // { title: "Health Care", number: 234, icon: "ph:heart-light" },
+  // { title: "Data Science", number: 234, icon: "ph:brain-light" },
+  // { title: "Management", number: 234, icon: "ph:chart-pie-light" },
 ];
 
 const colors = [
@@ -162,7 +162,7 @@ const Categories: React.FC = () => {
                       color: (theme) => theme.palette.secondary.dark,
                     }}
                   >
-                    {item.number} open positions
+                    {item.number} View Open positions
                   </Typography>
                 </Stack>
               </Card>

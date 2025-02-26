@@ -17,9 +17,11 @@ import Gears from "../assets/gears.svg";
 import Gem from "../assets/gem.svg";
 import Star from "../assets/star.svg";
 
+import { Autocomplete, TextField } from "@mui/material";
 // ** Third Party Imports
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
+
 
 //** Custom Component Imports
 import CustomTextField from "../../../@core/component/mui/text-field";
@@ -78,6 +80,12 @@ const HeroSection = () => {
       loop: true,
     });
   }, []);
+  const statesInNigeria = [
+    "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno",
+    "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "Gombe", "Imo", "Jigawa",
+    "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger",
+    "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara"
+  ];
 
   const {
     control,
@@ -312,33 +320,35 @@ const HeroSection = () => {
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <Controller
-                name="location"
-                control={control}
-                rules={{ required: true }}
-                render={({ field: { value, onChange } }) => (
-                  <CustomTextField
-                    fullWidth
-                    value={value}
-                    onChange={onChange}
-                    size="medium"
-                    placeholder="Location"
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment
-                          position="start"
-                          sx={{
-                            color: (theme) => theme.palette.primary.main,
-                          }}
-                        >
-                          <Icon icon="hugeicons:location-04" />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                )}
-              />
-            </Grid>
+            <Controller
+              name="location"
+              control={control}
+              rules={{ required: true }}
+              render={({ field: { value, onChange } }) => (
+                <Autocomplete
+                  options={statesInNigeria}
+                  value={value || null}
+                  onChange={(_, newValue) => onChange(newValue)}
+                  fullWidth
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder="Select Location"
+                      size="medium"
+                      InputProps={{
+                        ...params.InputProps,
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Icon icon="hugeicons:location-04" />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  )}
+                />
+              )}
+            />
+          </Grid>
           </Grid>
 
           <CardActions
@@ -389,7 +399,7 @@ const HeroSection = () => {
           >
             Popular:
           </Typography>
-          Designer, Programming, Digital Marketing, Animation, Videography...
+          Software testers, Business Development Officer, Business Analyst, Full Stack Developers, DevOps engineers, Platform engineers, Service desk engineers, data analysts.
         </Box>
       </Card>
     </Box>

@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-
+import { API_BASE_URL } from "@/@core/utils/constants"
 interface RegistrationData {
     account_type: 'CLIENT' | 'TALENT';
     name: string;
@@ -17,13 +17,14 @@ interface RegistrationData {
 }
 
 const registerUser = async (registrationData: RegistrationData): Promise<any> => {
-    const response = await fetch('https://api.tbo-taas.com/api/v1/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(registrationData),
-    });
+    const response = await fetch(`${API_BASE_URL}/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(registrationData),
+      });
+      
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }

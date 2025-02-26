@@ -13,7 +13,7 @@ const Admin = () => {
   return (
     <Box sx={{ mb: 4 }}>
       <StatHeader />
-      <QuickActions />
+      {/* <QuickActions /> */}
       <ApplicationUserChart />
       <JobApplicationChart />
       <ActivityLog />

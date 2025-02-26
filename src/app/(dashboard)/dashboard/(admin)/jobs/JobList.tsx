@@ -47,8 +47,9 @@ import NewJob from "./NewJob";
 interface Job {
   id: number;
   title: string;
-  applications: number;
+  // applications: number;
   application_deadline: string;
+  applicant_count: number; 
   created_at : string;
   postingDate: string;
   expirationDate: string;
@@ -306,8 +307,8 @@ return (
                 <TableRow key={job.id}>
                   <TableCell>{job.id}</TableCell>
                   <TableCell>{job.title}</TableCell>
-                  <TableCell>{job.applications}</TableCell>
-                  <TableCell>{job.created_at}</TableCell>
+                  <TableCell>{job.applicant_count}</TableCell>
+                  <TableCell>{new Date(job.created_at).toISOString().split("T")[0]}</TableCell>
                   <TableCell>{job.application_deadline}</TableCell>
                   <TableCell
                     align="center"

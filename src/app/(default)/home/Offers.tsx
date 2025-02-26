@@ -33,7 +33,7 @@ const HiringOffers: React.FC = () => {
       sx={{
         zIndex: -1,
         position: "relative",
-        mt: { xs: "8rem", sm: -2 },
+        mt: { xs: "8rem", sm: -20 },
         pt: "6rem",
         p: (theme) => [
           `${theme.spacing(2)} !important`,

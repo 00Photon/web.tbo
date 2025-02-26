@@ -80,8 +80,7 @@ const Banner: React.FC = () => {
                 fontWeight: { xs: 200, sm: 500 },
               }}
             >
-              With over 301,567 job-seekers, we&apos;ve got your organization
-              covered!
+             With numerous jobseekers, we've got your organization covered!
             </Typography>
 
             <Box
