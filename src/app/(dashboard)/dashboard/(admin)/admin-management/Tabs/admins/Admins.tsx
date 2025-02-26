@@ -399,7 +399,7 @@ const AdminsTable = () => {
                 <TableCellStyled align="center">Account Type</TableCellStyled>
                 <TableCellStyled align="left">Role</TableCellStyled>
                 <TableCellStyled align="center">Status</TableCellStyled>
-                <TableCellStyled align="left">Actions</TableCellStyled>
+                {/* <TableCellStyled align="left">Actions</TableCellStyled> */}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -461,7 +461,7 @@ const AdminsTable = () => {
                         />
                       )}
                     </TableCell>
-                    <TableCell>
+                    {/* <TableCell>
                       <Box sx={{ alignSelf: "end" }}>
                         <Avatar sx={{ background: "transparent" }}>
                           <IconButton
@@ -511,7 +511,7 @@ const AdminsTable = () => {
                           </Menu>
                         </Avatar>
                       </Box>
-                    </TableCell>
+                    </TableCell> */}
                   </TableRow>
                 );
               })}

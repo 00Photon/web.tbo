@@ -39,15 +39,16 @@ const StatHeader: React.FC = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-         const response = await getAdminStats();  
-        setStats(response.data);
+        const statsData = await getAdminStats(); // getAdminStats already returns StatsData
+        setStats(statsData); // No need to use `.data`
       } catch (error) {
         console.error("Error fetching stats:", error);
       }
     };
-
+  
     fetchStats();
   }, []);
+  
 
   return (
     <Paper sx={{ boxShadow: "3", borderRadius: 3, pb: 2 }}>

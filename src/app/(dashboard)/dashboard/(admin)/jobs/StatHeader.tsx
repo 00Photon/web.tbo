@@ -1,5 +1,8 @@
 // * React Imports
-import React from "react";
+import React, { useEffect, useState } from "react";
+
+// * API Service
+import { getAdminStats } from "@/@core/services/stats";
 
 // * Icon Import
 import Icon from "@/@core/component/icon";
@@ -8,7 +11,7 @@ import Icon from "@/@core/component/icon";
 import StyledImage from "@/@core/component/mui/image";
 import { formatNumber } from "@/@core/utils/format";
 
-//* Image Imports
+// * Image Imports
 import Green from "../../components/assets/green.png";
 import Purple from "../../components/assets/purple.png";
 import Brown from "../../components/assets/brown.png";
@@ -24,11 +27,7 @@ import Stack from "@mui/material/Stack";
 import CardContent from "@mui/material/CardContent";
 import { styled } from "@mui/material/styles";
 
-interface SupTextProps {
-  color?: string;
-}
-
-const SupText = styled("span")<SupTextProps>(({ color }) => ({
+const SupText = styled("span")(({ color }: { color?: string }) => ({
   display: "flex",
   alignItems: "center",
   fontWeight: "bold",
@@ -36,215 +35,61 @@ const SupText = styled("span")<SupTextProps>(({ color }) => ({
 }));
 
 const StatHeader: React.FC = () => {
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await getAdminStats();
+        setStats(data);
+      } catch (err) {
+        setError("Failed to load stats");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  if (loading) {
+    return <Typography sx={{ p: 3, textAlign: "center" }}>Loading stats...</Typography>;
+  }
+
+  if (error) {
+    return <Typography sx={{ p: 3, textAlign: "center", color: "red" }}>{error}</Typography>;
+  }
+
   return (
-    <Paper sx={{ boxShadow: "3", borderRadius: 3 }}>
-      <CardContent>
-        <Grid container spacing={4}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card
-              sx={{
-                height: "100%",
-                p: 2,
-                background: "#E5FCF5",
-                color: "#008A5D",
-              }}
-            >
-              <CardContent
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
+    <Paper sx={{ boxShadow: 3, borderRadius: 3, p: 3 }}>
+      <Grid container spacing={4}>
+        {[
+          { title: "Total Users", value: stats?.total_users, color: "#008A5D", bg: "#E5FCF5", icon: "circum:user", img: Green },
+          { title: "Applications", value: stats?.total_applications, color: "#7A0099", bg: "#F9E5FF", icon: "pepicons-print:file", img: Purple },
+          { title: "Companies", value: stats?.total_companies, color: "#997A00", bg: "#FFF9E5", icon: "ph:building-office-duotone", img: Brown },
+          { title: "Active Jobs", value: stats?.active_jobs, color: "#C01729", bg: "#FFF0F1", icon: "ion:briefcase-outline", img: Red },
+        ].map((item, index) => (
+          <Grid item xs={12} sm={6} md={3} key={index}>
+            <Card sx={{ height: "100%", p: 2, background: item.bg, color: item.color }}>
+              <CardContent sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <Stack spacing={2}>
-                  <Typography
-                    variant="h6"
-                    sx={{ fontSize: "14px", fontWeight: "600" }}
-                  >
-                    Total openings
+                  <Typography variant="h6" sx={{ fontSize: "14px", fontWeight: "600" }}>
+                    {item.title}
                   </Typography>
-
-                  <Typography
-                    variant="h5"
-                    sx={{ fontWeight: 700, fontFamily: "sans-serif" }}
-                  >
-                    {formatNumber(1850)}
+                  <Typography variant="h5" sx={{ fontWeight: 700, fontFamily: "sans-serif" }}>
+                    {formatNumber(item.value || 0)}
                   </Typography>
                 </Stack>
-
                 <Box sx={{ position: "relative", width: 50, height: 50 }}>
-                  <StyledImage
-                    src={Green.src}
-                    alt="icon adornment"
-                    sx={{
-                      position: "absolute",
-                      left: "-.7rem",
-                      top: "-.3rem",
-                    }}
-                  />
-                  <Icon icon="circum:user" fontSize="2.85rem" color="#008A5D" />
+                  <StyledImage src={item.img.src} alt="icon adornment" sx={{ position: "absolute", left: "-.7rem", top: "-.3rem" }} />
+                  <Icon icon={item.icon} fontSize="2.85rem" color={item.color} />
                 </Box>
               </CardContent>
             </Card>
           </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <Card
-              sx={{
-                height: "100%",
-                p: 2,
-                background: "#F9E5FF",
-                color: "#7A0099",
-              }}
-            >
-              <CardContent
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Stack spacing={2}>
-                  <Typography
-                    variant="h6"
-                    sx={{ fontSize: "14px", fontWeight: "600" }}
-                  >
-                    Applications
-                  </Typography>
-
-                  <Typography
-                    variant="h5"
-                    sx={{ fontWeight: 700, fontFamily: "sans-serif" }}
-                  >
-                    {formatNumber(1254)}
-                  </Typography>
-                </Stack>
-
-                <Box sx={{ position: "relative", width: 50, height: 50 }}>
-                  <StyledImage
-                    src={Purple.src}
-                    alt="icon adornment"
-                    sx={{
-                      position: "absolute",
-                      left: "-.7rem",
-                      top: "-.3rem",
-                    }}
-                  />
-                  <Icon
-                    icon="pepicons-print:file"
-                    fontSize="2.85rem"
-                    color="#7A0099"
-                  />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <Card
-              sx={{
-                height: "100%",
-                p: 2,
-                background: "#FFF9E5",
-                color: "#997A00",
-              }}
-            >
-              <CardContent
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Stack spacing={2}>
-                  <Typography
-                    variant="h6"
-                    sx={{ fontSize: "14px", fontWeight: "600" }}
-                  >
-                    Companies
-                  </Typography>
-
-                  <Typography
-                    variant="h5"
-                    sx={{ fontWeight: 700, fontFamily: "sans-serif" }}
-                  >
-                    {formatNumber(690)}
-                  </Typography>
-                </Stack>
-
-                <Box sx={{ position: "relative", width: 50, height: 50 }}>
-                  <StyledImage
-                    src={Brown.src}
-                    alt="icon adornment"
-                    sx={{
-                      position: "absolute",
-                      left: "-.7rem",
-                      top: "-.3rem",
-                    }}
-                  />
-                  <Icon
-                    icon="ph:building-office-duotone"
-                    fontSize="2.85rem"
-                    color="#997A00"
-                  />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <Card
-              sx={{
-                height: "100%",
-                p: 2,
-                background: "#FFF0F1",
-                color: "#C01729",
-              }}
-            >
-              <CardContent
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Stack spacing={2}>
-                  <Typography
-                    variant="h6"
-                    sx={{ fontSize: "14px", fontWeight: "600" }}
-                  >
-                    Active Jobs
-                  </Typography>
-
-                  <Typography
-                    variant="h5"
-                    sx={{ fontWeight: 700, fontFamily: "sans-serif" }}
-                  >
-                    {formatNumber(320)}
-                  </Typography>
-                </Stack>
-
-                <Box sx={{ position: "relative", width: 50, height: 50 }}>
-                  <StyledImage
-                    src={Red.src}
-                    alt="icon adornment"
-                    sx={{
-                      position: "absolute",
-                      left: "-.7rem",
-                      top: "-.3rem",
-                    }}
-                  />
-                  <Icon
-                    icon="ion:briefcase-outline"
-                    fontSize="2.85rem"
-                    color="#C01729"
-                  />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      </CardContent>
+        ))}
+      </Grid>
     </Paper>
   );
 };
