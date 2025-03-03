@@ -35,19 +35,33 @@ const SigninForm: FC = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
 
-  const login = async (data: any) => {
-    setIsLoading(true);
-    const res: any = await signIn('credentials', { redirect: false, ...data });
+  const { data: session } = useSession();
 
-    if (res && res.ok) {
-      setIsLoginSuccess(true)
-      await getSession().then((session) => router.push(`/dashboard/${session?.user.accountType.toLowerCase()}`));
-    } else {
-      console.error('Error during sign in:', res);
-      setShowError(true);
-    }
-    setIsLoading(false);
-  };
+
+
+const login = async (data: any) => {
+  setIsLoading(true);
+  const res = await signIn('credentials', { redirect: false, ...data });
+
+  if (res?.ok) {
+    setIsLoginSuccess(true);
+
+    // Wait for session update
+    setTimeout(() => {
+      if (session?.user?.accountType) {
+        router.push(`/dashboard/${session.user.accountType.toLowerCase()}`);
+      } else {
+        console.error("Session not found after login");
+      }
+    }, 500);
+  } else {
+    console.error("Error during sign in:", res);
+    setShowError(true);
+  }
+  
+  setIsLoading(false);
+};
+
 
   return (
     <Box
