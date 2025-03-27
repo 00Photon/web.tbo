@@ -10,7 +10,7 @@ import Jobs from "./JobList";
 const Index = () => {
   return (
     <>
-      <StatHeader />
+      {/* <StatHeader /> */}
       <Jobs />
     </>
   );

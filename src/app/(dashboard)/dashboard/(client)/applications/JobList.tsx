@@ -39,6 +39,7 @@ import TableBody from "@mui/material/TableBody";
 import TablePagination from "@mui/material/TablePagination";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { Theme } from "@mui/material/styles";
+import PostJobModal from "./PostJobModal"; // Adjust the path if needed
 
 interface MockData {
   id: number;
@@ -109,6 +110,10 @@ const JobListTable: React.FC = () => {
   const [anchorEl, setAnchorEl] = React.useState<(HTMLElement | null)[]>(
     Array(data?.length)?.fill(null)
   );
+  const [openPostJobModal, setOpenPostJobModal] = React.useState(false);
+
+const handleOpenModal = () => setOpenPostJobModal(true);
+const handleCloseModal = () => setOpenPostJobModal(false);
 
   const smallScreen = useMediaQuery((theme: Theme) =>
     theme.breakpoints.up("md")
@@ -152,7 +157,7 @@ const JobListTable: React.FC = () => {
       }}
     >
       <CardContent sx={{ p: { xs: 2, md: 4 } }}>
-        <CardHeader title="Job List" />
+        {/* <CardHeader title="Job List" /> */}
 
         <Collapse
           easing={"ease-in-out"}
@@ -279,7 +284,7 @@ const JobListTable: React.FC = () => {
               value={value}
               onChange={(e) => setValue(e.target.value)}
               size="small"
-              placeholder="Job title, company name, applicant"
+              placeholder="."
               sx={{ maxWidth: 400 }}
               InputProps={{
                 startAdornment: (
@@ -320,24 +325,24 @@ const JobListTable: React.FC = () => {
               </Button>
 
               <Button
-                variant="contained"
-                size="medium"
-                sx={{
-                  textTransform: "capitalize",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 2,
-                  width: "fit-content",
-                  minWidth: { md: 120 },
-                }}
-              >
-                <Icon icon="fa6-solid:user-pen" fontSize="1.257rem" />
-                {smallScreen && (
-                  <Typography sx={{ fontSize: ".857rem" }}>
-                    Post&nbsp;Job
-                  </Typography>
-                )}
-              </Button>
+  variant="contained"
+  size="medium"
+  onClick={handleOpenModal} // <-- Add this
+  sx={{
+    textTransform: "capitalize",
+    display: "flex",
+    alignItems: "center",
+    gap: 2,
+    width: "fit-content",
+    minWidth: { md: 120 },
+  }}
+>
+  <Icon icon="fa6-solid:user-pen" fontSize="1.257rem" />
+  {smallScreen && (
+    <Typography sx={{ fontSize: ".857rem" }}>Post&nbsp;Job</Typography>
+  )}
+</Button>
+
             </Box>
           </Box>
         </Box>
@@ -463,8 +468,12 @@ const JobListTable: React.FC = () => {
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
+    <PostJobModal open={openPostJobModal} close={handleCloseModal}  />
     </Card>
+    
   );
+
+
 };
 
 export default JobListTable;

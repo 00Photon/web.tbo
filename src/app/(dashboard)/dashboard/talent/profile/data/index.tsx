@@ -1,9 +1,21 @@
-import { Badge, Person } from "@mui/icons-material";
+import { AddCard, Badge, Person,Videocam,WorkspacePremiumSharp } from "@mui/icons-material";
 
 export const profileTabs = [
   {
     icon: <Person />,
-    name: "My Profile",
+    name: "Personal Information",
+  },
+  {
+    icon: <Videocam />,
+    name: "Video Introduction",
+  },
+  {
+    icon: <AddCard />,
+    name: "Resume and Cover Letter",
+  },
+  {
+    icon: <WorkspacePremiumSharp />,
+    name: "Project work / Portfolio",
   },
   {
     icon: <Badge />,
@@ -11,7 +23,7 @@ export const profileTabs = [
   },
   {
     icon: <Badge />,
-    name: "Notifications",
+    name: "Account Settings",
   },
 ];
 
