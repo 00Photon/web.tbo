@@ -15,10 +15,10 @@ const MyProfileTab = () => {
           <PersonalInformation />
         </Grid>
       </Grid>
+      {/* <Divider sx={{ mt: '35px' }} /> */}
+      {/* <OtherInformationTab />
       <Divider sx={{ mt: '35px' }} />
-      <OtherInformationTab />
-      <Divider sx={{ mt: '35px' }} />
-      <DeactivateAccount />
+      <DeactivateAccount /> */}
     </section>
   );
 };

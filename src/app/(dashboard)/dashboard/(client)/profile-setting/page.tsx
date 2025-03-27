@@ -14,6 +14,7 @@ import { Theme } from "@mui/material/styles";
 // * Tab Components Imports
 import { profileTabs } from "./Tabs/data";
 import Profile from "./Tabs/user-profile/Profile";
+import ReProfile from "./Tabs/representative/Profile";
 import Password from "./Tabs/password/Password";
 import Notification from "./Tabs/notification/Notification";
 
@@ -98,8 +99,9 @@ export default function ClientProfilePage() {
           sx={{ backgroundColor: "#FFFFFF", padding: "20px", width: "100%" }}
         >
           {activeTab == 0 && <Profile />}
-          {activeTab == 1 && <Password />}
-          {activeTab == 2 && <Notification />}
+          {activeTab == 1 && <ReProfile />}
+          {activeTab == 2 && <Password />}
+          {activeTab == 3 && <Notification />}
         </Box>
       </section>
     </Box>

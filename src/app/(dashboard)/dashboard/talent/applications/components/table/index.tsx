@@ -11,111 +11,89 @@ import {
   Typography,
 } from '@mui/material';
 
+interface JobApplication {
+  image: string;
+  companyName: string;
+  role: string;
+  dateOfApplication: string;
+  status: 'Awaiting Feedback' | 'Interview In Progress';
+}
+
 const JobApplicationsTable: React.FC<{
   setOpenApplicationModal: () => void;
-  setOpenWithdrawModal: () => void;
-}> = ({ setOpenApplicationModal, setOpenWithdrawModal }) => {
+}> = ({ setOpenApplicationModal }) => {
   const headerFields = [
     'Company Name',
-    'Salary Range',
-    'No of Application',
-    'Date  of Posted',
+    'Role Applied For',
+    'Date of Application',
     'Application Status',
-    '',
+    'Action',
   ];
 
-  const companyNameField = (image: string, name: string) => {
-    return (
-      <TableCell>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Box sx={{ marginRight: '12px' }}>
-            <Box
-              sx={{
-                backgroundImage: `url(${image})`,
-                backgroundSize: '100% 100%',
-                borderRadius: '20%',
-                width: '30px',
-                height: '30px',
-                backgroundColor: '#E7E7E7',
-              }}
-            />
-          </Box>
-          <Box>
-            <Typography
-              sx={{ fontWeight: '600', color: '#101828', fontSize: '14px' }}
-            >
-              {name}
-            </Typography>
-          </Box>
-        </Box>
-      </TableCell>
-    );
-  };
-
-  const textOnlyField = (data: string) => {
-    return (
-      <TableCell>
-        <Typography sx={{ fontSize: '14px' }}>{data}</Typography>
-      </TableCell>
-    );
-  };
-
-  const applicationStatusField = (status: string) => {
-    switch (status) {
-      case 'Accepted':
-        return (
-          <TableCell>
-            <TextOnlyPill variant='success' text={status} />
-          </TableCell>
-        );
-      case 'Not Opened':
-        return (
-          <TableCell>
-            <TextOnlyPill variant='grey' text={status} />
-          </TableCell>
-        );
-      case 'Declined':
-        return (
-          <TableCell>
-            <TextOnlyPill variant='error' text={status} />
-          </TableCell>
-        );
-    }
-  };
-
-  const buttonsField = () => {
-    return (
-      <TableCell>
-        {[
-          { variant: 'outlined', label: 'Withdraw' },
-          { variant: 'contained', label: 'View' },
-        ].map((button, index) => (
-          <Button
-            {...(index === 1
-              ? { onClick: setOpenApplicationModal }
-              : { onClick: setOpenWithdrawModal })}
-            key={index}
-            variant={button.variant as 'outlined' | 'contained'}
+  const companyNameField = (image: string, name: string) => (
+    <TableCell>
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ marginRight: '12px' }}>
+          <Box
             sx={{
-              textTransform: 'none',
-              ...(index == 0 && { mr: { xs: 0, sm: 3 }, mb: { xs: 3, lg: 0 } }),
+              backgroundImage: `url(${image})`,
+              backgroundSize: '100% 100%',
+              borderRadius: '20%',
+              width: '30px',
+              height: '30px',
+              backgroundColor: '#E7E7E7',
             }}
-          >
-            {button.label}
-          </Button>
-        ))}
+          />
+        </Box>
+        <Typography sx={{ fontWeight: '600', color: '#101828', fontSize: '14px' }}>
+          {name}
+        </Typography>
+      </Box>
+    </TableCell>
+  );
+
+  const textOnlyField = (data: string) => (
+    <TableCell>
+      <Typography sx={{ fontSize: '14px' }}>{data}</Typography>
+    </TableCell>
+  );
+
+  const applicationStatusField = (status: JobApplication['status']) => {
+    const statusVariant = status === 'Awaiting Feedback' ? 'grey' : 'success';
+
+    return (
+      <TableCell>
+        <TextOnlyPill variant={statusVariant} text={status} />
       </TableCell>
     );
   };
 
-  const rowsData = [
+  const viewButtonField = () => (
+    <TableCell>
+      <Button
+        onClick={setOpenApplicationModal}
+        variant="contained"
+        sx={{ textTransform: 'none' }}
+      >
+        View
+      </Button>
+    </TableCell>
+  );
+
+  const rowsData: JobApplication[] = [
     {
       image: '/icons/google.png',
-      name: 'Google',
-      salaryRange: '$20,000 - $25,000',
-      noOfApplications: 45,
-      datePosted: '09-12-2024',
-      status: 'Not Opened',
+      companyName: 'Google',
+      role: 'Software Engineer',
+      dateOfApplication: '09-12-2024',
+      status: 'Awaiting Feedback',
+    },
+    {
+      image: '/icons/microsoft.png',
+      companyName: 'Microsoft',
+      role: 'Data Analyst',
+      dateOfApplication: '15-03-2025',
+      status: 'Interview In Progress',
     },
   ];
 
@@ -130,20 +108,15 @@ const JobApplicationsTable: React.FC<{
           </TableRow>
         </TableHead>
         <TableBody>
-          {Array(10)
-            .fill(rowsData[0])
-            .map((row, index) => (
-              <TableRow key={index}>
-                {companyNameField(row.image, row.name)}
-                {[
-                  row.salaryRange,
-                  `${row.noOfApplications} Applications`,
-                  row.datePosted,
-                ].map((field) => textOnlyField(field))}
-                {applicationStatusField(row.status)}
-                {buttonsField()}
-              </TableRow>
-            ))}
+          {rowsData.map((row, index) => (
+            <TableRow key={index}>
+              {companyNameField(row.image, row.companyName)}
+              {textOnlyField(row.role)}
+              {textOnlyField(row.dateOfApplication)}
+              {applicationStatusField(row.status)}
+              {viewButtonField()}
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </TableContainer>

@@ -36,14 +36,14 @@ export default function TalentProfilePage() {
         }}
       >
         {[
-          {
-            icon: <Person />,
-            name: 'All Interviews',
-          },
-          {
-            icon: <Badge />,
-            name: 'Upcoming Interviews',
-          },
+          // {
+          //   icon: <Person />,
+          //   name: 'All Interviews',
+          // },
+          // {
+          //   icon: <Badge />,
+          //   name: 'Upcoming Interviews',
+          // },
         ].map((tab, index) => (
           <Box
             onClick={() => setActiveTab(index)}
@@ -61,10 +61,7 @@ export default function TalentProfilePage() {
               ...(activeTab == index && hoverTabStyle),
             }}
           >
-            {tab.icon}
-            <Typography sx={{ fontSize: '14px', ml: '5px' }}>
-              {tab.name}
-            </Typography>
+        
           </Box>
         ))}
       </Box>

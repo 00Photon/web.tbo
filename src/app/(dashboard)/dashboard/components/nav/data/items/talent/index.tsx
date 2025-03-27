@@ -1,4 +1,4 @@
-import { CasesOutlined, Dashboard, List, Person } from "@mui/icons-material";
+import { Message, CasesOutlined, Dashboard, List, Person } from "@mui/icons-material";
 
 export const talentNavItemsData = [
     {
@@ -7,9 +7,14 @@ export const talentNavItemsData = [
         path: '/dashboard/talent'
     },
     {
-        icon: <CasesOutlined />,
-        name: 'Interview Alerts',
-        path: '/dashboard/talent/interview-alerts'
+        icon: <Person />,
+        name: 'Profile',
+        path: '/dashboard/talent/profile'
+    },
+    {
+        icon: <Message />,
+        name: 'Inbox',
+        path: '/dashboard/talent/inbox'
     },
     {
         icon: <List />,
@@ -22,8 +27,11 @@ export const talentNavItemsData = [
         path: '/dashboard/talent/applications'
     },
     {
-        icon: <Person />,
-        name: 'Profile',
-        path: '/dashboard/talent/profile'
+        icon: <CasesOutlined />,
+        name: 'Interview Alerts',
+        path: '/dashboard/talent/interview-alerts'
     }
+   
+   
+    
 ]

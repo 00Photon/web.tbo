@@ -29,7 +29,7 @@ const JobFind: React.FC<{ sx?: SxProps }> = ({ sx }) => {
               lg: 6,
             },
             { placeholder: 'Location', xs: 12, sm: 6, lg: 3 },
-            { placeholder: 'Salary Range', xs: 12, sm: 6, lg: 3 },
+            // { placeholder: 'Salary Range', xs: 12, sm: 6, lg: 3 },
           ].map((item, index) => (
             <Grid key={index} xs={item.xs} sm={item.sm} lg={item.lg} item>
               <TextField

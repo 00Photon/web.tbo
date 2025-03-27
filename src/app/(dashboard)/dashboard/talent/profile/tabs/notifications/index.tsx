@@ -6,10 +6,8 @@ const NotificationsTab = () => {
       <Typography sx={{ fontWeight: 600, color: '#39353D', fontSize: '16px' }}>
         Notifications Management
       </Typography>
-      <Typography sx={{ fontSize: '13px', mb: '20px' }}>
-        Make changes to your password
-      </Typography>
-      <Divider sx={{ mb: '20px' }} />
+     
+      {/* <Divider sx={{ mb: '20px' }} />
       <Stack gap={3}>
         {[
           {
@@ -48,7 +46,7 @@ const NotificationsTab = () => {
         >
           Save Changes
         </Button>
-      </Box>
+      </Box> */}
     </section>
   );
 };

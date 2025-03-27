@@ -1,4 +1,5 @@
 import {
+  Message,
   CasesOutlined,
   Dashboard,
   Person,
@@ -13,20 +14,21 @@ export const clientNavItemsData = [
     path: "/dashboard/client",
   },
   {
-    icon: <CasesOutlined />,
-    name: "Job Applications",
-    path: "/dashboard/applications",
-  },
-  {
     icon: <Person />,
     name: "Profile",
     path: "/dashboard/profile-setting",
   },
   {
-    icon: <Settings />,
-    name: "Settings",
-    path: "/dashboard/user-settings",
+          icon: <Message />,
+          name: 'Inbox',
+          path: ''
+      },
+  {
+    icon: <CasesOutlined />,
+    name: "Job Applications",
+    path: "/dashboard/applications",
   },
+ 
   {
     icon: <SupportAgent />,
     name: "Support",

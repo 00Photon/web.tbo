@@ -121,9 +121,9 @@ export default function TalentJobVacanciesPage() {
             <JobFilter
               title={"Experience"}
               options={[
-                { label: "Full Time", checkState: false },
-                { label: "Freelance", checkState: false },
-                { label: "Part Time", checkState: false },
+                { label: "0- 1year", checkState: false },
+                { label: "2-5 Years ", checkState: false },
+                { label: "5years and above", checkState: false },
               ]}
             />
           </Box>

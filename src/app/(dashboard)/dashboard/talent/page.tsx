@@ -2,226 +2,228 @@
 import { TextOnlyPill } from "@/@core/utils/pills";
 import { Box, Button, Divider, Grid, Stack, Typography } from "@mui/material";
 import Image from "next/image";
-import { BarChart } from "@mui/x-charts/BarChart";
 import { Suspense } from "react";
+import { useSession } from "next-auth/react";
 
 export default function TalentHome() {
+  const { data: session } = useSession();
+  const cardData = [
+    {
+      title: "Saved Jobs",
+      date: "Monday, 1 July",
+      time: "10:00 - 10:30 (30 mins)",
+      linkText: "Company Website",
+      company: "Amazon",
+      position: "Software Engineer",
+      icon: "/icons/amazon.png",
+      actions: ["Remove", "Apply Now"],
+    },
+    {
+      title: "Job Applied",
+      date: "Wednesday, 3 July",
+      time: "09:30 - 10:00 (30 mins)",
+      linkText: "Application Status",
+      company: "Microsoft",
+      position: "Data Analyst",
+      icon: "/icons/microsoft.png",
+      actions: ["Withdraw", "View Details"],
+    },
+    {
+      title: "Upcoming Interviews",
+      date: "Friday, 6 July",
+      time: "11:30 - 12:00 (30 mins)",
+      linkText: "Zoom Meeting Link",
+      company: "Google",
+      position: "IT Support",
+      icon: "/icons/google.png",
+      actions: ["Reschedule", "Attend Now"],
+    },
+  ];
   return (
     <main>
-      <Stack gap={3}>
+      <Stack gap={3} sx={{ px: 2, py: 4 }}>
+        {/* HEADER */}
         <Stack flexGrow={1} gap={1}>
-          <Typography
-            sx={{ fontWeight: 600, color: "#39353D", fontSize: "20px" }}
-          >
-            <Suspense fallback={"Hello..."}>Dashboard</Suspense>
-          </Typography>
-          <Typography sx={{ fontSize: "13px" }}>
-            View summary of analytics happenings on your job profile
+          <Typography sx={{ fontWeight: 700, color: "#39353D", fontSize: "24px" }}>
+            <Suspense fallback={"Loading..."}>Dashboard</Suspense>
           </Typography>
         </Stack>
-        <Box
+
+        {/* HERO SECTION */}
+        <Grid
+          container
+          spacing={0}
           sx={{
-            height: "212px",
-            backgroundImage: "url('/dashboard_banner_with_text.png')",
-            backgroundSize: "100% 100%",
-            backgroundColor: "#FFF8F8",
-            display: { xs: "none", md: "flex" },
-            justifyContent: "center",
-            alignItems: "center",
-            border: "1px solid #E4E5E8",
-            borderRadius: "8px",
+            backgroundColor: "#fff",
+            borderRadius: 3,
+            overflow: "hidden",
+            boxShadow: 3,
+            minHeight: { xs: "auto", md: 350 },
           }}
-        ></Box>
-        <Grid columnSpacing={2} rowSpacing={2} container>
+        >
+          {/* Left - Image */}
+          <Grid
+            item
+            xs={12}
+            md={6}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Box
+              component="img"
+              src="/woman.jpeg"
+              alt="Find Work"
+              sx={{
+                width: "100%",
+                height: { xs: 250, md: "100%" },
+                objectFit: "cover",
+                borderRadius: { xs: "8px 8px 0 0", md: "8px 0 0 8px" },
+              }}
+            />
+          </Grid>
+
+          {/* Right - Text & CTA */}
+          <Grid
+            item
+            xs={12}
+            md={6}
+            sx={{
+              backgroundColor: "#730E19",
+              color: "#fff",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: { xs: "center", md: "flex-start" },
+              padding: { xs: 3, md: 5 },
+              textAlign: { xs: "center", md: "left" },
+            }}
+          >
+            <Typography variant="subtitle2" sx={{ textTransform: "uppercase", fontWeight: 600 }}>
+              Welcome, {session?.user?.name}!
+            </Typography>
+            <Typography variant="h4" sx={{ fontWeight: "bold", mt: 1 }}>
+              Here’s a Quick Snapshot of Your Analytics
+            </Typography>
+            <Typography variant="body1" sx={{ mt: 2, mb: 3, opacity: 0.9 }}>
+            Level Up Your Career—Thousands of
+            Opportunities Await!
+            </Typography>
+          </Grid>
+        </Grid>
+
+        {/* DASHBOARD CARDS */}
+        <Grid container columnSpacing={2} rowSpacing={2}>
           {[
-            { title: "Job Posted" },
-            { title: "Saved Jobs" },
-            { title: "Jobs Applied" },
-            { title: "Interviews" },
+            { title: "Saved Jobs", value: 450  },
+            { title: "Jobs Applied", value: 120 },
+            { title: "Interviews", value: 5 },
           ].map((card, index) => (
-            <Grid key={index} xs={12} md={3} item>
+            <Grid key={index} item xs={12} sm={4}>
               <Box
                 sx={{
                   border: "1px solid #E4E5E8",
-                  borderRadius: "8px",
+                  borderRadius: 3,
                   backgroundColor: "#FFFFFF",
-                  padding: "10px",
+                  padding: "24px",
                   display: "flex",
                   flexDirection: "column",
-                  gap: 2,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: 180,
+                  textAlign: "center",
+                  transition: "0.3s",
+                  "&:hover": {
+                    boxShadow: 4,
+                    transform: "scale(1.02)",
+                  },
                 }}
               >
-                <Box sx={{ display: "flex" }}>
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Image
-                      src="/icons/chart_rounded.svg"
-                      alt="Chart Icon"
-                      width={32}
-                      height={32}
-                    />
-                  </Box>
-                  <Box>Last 30 days</Box>
+                {/* Icon */}
+                <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+                  <Image src="/icons/chart_rounded.svg" alt="Chart Icon" width={40} height={40} />
                 </Box>
-                <Box>
-                  <Box>{card.title}</Box>
-                  <Stack
-                    gap={2}
-                    direction={"row"}
-                    sx={{ alignItems: "center" }}
-                  >
-                    <Box>450</Box>
-                    <Box>
-                      <TextOnlyPill variant="success" text="15%" />
-                    </Box>
-                  </Stack>
-                </Box>
+
+                {/* Title */}
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  {card.title}
+                </Typography>
+
+                {/* Stats Section */}
+                <Stack gap={1} direction="row" sx={{ alignItems: "center", mt: 1 }}>
+                  <Typography variant="h5" sx={{ fontWeight: "bold" }}>
+                    {card.value}
+                  </Typography>
+                 
+                </Stack>
               </Box>
             </Grid>
           ))}
         </Grid>
-        <Grid columnSpacing={3} rowSpacing={3} container>
-          <Grid xs={12} lg={8} item>
-            <Box
-              sx={{
-                border: "1px solid #E4E5E8",
-                borderRadius: "8px",
-                backgroundColor: "#FFFFFF",
-                padding: "20px",
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              <Stack gap={3}>
-                <Stack direction={"row"} alignItems={"center"}>
-                  <Box sx={{ flexGrow: 1 }}>Job Applications Report</Box>
-                  <Box>
-                    <Box
-                      sx={{
-                        border: "1px solid black",
-                        borderRadius: "8px",
-                        display: "flex",
-                        alignItems: "center",
-                        py: "5px",
-                        px: "10px",
-                        gap: 2,
-                      }}
-                    >
-                      <Box>20/10/2023 - 14/05/2024</Box>
-                      <Image
-                        src={"/icons/calendar.svg"}
-                        width={20}
-                        height={20}
-                        alt={"Calendar"}
-                      />
-                    </Box>
-                  </Box>
-                </Stack>
-                <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    {["Job Posted", "Job Applied"].map((item, index) => (
-                      <Box key={index}>
-                        <TextOnlyPill text={item} />
-                      </Box>
-                    ))}
-                  </Box>
-                </Box>
+
+        {/* UPCOMING INTERVIEWS */}
+        <Grid container spacing={2}>
+      {cardData.map((card, index) => (
+        <Grid key={index} xs={12} md={4} item>
+          <Box
+            sx={{
+              border: "1px solid #E4E5E8",
+              borderRadius: 3,
+              backgroundColor: "#FFFFFF",
+              padding: "24px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 3,
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              {card.title}
+            </Typography>
+            <Divider />
+            <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
+              {card.date}
+            </Typography>
+            <Stack gap={2} direction="row" alignItems="center">
+              <Image src="/icons/clock.svg" width={20} height={20} alt="Clock Icon" />
+              <Typography>{card.time}</Typography>
+            </Stack>
+            <Stack gap={2} direction="row" alignItems="center">
+              <Image src="/icons/calendar.svg" width={20} height={20} alt="Calendar Icon" />
+              <Typography
+                sx={{ color: "#0073e6", cursor: "pointer", textDecoration: "underline" }}
+              >
+                {card.linkText}
+              </Typography>
+            </Stack>
+            <Stack gap={2} direction="row" alignItems="center">
+              <Image src={card.icon} width={30} height={30} alt="Company Icon" />
+              <Stack>
+                <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                  {card.company}
+                </Typography>
+                <Typography variant="body2" sx={{ color: "gray" }}>
+                  {card.position}
+                </Typography>
               </Stack>
-              <BarChart
-                sx={{ mt: "-20px" }}
-                xAxis={[
-                  {
-                    scaleType: "band",
-                    data: [
-                      "Mon",
-                      "Tues",
-                      "Wed",
-                      "Thurs",
-                      "Fri",
-                      "Sat",
-                      "Sun",
-                      "Mon",
-                      "Tues",
-                      "Wed",
-                      "Thurs",
-                      "Fri",
-                    ],
-                  },
-                ]}
-                series={[
-                  { data: [4, 3, 5, 4, 3, 5, 4, 3, 5, 4, 3, 5, 4, 3, 5] },
-                  { data: [1, 6, 3, 4, 3, 5, 4, 3, 5, 4, 3, 5, 4, 3, 5] },
-                  { data: [2, 5, 6, 4, 3, 5, 4, 3, 5, 4, 3, 5, 4, 3, 5] },
-                ]}
-                height={220}
-              />
-            </Box>
-          </Grid>
-          <Grid xs={12} lg={4} item>
-            <Box
-              sx={{
-                border: "1px solid #E4E5E8",
-                borderRadius: "8px",
-                backgroundColor: "#FFFFFF",
-                padding: "20px",
-                display: "flex",
-                flexDirection: "column",
-                height: "100%",
-                gap: 3,
-              }}
-            >
-              <Box>Upcoming Interviews</Box>
-              <Divider />
-              <Box>Friday, 6 July</Box>
-              <Stack gap={2} direction={"row"} alignItems={"center"}>
-                <Image
-                  src={"/icons/clock.svg"}
-                  width={20}
-                  height={20}
-                  alt="Clock Icon"
-                />
-                <Box>11:30 - 12:00 {"(30 mins)"}</Box>
-              </Stack>
-              <Stack gap={2} direction={"row"} alignItems={"center"}>
-                <Image
-                  src={"/icons/calendar.svg"}
-                  width={20}
-                  height={20}
-                  alt="Calendar Icon"
-                />
-                <Box>Zoom Meeting Link</Box>
-              </Stack>
-              <Stack gap={2} direction={"row"} alignItems={"center"}>
-                <Image
-                  src={"/icons/google.png"}
-                  width={30}
-                  height={30}
-                  alt="Clock Icon"
-                />
-                <Stack>
-                  <Box>Google</Box>
-                  <Box>Information Technology Support</Box>
-                </Stack>
-              </Stack>
-              <Divider />
-              <Stack direction={"row"} alignItems={"center"} gap={3}>
-                {[
-                  { variant: "outlined", label: "Reschedule" },
-                  { variant: "contained", label: "Attend Now" },
-                ].map((button, index) => (
-                  <Button
-                    key={index}
-                    variant={button.variant as "outlined" | "contained"}
-                    sx={{
-                      textTransform: "none",
-                    }}
-                  >
-                    {button.label}
-                  </Button>
-                ))}
-              </Stack>
-            </Box>
-          </Grid>
+            </Stack>
+            <Divider />
+            <Stack direction="row" gap={2}>
+              {card.actions.map((action, i) => (
+                <Button
+                  key={i}
+                  variant={i === 0 ? "outlined" : "contained"}
+                  sx={{ textTransform: "none", flex: 1 }}
+                >
+                  {action}
+                </Button>
+              ))}
+            </Stack>
+          </Box>
         </Grid>
+      ))}
+    </Grid>
       </Stack>
     </main>
   );

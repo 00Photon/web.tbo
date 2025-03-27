@@ -9,107 +9,151 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
+import { useState } from 'react';
+import InterviewDetailsModal from '@/app/(dashboard)/dashboard/talent/interview-alerts/components/modal/InterviewDetailsModal';
 
-const InterviewAlertsTable = () => {
-  const headerFields = [
-    'Company Name',
-    'Salary Range',
-    'Role Applied',
-    'Interview Date',
-    'Interview Time',
-    '',
-  ];
+interface Interview {
+  image: string;
+  name: string;
+  role: string;
+  interviewStage: 'Upcoming' | 'In Progress' | 'Completed';
+  date: string;
+  time: string;
+  location: string;
+}
 
-  const companyNameField = (image: string, name: string) => {
-    return (
-      <TableCell>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Box sx={{ marginRight: '12px' }}>
-            <Box
-              sx={{
-                backgroundImage: `url(${image})`,
-                backgroundSize: '100% 100%',
-                borderRadius: '20%',
-                width: '30px',
-                height: '30px',
-                backgroundColor: '#E7E7E7',
-              }}
-            />
-          </Box>
-          <Box>
-            <Typography
-              sx={{ fontWeight: '600', color: '#101828', fontSize: '14px' }}
-            >
-              {name}
-            </Typography>
-          </Box>
+const InterviewAlertsTable: React.FC = () => {
+  const [open, setOpen] = useState<boolean>(false);
+  const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
+
+  const handleOpen = (interview: Interview) => {
+    setSelectedInterview(interview);
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setSelectedInterview(null);
+  };
+
+  const headerFields: string[] = ['Company Name', 'Role Applied', 'Interview Stage', 'Action'];
+
+  const companyNameField = (image: string, name: string) => (
+    <TableCell>
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ marginRight: '12px' }}>
+          <Box
+            sx={{
+              backgroundImage: `url(${image})`,
+              backgroundSize: 'cover',
+              borderRadius: '20%',
+              width: '30px',
+              height: '30px',
+              backgroundColor: '#E7E7E7',
+            }}
+          />
         </Box>
-      </TableCell>
-    );
-  };
+        <Typography sx={{ fontWeight: '600', color: '#101828', fontSize: '14px' }}>
+          {name}
+        </Typography>
+      </Box>
+    </TableCell>
+  );
 
-  const textOnlyField = (data: string) => {
-    return (
-      <TableCell>
-        <Typography sx={{ fontSize: '14px' }}>{data}</Typography>
-      </TableCell>
-    );
-  };
+  const textOnlyField = (data: string) => (
+    <TableCell>
+      <Typography sx={{ fontSize: '14px' }}>{data}</Typography>
+    </TableCell>
+  );
 
-  const buttonsField = () => {
-    return (
-      <TableCell>
-        <Button
-          variant='contained'
-          sx={{
-            textTransform: 'none',
-          }}
-        >
-          Attend Now
-        </Button>
-      </TableCell>
-    );
-  };
+  const interviewStageField = (stage: 'Upcoming' | 'In Progress' | 'Completed') => (
+    <TableCell>
+      <Typography
+        sx={{
+          fontSize: '14px',
+          fontWeight: 'bold',
+          color:
+            stage === 'Upcoming'
+              ? 'blue'
+              : stage === 'In Progress'
+              ? 'orange'
+              : 'green',
+        }}
+      >
+        {stage}
+      </Typography>
+    </TableCell>
+  );
 
-  const rowsData = [
+  const buttonsField = (row: Interview) => (
+    <TableCell>
+      <Button
+        variant="contained"
+        sx={{ textTransform: 'none' }}
+        onClick={() => handleOpen(row)}
+      >
+        View
+      </Button>
+    </TableCell>
+  );
+
+  const rowsData: Interview[] = [
     {
       image: '/icons/google.png',
       name: 'Google',
-      salaryRange: '$20,000 - $25,000',
-      noOfApplications: 45,
-      datePosted: '09-12-2024',
-      status: '09:04 AM',
+      role: 'Software Engineer',
+      interviewStage: 'Upcoming',
+      date: 'March 30, 2025',
+      time: '10:00 AM',
+      location: 'Google HQ, California',
+    },
+    {
+      image: '/icons/microsoft.png',
+      name: 'Microsoft',
+      role: 'Backend Developer',
+      interviewStage: 'In Progress',
+      date: 'April 2, 2025',
+      time: '3:00 PM',
+      location: 'Microsoft Teams (Online)',
+    },
+    {
+      image: '/icons/amazon.png',
+      name: 'Amazon',
+      role: 'Frontend Developer',
+      interviewStage: 'Completed',
+      date: 'March 15, 2025',
+      time: '1:30 PM',
+      location: 'Amazon Office, Seattle',
     },
   ];
 
   return (
-    <TableContainer sx={{ backgroundColor: 'white', padding: '20px' }}>
-      <Table sx={{ minWidth: 650 }}>
-        <TableHead>
-          <TableRow sx={{ backgroundColor: '#F9FAFB' }}>
-            {headerFields.map((field, index) => (
-              <TableCell key={index}>{field}</TableCell>
-            ))}
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {Array(10)
-            .fill(rowsData[0])
-            .map((row, index) => (
+    <>
+      <TableContainer sx={{ backgroundColor: 'white', padding: '20px' }}>
+        <Table sx={{ minWidth: 650 }}>
+          <TableHead>
+            <TableRow sx={{ backgroundColor: '#F9FAFB' }}>
+              {headerFields.map((field, index) => (
+                <TableCell key={index}>{field}</TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {rowsData.map((row, index) => (
               <TableRow key={index}>
                 {companyNameField(row.image, row.name)}
-                {[
-                  row.salaryRange,
-                  `${row.noOfApplications} Applications`,
-                  row.datePosted,
-                  row.status,
-                ].map((field) => textOnlyField(field))}
-                {buttonsField()}
+                {textOnlyField(row.role)}
+                {interviewStageField(row.interviewStage)}
+                {buttonsField(row)}
               </TableRow>
             ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {/* Use the new InterviewDetailsModal component */}
+      <InterviewDetailsModal open={open} onClose={handleClose} interview={selectedInterview} />
+    </>
   );
 };
 

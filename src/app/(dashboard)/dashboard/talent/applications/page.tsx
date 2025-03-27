@@ -30,7 +30,7 @@ export default function TalentApplicationsPage() {
           <PaginationControl />
           <JobApplicationsTable
             setOpenApplicationModal={() => setOpenApplicationModal(true)}
-            setOpenWithdrawModal={() => setOpenWithdrawModal(true)}
+        
           />
         </Stack>
       </Stack>
