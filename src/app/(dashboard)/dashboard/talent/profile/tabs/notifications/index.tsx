@@ -7,7 +7,7 @@ const NotificationsTab = () => {
         Notifications Management
       </Typography>
      
-      <Divider sx={{ mb: '20px' }} />
+      {/* <Divider sx={{ mb: '20px' }} />
       <Stack gap={3}>
         {[
           {
@@ -46,7 +46,7 @@ const NotificationsTab = () => {
         >
           Save Changes
         </Button>
-      </Box>
+      </Box> */}
     </section>
   );
 };

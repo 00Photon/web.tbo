@@ -14,7 +14,7 @@ export const talentNavItemsData = [
     {
         icon: <Message />,
         name: 'Inbox',
-        path: '/dashboard/talent/Inbox'
+        path: '/dashboard/talent/inbox'
     },
     {
         icon: <List />,

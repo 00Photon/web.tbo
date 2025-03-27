@@ -7,6 +7,38 @@ import { useSession } from "next-auth/react";
 
 export default function TalentHome() {
   const { data: session } = useSession();
+  const cardData = [
+    {
+      title: "Saved Jobs",
+      date: "Monday, 1 July",
+      time: "10:00 - 10:30 (30 mins)",
+      linkText: "Company Website",
+      company: "Amazon",
+      position: "Software Engineer",
+      icon: "/icons/amazon.png",
+      actions: ["Remove", "Apply Now"],
+    },
+    {
+      title: "Job Applied",
+      date: "Wednesday, 3 July",
+      time: "09:30 - 10:00 (30 mins)",
+      linkText: "Application Status",
+      company: "Microsoft",
+      position: "Data Analyst",
+      icon: "/icons/microsoft.png",
+      actions: ["Withdraw", "View Details"],
+    },
+    {
+      title: "Upcoming Interviews",
+      date: "Friday, 6 July",
+      time: "11:30 - 12:00 (30 mins)",
+      linkText: "Zoom Meeting Link",
+      company: "Google",
+      position: "IT Support",
+      icon: "/icons/google.png",
+      actions: ["Reschedule", "Attend Now"],
+    },
+  ];
   return (
     <main>
       <Stack gap={3} sx={{ px: 2, py: 4 }}>
@@ -42,7 +74,7 @@ export default function TalentHome() {
           >
             <Box
               component="img"
-              src="/woman.jpg"
+              src="/woman.jpeg"
               alt="Find Work"
               sx={{
                 width: "100%",
@@ -85,9 +117,9 @@ export default function TalentHome() {
         {/* DASHBOARD CARDS */}
         <Grid container columnSpacing={2} rowSpacing={2}>
           {[
-            { title: "Saved Jobs", value: 450, change: "15%" },
-            { title: "Jobs Applied", value: 120, change: "10%" },
-            { title: "Interviews", value: 5, change: "25%" },
+            { title: "Saved Jobs", value: 450  },
+            { title: "Jobs Applied", value: 120 },
+            { title: "Interviews", value: 5 },
           ].map((card, index) => (
             <Grid key={index} item xs={12} sm={4}>
               <Box
@@ -124,7 +156,7 @@ export default function TalentHome() {
                   <Typography variant="h5" sx={{ fontWeight: "bold" }}>
                     {card.value}
                   </Typography>
-                  <TextOnlyPill variant="success" text={card.change} />
+                 
                 </Stack>
               </Box>
             </Grid>
@@ -132,51 +164,66 @@ export default function TalentHome() {
         </Grid>
 
         {/* UPCOMING INTERVIEWS */}
-        <Grid container>
-          <Grid xs={12} md={4} item>
-            <Box
-              sx={{
-                border: "1px solid #E4E5E8",
-                borderRadius: 3,
-                backgroundColor: "#FFFFFF",
-                padding: "24px",
-                display: "flex",
-                flexDirection: "column",
-                gap: 3,
-              }}
-            >
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>Upcoming Interviews</Typography>
-              <Divider />
-              <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>Friday, 6 July</Typography>
-              <Stack gap={2} direction="row" alignItems="center">
-                <Image src="/icons/clock.svg" width={20} height={20} alt="Clock Icon" />
-                <Typography>11:30 - 12:00 (30 mins)</Typography>
-              </Stack>
-              <Stack gap={2} direction="row" alignItems="center">
-                <Image src="/icons/calendar.svg" width={20} height={20} alt="Calendar Icon" />
-                <Typography sx={{ color: "#0073e6", cursor: "pointer", textDecoration: "underline" }}>
-                  Zoom Meeting Link
+        <Grid container spacing={2}>
+      {cardData.map((card, index) => (
+        <Grid key={index} xs={12} md={4} item>
+          <Box
+            sx={{
+              border: "1px solid #E4E5E8",
+              borderRadius: 3,
+              backgroundColor: "#FFFFFF",
+              padding: "24px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 3,
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              {card.title}
+            </Typography>
+            <Divider />
+            <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
+              {card.date}
+            </Typography>
+            <Stack gap={2} direction="row" alignItems="center">
+              <Image src="/icons/clock.svg" width={20} height={20} alt="Clock Icon" />
+              <Typography>{card.time}</Typography>
+            </Stack>
+            <Stack gap={2} direction="row" alignItems="center">
+              <Image src="/icons/calendar.svg" width={20} height={20} alt="Calendar Icon" />
+              <Typography
+                sx={{ color: "#0073e6", cursor: "pointer", textDecoration: "underline" }}
+              >
+                {card.linkText}
+              </Typography>
+            </Stack>
+            <Stack gap={2} direction="row" alignItems="center">
+              <Image src={card.icon} width={30} height={30} alt="Company Icon" />
+              <Stack>
+                <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                  {card.company}
+                </Typography>
+                <Typography variant="body2" sx={{ color: "gray" }}>
+                  {card.position}
                 </Typography>
               </Stack>
-              <Stack gap={2} direction="row" alignItems="center">
-                <Image src="/icons/google.png" width={30} height={30} alt="Company Icon" />
-                <Stack>
-                  <Typography variant="body1" sx={{ fontWeight: 600 }}>Google</Typography>
-                  <Typography variant="body2" sx={{ color: "gray" }}>IT Support</Typography>
-                </Stack>
-              </Stack>
-              <Divider />
-              <Stack direction="row" gap={2}>
-                <Button variant="outlined" sx={{ textTransform: "none", flex: 1 }}>
-                  Reschedule
+            </Stack>
+            <Divider />
+            <Stack direction="row" gap={2}>
+              {card.actions.map((action, i) => (
+                <Button
+                  key={i}
+                  variant={i === 0 ? "outlined" : "contained"}
+                  sx={{ textTransform: "none", flex: 1 }}
+                >
+                  {action}
                 </Button>
-                <Button variant="contained" sx={{ textTransform: "none", flex: 1 }}>
-                  Attend Now
-                </Button>
-              </Stack>
-            </Box>
-          </Grid>
+              ))}
+            </Stack>
+          </Box>
         </Grid>
+      ))}
+    </Grid>
       </Stack>
     </main>
   );
