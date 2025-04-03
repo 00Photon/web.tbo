@@ -8,8 +8,11 @@ import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
+import Card from "@mui/material/Card";
+import CardHeader from "@mui/material/CardHeader";
+import CardContent from "@mui/material/CardContent";
 
-interface Applications {
+interface Application {
   title: string;
   reviewed: number;
   shortlisted: number;
@@ -17,126 +20,132 @@ interface Applications {
 }
 
 interface ApplicationRowProps {
-  data: Applications;
+  data: Application;
 }
 
-const data: Applications[] = [
+const data: Application[] = [
   { title: "UI/UX Design", reviewed: 16, shortlisted: 10, rejected: 6 },
   { title: "Backend Developer", reviewed: 10, shortlisted: 4, rejected: 6 },
   { title: "Product Manager", reviewed: 5, shortlisted: 2, rejected: 3 },
 ];
 
-const ApplicationRows: React.FC<ApplicationRowProps> = ({ data }) => {
+const ApplicationRow: React.FC<ApplicationRowProps> = ({ data }) => {
   return (
     <Box>
-      <Typography sx={{ mb: 1, mt: 3, ml: 2, fontWeight: "bold" }}>
+      <Typography sx={{ mb: 1.5, fontWeight: 600, color: 'text.primary' }}>
         {data.title}
       </Typography>
-      <Box
+      <Card
+        elevation={0}
         sx={{
-          borderRadius: 3,
-          p: 3,
+          borderRadius: 2,
+          p: 2,
           mb: 2,
           display: "flex",
           alignItems: "center",
-          gap: 2,
-          // width: "100%",
-          background: (theme) => theme.palette.primary.light,
+          justifyContent: "space-between",
+          gap: 1,
+          border: '1px solid',
+          borderColor: 'divider',
+          backgroundColor: '#fff'
         }}
       >
-        <Stack sx={{ width: "90%" }}>
-          <Typography sx={{ textAlign: "center", fontWeight: "bold" }}>
+        <Stack sx={{ flex: 1 }}>
+          <Typography sx={{ textAlign: "center", fontWeight: 700, fontSize: '1.25rem' }}>
             {data.reviewed}
           </Typography>
           <Typography
+            variant="body2"
             sx={{
-              color: (theme) => theme.palette.secondary.dark,
+              color: 'text.secondary',
               textAlign: "center",
+              fontWeight: 500,
+              mt: 0.5
             }}
           >
             Reviewed
           </Typography>
         </Stack>
         <Divider orientation="vertical" variant="middle" flexItem />
-        <Stack sx={{ width: "90%" }}>
-          <Typography sx={{ textAlign: "center", fontWeight: "bold" }}>
+        <Stack sx={{ flex: 1 }}>
+          <Typography sx={{ textAlign: "center", fontWeight: 700, fontSize: '1.25rem', color: '#1976d2' }}>
             {data.shortlisted}
           </Typography>
           <Typography
+            variant="body2"
             sx={{
-              color: (theme) => theme.palette.secondary.dark,
+              color: 'text.secondary',
               textAlign: "center",
+              fontWeight: 500,
+              mt: 0.5
             }}
           >
-            Reviewed
+            Shortlisted
           </Typography>
         </Stack>
         <Divider orientation="vertical" variant="middle" flexItem />
-        <Stack sx={{ width: "90%" }}>
-          <Typography sx={{ textAlign: "center", fontWeight: "bold" }}>
+        <Stack sx={{ flex: 1 }}>
+          <Typography sx={{ textAlign: "center", fontWeight: 700, fontSize: '1.25rem', color: '#d32f2f' }}>
             {data.rejected}
           </Typography>
           <Typography
+            variant="body2"
             sx={{
-              color: (theme) => theme.palette.secondary.dark,
+              color: 'text.secondary',
               textAlign: "center",
+              fontWeight: 500,
+              mt: 0.5
             }}
           >
-            Reviewed
+            Rejected
           </Typography>
         </Stack>
-      </Box>
+      </Card>
     </Box>
   );
 };
 
 const Applications: React.FC = () => {
   return (
-    <Box
+    <Card
       sx={{
         borderRadius: 3,
-        boxShadow: 3,
-        p: 3,
+        boxShadow: 2,
         width: "100%",
-        minWidth: "40%",
+        maxWidth: '960px',
+        mx: 'auto',
         mt: { xs: 4, md: 0 },
-        background: "#fff",
+        overflow: 'hidden'
       }}
     >
-      <Box>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            mb: 3,
-          }}
-        >
-          <Typography
-            variant="h4"
-            sx={{ fontSize: "1.25rem", fontWeight: "bold" }}
-          >
+      <CardHeader
+        title={
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
             Applications
           </Typography>
+        }
+        action={
           <Button
             variant="text"
-            size="medium"
-            sx={{ textTransform: "capitalize" }}
+            size="small"
+            sx={{ textTransform: "capitalize", fontWeight: 500 }}
           >
             View all
           </Button>
-        </Box>
-        <Grid container spacing={2} sx={{ mx: "auto", width: "100%" }}>
-          {data.map((item, i) => {
-            return (
-              <Grid key={i} xs={12}>
-                <ApplicationRows data={item} />
-              </Grid>
-            );
-          })}
-        </Grid>
-      </Box>
-    </Box>
+        }
+        sx={{ 
+          borderBottom: '1px solid', 
+          borderColor: 'divider',
+          px: 3,
+          py: 2
+        }}
+      />
+      <CardContent sx={{ p: 3 }}>
+        {data.map((item, i) => (
+          <ApplicationRow key={i} data={item} />
+        ))}
+      </CardContent>
+    </Card>
   );
 };
 

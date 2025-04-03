@@ -21,17 +21,12 @@ export const clientNavItemsData = [
   {
           icon: <Message />,
           name: 'Inbox',
-          path: ''
+          path: '/dashboard/inbox',
       },
   {
     icon: <CasesOutlined />,
-    name: "Job Applications",
+    name: "Job List",
     path: "/dashboard/applications",
   },
  
-  {
-    icon: <SupportAgent />,
-    name: "Support",
-    path: "/dashboard/help-support",
-  },
 ];
