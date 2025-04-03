@@ -8,7 +8,7 @@ import Stack from "@mui/material/Stack";
 import Divider from "@mui/material/Divider";
 import Switch from "@mui/material/Switch";
 import Button from "@mui/material/Button";
-
+import DeactivateAccount from "../../../../components/delete-account";
 interface SettingsProps {
   title: string;
   text: string;
@@ -75,28 +75,11 @@ const Notification = () => {
   return (
     <main>
       <Box sx={{ mt: 4 }}>
-        <Typography
-          sx={{
-            fontWeight: 600,
-            color: "#39353D",
-            fontSize: { xs: "1rem", sm: "1.2rem" },
-          }}
-        >
-          Notifications Management
-        </Typography>
-        <Typography sx={{ fontSize: "13px", mb: "10px" }}>
-          Manage all notification preference
-        </Typography>
+      
+       
 
         <Divider variant="middle" />
-        <Stack sx={{ width: { xs: "100%", md: "70%" } }}>
-          {settings.map((settings, i) => (
-            <Box key={i}>
-              <SettingsCard settings={settings} />
-            </Box>
-          ))}
-        </Stack>
-
+        <DeactivateAccount />
         <Divider variant="middle" />
         <Box
           sx={{
@@ -106,16 +89,7 @@ const Notification = () => {
             my: 4,
           }}
         >
-          <Button
-            variant="contained"
-            size="large"
-            sx={{
-              width: { xs: "70%", sm: "30%" },
-              textTransform: "capitalize",
-            }}
-          >
-            Save Changes
-          </Button>
+          
         </Box>
       </Box>
     </main>

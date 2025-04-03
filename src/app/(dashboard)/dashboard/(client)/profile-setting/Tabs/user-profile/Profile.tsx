@@ -276,65 +276,9 @@ const Profile = () => {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6} lg={6}>
-              <Typography
-                sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-              >
-                Country Code
-              </Typography>
+            
 
-              <Controller
-                name="countryCode"
-                control={control}
-                rules={{ required: true }}
-                render={({ field: { value, onChange } }) => (
-                  <CustomTextField
-                    fullWidth
-                    value={value}
-                    onChange={onChange}
-                    size="medium"
-                    InputProps={{
-                      country: "rw",
-                      startAdornment: (
-                        <InputAdornment position="start">+234</InputAdornment>
-                      ),
-                    }}
-                    error={Boolean(errors.countryCode)}
-                    helperText={errors.countryCode?.message}
-                  />
-                )}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6} lg={6}>
-              <Typography
-                sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-              >
-                Country
-              </Typography>
-
-              <Controller
-                name="country"
-                control={control}
-                rules={{ required: true }}
-                render={({ field: { value, onChange } }) => (
-                  <CustomTextField
-                    fullWidth
-                    value={value}
-                    onChange={onChange}
-                    size="medium"
-                    placeholder="Rwanda, Tunisia, Nigeria..."
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">✅</InputAdornment>
-                      ),
-                    }}
-                    error={Boolean(errors.country)}
-                    helperText={errors.country?.message}
-                  />
-                )}
-              />
-            </Grid>
+         
 
             <Grid item xs={12} sm={6} lg={6}>
               <Typography

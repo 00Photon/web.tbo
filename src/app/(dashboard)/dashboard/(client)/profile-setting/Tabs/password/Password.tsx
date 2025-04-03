@@ -221,7 +221,7 @@ const Password = () => {
         </form>
       </Box>
 
-      <DeactivateAccount />
+    
     </main>
   );
 };

@@ -69,7 +69,7 @@ const InfoHeader: React.FC = () => {
           >
             <Box
               component="img"
-              src="/company.jpg"
+              src="/company.jpeg"
               alt="Find Work"
               sx={{
                 width: "100%",
