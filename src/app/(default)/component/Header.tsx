@@ -80,38 +80,40 @@ function Header() {
   const isMediumScreenUp = useMediaQuery(theme.breakpoints.up("sm"));
   return (
     <>
-      <AppBar
-        position="static"
-        sx={{
-          p: (theme) => theme.spacing(3),
-          position: "relative",
-          backgroundColor: (theme) => theme.palette.primary.dark,
-        }}
-      >
-        <Box
+       <AppBar
+          position="static"
+          elevation={0}
           sx={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            backgroundImage: `url(${Bitmap.src})`,
-            backgroundSize: "cover",
-          }}
-        ></Box>
-        <Container
-          maxWidth="lg"
-          sx={{
-            backgroundColor: (theme) => theme.palette.primary.light,
-            borderRadius: 8,
-            p: (theme) => theme.spacing(2),
-
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 2,
+            p: 3,
+            position: "relative",
+            backgroundColor: theme => theme.palette.primary.dark,
           }}
         >
+        <Box
+        sx={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          backgroundImage: `url(${Bitmap.src})`,
+          backgroundSize: "cover",
+        }}
+      />
+         <Container
+        maxWidth="lg"
+        sx={{
+          backgroundColor: theme => theme.palette.primary.light,
+          borderRadius: 2,
+          p: 2,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 2,
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
           <Box>
             <Link href="/">
               <StyledImage src={Logo.src} alt="TBO Logo" />

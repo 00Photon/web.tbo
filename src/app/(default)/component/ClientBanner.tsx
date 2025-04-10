@@ -5,7 +5,7 @@ import React from "react";
 import Icon from "@/@core/component/icon";
 
 //** Image Import
-import BannerImage from "../assets/hiring.png";
+import BannerImage from "../../../../public/woman.jpg";
 
 //** MUI Import
 import Box from "@mui/material/Box";
@@ -19,7 +19,8 @@ const Banner: React.FC = () => {
     <Box
       sx={{
         width: "100%",
-        maxWidth: "1400px",
+        maxWidth: "100%",
+     
         mx: "auto",
         height: { xs: "auto", sm: "80vh" },
       }}
@@ -29,6 +30,7 @@ const Banner: React.FC = () => {
           background: `url(${BannerImage.src})`,
           backgroundSize: "cover",
           backgroundRepeat: "no-repeat",
+       
           mt: (theme) => theme.spacing(4),
           height: { xs: "100%", md: "80vh" },
         }}
@@ -43,6 +45,7 @@ const Banner: React.FC = () => {
             width: "100%",
             height: "100%",
             background: `rgba(0, 0, 0, 0.53)`,
+        
           }}
         >
           <Stack

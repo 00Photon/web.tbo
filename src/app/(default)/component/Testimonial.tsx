@@ -1,14 +1,7 @@
-// * React Imports
-import React, { useEffect, useRef } from "react";
-
-// ** Icon Imports
-import Icon from "@/@core/component/icon";
-
-// ** anime Import
+import React, { useEffect, useRef, useState } from "react";
 import anime from "animejs";
 
 // ** Image Imports
-import cheerful from "../assets/cheerful.svg";
 import Quote from "../assets/quote.svg";
 import SingleGear from "../assets/singleGear.svg";
 
@@ -18,8 +11,12 @@ import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import Card from "@mui/material/Card";
 import Stack from "@mui/material/Stack";
-import Avatar from "@mui/material/Avatar";
-import { alpha, styled } from "@mui/material/styles";
+import IconButton from "@mui/material/IconButton";
+import { alpha, styled, useTheme } from "@mui/material/styles";
+import Chip from "@mui/material/Chip";
+
+// * Icon Imports
+import Icon from "@/@core/component/icon";
 
 // * Custom Component Imports
 import StyledImage from "@/@core/component/mui/image";
@@ -27,175 +24,363 @@ import StyledImage from "@/@core/component/mui/image";
 interface DataProps {
   name: string;
   testimony: string;
+  industry?: string;
 }
+
 const data: DataProps[] = [
   {
     name: "Petrocam",
-    testimony: `TBO Integrated Services Ltd. has provided us with a resolute team of experts to oversee the day-to-day management and maintenance of our IT infrastructure. This proactive approach ensures our systems’ reliability, security, and performance, allowing our internal IT team to concentrate on strategic initiatives rather than routine maintenance tasks.`,
+    industry: "Energy",
+    testimony: `TBO Integrated Services Ltd. has provided us with a resolute team of experts to oversee the day-to-day management and maintenance of our IT infrastructure. This proactive approach ensures our systems' reliability, security, and performance, allowing our internal IT team to concentrate on strategic initiatives rather than routine maintenance tasks.`,
   },
-
   {
     name: "ATOS",
-    testimony: ` TBO Integrated Services Ltd. deliver Talent as a Service where they recruit tech talents for our multinational clients across Africa. These services include tech talent recruitment, staff onboarding, payroll management.
-
-  The team has helped our digital transformation growth.`,
+    industry: "Technology",
+    testimony: `TBO Integrated Services Ltd. deliver Talent as a Service where they recruit tech talents for our multinational clients across Africa. These services include tech talent recruitment, staff onboarding, payroll management. The team has helped our digital transformation growth.`,
   },
+  {
+    name: "Global Corp",
+    industry: "Finance",
+    testimony: `Working with TBO Integrated Services has transformed our tech operations. Their team provided exceptional support, innovative solutions, and reliable service that exceeded our expectations. We've seen measurable improvements in efficiency since partnering with them.`,
+  }
 ];
 
+// Styled components for better visual elements
+const QuoteIcon = styled(Box)(({ theme }) => ({
+  width: 60,
+  height: 60,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  borderRadius: '50%',
+  backgroundColor: alpha(theme.palette.primary.main, 0.1),
+  marginBottom: theme.spacing(2)
+}));
+
+const TestimonialCard = styled(Card)(({ theme }) => ({
+  padding: theme.spacing(4),
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'space-between',
+  borderRadius: theme.spacing(2),
+  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+  boxShadow: theme.shadows[2],
+  '&:hover': {
+    transform: 'translateY(-8px)',
+    boxShadow: theme.shadows[8],
+  }
+}));
+
 const Testimonial: React.FC = () => {
+  const theme = useTheme();
   const quoteRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  
+  // Controls for the testimonial carousel
+  const handleNext = () => {
+    setActiveIndex((prev) => (prev + 1) % data.length);
+  };
+  
+  const handlePrev = () => {
+    setActiveIndex((prev) => (prev - 1 + data.length) % data.length);
+  };
 
   useEffect(() => {
     anime({
       targets: quoteRef.current,
       scale: [0.8, 1],
-      duration: 2000,
+      opacity: [0.7, 1],
+      duration: 3000,
       direction: "alternate",
       loop: true,
       easing: "easeInOutSine",
     });
   }, []);
+
+  // Creates visible items for carousel with proper ordering
+  const getVisibleItems = () => {
+    const items = [];
+    
+    // For desktop view (3 items)
+    for (let i = 0; i < 3; i++) {
+      const index = (activeIndex + i) % data.length;
+      items.push({ data: data[index], index });
+    }
+    
+    return items;
+  };
+
+  const visibleItems = getVisibleItems();
+
   return (
     <Paper
       sx={{
         position: "relative",
-        background: (theme) => theme.palette.primary.light,
-        py: (theme) => theme.spacing(4),
+        background: `linear-gradient(145deg, ${theme.palette.primary.light}, ${alpha(theme.palette.background.paper, 0.9)})`,
+        py: 8,
+        overflow: "hidden",
       }}
     >
+      {/* Background elements */}
       <Box
         sx={{
           position: "absolute",
           top: 0,
           left: 0,
           background: `url(${SingleGear.src})`,
+          backgroundPosition: "center",
+          backgroundSize: "cover",
           width: "100%",
           height: "100%",
+          opacity: 0.05,
           zIndex: 1,
-          backgroundBlendMode: "multiply",
         }}
-      ></Box>
+      />
+      
       <Box
         sx={{
           position: "absolute",
-          top: { xs: "27%", md: "10%" },
-          right: { xs: "-15%", md: "5%" },
+          top: { xs: "10%", md: "5%" },
+          right: { xs: "5%", md: "10%" },
         }}
         ref={quoteRef}
       >
-        <StyledImage src={Quote.src} alt="Qoute sign" />
-      </Box>
-      <Box
-        sx={{
-          position: "relative",
-          zIndex: 2,
-          py: (theme) => theme.spacing(4),
-          maxWidth: "1200px",
-          mx: "auto",
-          px: { xs: 2, sm: 4 },
-        }}
-      >
-        <Typography
-          variant="h2"
+        <StyledImage 
+          src={Quote.src} 
+          alt="Quote sign" 
           sx={{
-            fontSize: { xs: "1rem", sm: "1.5rem" },
-            fontWeight: 400,
-            textTransform: "capitalize",
-            mb: 2,
-            mt: "2rem",
-            textAlign: "center",
-            color: (theme) => theme.palette.primary.main,
+            width: { xs: 80, md: 120 },
+            height: { xs: 80, md: 120 },
+            opacity: 0.2,
           }}
-        >
-          Testimonials
-        </Typography>
-        <Typography
-          variant="h4"
-          sx={{
-            textAlign: "center",
-            fontSize: {
-              xs: "1.25rem",
-              sm: "1.75rem",
-              md: "1.75rem",
-            },
-          }}
-        >
-          What our users are saying about their experience...
-        </Typography>
+        />
       </Box>
-      <Box
-        sx={{
-          position: "relative",
-          zIndex: 2,
-          px: { xs: 2, sm: 4 },
-          py: 4,
-          overflowX: "hidden",
 
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
+      {/* Content container */}
+      <Box
+        sx={{
+          position: "relative",
+          zIndex: 2,
+          maxWidth: "1400px",
+          mx: "auto",
+          px: { xs: 2, sm: 6 },
         }}
       >
+        {/* Section header */}
+        <Box sx={{ mb: 8, textAlign: "center", marginTop: "40px" }}>
+          <Chip 
+            label="CLIENT FEEDBACK" 
+            color="primary" 
+            sx={{ 
+              mb: 2, 
+              fontWeight: 500,
+              letterSpacing: "0.5px",
+            }} 
+          />
+          
+          <Typography
+            variant="h2"
+            sx={{
+              fontSize: { xs: "2rem", sm: "2.5rem", md: "3rem" },
+              fontWeight: 700,
+              mb: 2,
+              background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
+            Testimonials
+          </Typography>
+          
+          <Typography
+            variant="h5"
+            sx={{
+              maxWidth: "800px",
+              mx: "auto",
+              fontSize: { xs: "1rem", sm: "1.25rem" },
+              color: alpha(theme.palette.text.primary, 0.8),
+              marginBottom: "40px",
+            }}
+          >
+            What our clients are saying about their experience working with us
+          </Typography>
+        </Box>
+
+        {/* Testimonial cards section */}
         <Box
           sx={{
-            display: "flex",
-            gap: 3,
-            px: { xs: 2, sm: 0 },
-            overflowX: "auto",
+            position: "relative",
             width: "100%",
-            "&::-webkit-scrollbar": { display: "none" },
           }}
         >
-          {data.map((item, index) => {
-            return (
-              <Card
-                key={index}
+          {/* Desktop View */}
+          <Box
+            sx={{
+              display: { xs: "none", md: "flex" },
+              gap: 4,
+              justifyContent: "center",
+              alignItems: "stretch",
+            }}
+          >
+            {visibleItems.map((item, idx) => (
+              <TestimonialCard
+                key={`${item.index}-${idx}`}
                 sx={{
-                  p: { xs: 2, sm: 4 },
-                  minWidth: { xs: "100%", sm: "60%", md: "35%" },
-                  textAlign: { xs: "center", sm: "left" },
-                  my: 1,
-                  borderRadius: { xs: "1rem", sm: "1.6rem" },
-                  boxShadow: `${alpha("#000", 0.5)}`,
+                  width: "30%",
+                  opacity: idx === 1 ? 1 : 0.85,
+                  transform: idx === 1 ? "scale(1.05)" : "scale(1)",
                 }}
               >
-                <Typography
-                  sx={{
-                    fontSize: { xs: ".85rem", sm: "1rem" },
-                    whiteSpace: "preserve",
-                  }}
-                >
-                  {item.testimony}
-                </Typography>
-                <Box
-                  sx={{ display: "flex", alignItems: "center", gap: 2, mt: 2 }}
-                >
-                  {/* <Avatar
-                    src={item.image.src}
-                    alt="cheerful face guy holding a laptop"
-                  /> */}
-                  <Stack>
+                <Box>
+                  <QuoteIcon>
+                    <Icon icon="mdi:format-quote-open" fontSize={30} color={theme.palette.primary.main} />
+                  </QuoteIcon>
+                  
+                  <Typography
+                    sx={{
+                      fontSize: "1rem",
+                      mb: 4,
+                      lineHeight: 1.8,
+                      color: theme.palette.text.secondary,
+                    }}
+                  >
+                    {item.data.testimony}
+                  </Typography>
+                </Box>
+                
+                <Box sx={{ pt: 3, borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}>
+                  <Typography
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: "1.1rem",
+                      color: theme.palette.text.primary,
+                    }}
+                  >
+                    {item.data.name}
+                  </Typography>
+                  
+                  {item.data.industry && (
                     <Typography
                       sx={{
-                        fontWeight: 400,
-                        fontSize: { xs: "0.7rem", sm: ".9rem" },
+                        fontSize: "0.875rem",
+                        color: theme.palette.primary.main,
                       }}
                     >
-                      {item.name}
+                      {item.data.industry}
                     </Typography>
-                    {/* <Typography
-                      sx={{
-                        fontSize: { xs: "0.6rem", sm: ".8rem" },
-                        color: (theme) => theme.palette.primary.main,
-                      }}
-                    >
-                      {item.title}
-                    </Typography> */}
-                  </Stack>
+                  )}
                 </Box>
-              </Card>
-            );
-          })}
+              </TestimonialCard>
+            ))}
+          </Box>
+
+          {/* Mobile View */}
+          <Box
+            sx={{
+              display: { xs: "block", md: "none" },
+              width: "100%",
+            }}
+          >
+            <TestimonialCard>
+              <Box>
+                <QuoteIcon>
+                  <Icon icon="mdi:format-quote-open" fontSize={30} color={theme.palette.primary.main} />
+                </QuoteIcon>
+                
+                <Typography
+                  sx={{
+                    fontSize: "1rem",
+                    mb: 4,
+                    lineHeight: 1.8,
+                    color: theme.palette.text.secondary,
+                  }}
+                >
+                  {data[activeIndex].testimony}
+                </Typography>
+              </Box>
+              
+              <Box sx={{ pt: 3, borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}>
+                <Typography
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: "1.1rem",
+                    color: theme.palette.text.primary,
+                  }}
+                >
+                  {data[activeIndex].name}
+                </Typography>
+                
+                {data[activeIndex].industry && (
+                  <Typography
+                    sx={{
+                      fontSize: "0.875rem",
+                      color: theme.palette.primary.main,
+                    }}
+                  >
+                    {data[activeIndex].industry}
+                  </Typography>
+                )}
+              </Box>
+            </TestimonialCard>
+          </Box>
+
+          {/* Navigation controls */}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              gap: 2,
+              mt: 6,
+              marginTop: "30px",
+              marginBottom: "30px",
+              padding: "100px",
+            }}
+          >
+            <IconButton 
+              onClick={handlePrev}
+              sx={{
+                background: theme.palette.background.paper,
+                boxShadow: theme.shadows[2],
+                '&:hover': { 
+                  background: theme.palette.primary.light 
+                }
+              }}
+            >
+              <Icon icon="mdi:chevron-left" />
+            </IconButton>
+            
+            {data.map((_, idx) => (
+              <Box
+                key={idx}
+                onClick={() => setActiveIndex(idx)}
+                sx={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  background: activeIndex === idx 
+                    ? theme.palette.primary.main 
+                    : alpha(theme.palette.primary.main, 0.3),
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                 
+                }}
+              />
+            ))}
+            
+            <IconButton 
+              onClick={handleNext}
+              sx={{
+                background: theme.palette.background.paper,
+                boxShadow: theme.shadows[2],
+                '&:hover': { 
+                  background: theme.palette.primary.light 
+                }
+              }}
+            >
+              <Icon icon="mdi:chevron-right" />
+            </IconButton>
+          </Box>
         </Box>
       </Box>
     </Paper>
