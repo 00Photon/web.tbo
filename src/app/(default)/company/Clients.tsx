@@ -5,12 +5,15 @@ import React from "react";
 // *Third-Party Imports
 
 // *Images Imports
-import MakeLess from "../../../../public/icon/mtn.jpg";
-import Dorfus from "../../../../public/icon/Petrocam.png";
-import Green from "../../../../public/icon/VFD.png";
-import Askimet from "../../../../public/clients/askimet.png";
-import Sass from "../../../../public/clients/sass.png";
-import Works from "../../../../public/clients/works.png";
+import MakeLess from "../../../../public/icon/1.png";
+import Dorfus from "../../../../public/icon/2.png";
+import Green from "../../../../public/icon/3.png";
+import Askimet from "../../../../public/icon/4.png";
+import Sass from "../../../../public/icon/5.png";
+import Works from "../../../../public/icon/6.png";
+import Works2 from "../../../../public/icon/7.png";
+import Works3 from "../../../../public/icon/8.png";
+import Works4 from "../../../../public/icon/9.png";
 
 // *Custom Component Imports
 import StyledImage from "@/@core/component/mui/image";
@@ -45,9 +48,18 @@ const clientsData: Image[] = [
     name: "Sass",
   },
   {
-    image: Works.src,
-    name: "Works",
+    image: Works2.src,
+    name: "Works2",
   },
+  {
+    image: Works3.src,
+    name: "Works3",
+  },
+  {
+    image: Works4.src,
+    name: "Works4",
+  },
+
 ];
 
 const Clients: React.FC = () => {

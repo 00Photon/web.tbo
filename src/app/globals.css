@@ -112,6 +112,7 @@ body {
   overflow: hidden;
   user-select: none;
   gap: var(--gap);
+  height: 70%;
 }
 
 .marquee__content {
@@ -130,7 +131,7 @@ body {
 .marquee__content > * {
   flex: 0 0 auto;
   margin: 2px;
-  padding: 1rem 2rem;
+  padding: 1rem 1rem; /* reduced padding */
   border-radius: 0.25rem;
   text-align: center;
 }

@@ -42,7 +42,7 @@ export default function ClientsCoure() {
         alignItems: "center",
         flexFlow: "column",
         width: { xs: "100%", sm: "100%" },
-        height: { xs: "auto", lg: "30%" },
+        height: { xs: "auto", lg: "10%" },
         borderRadius: 3,
         mt: 6, // Add some top margin if needed
         mb: 6, // Add bottom margin for spacing
