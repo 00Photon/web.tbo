@@ -14,18 +14,26 @@ import CardHeader from "@mui/material/CardHeader";
 import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
 import { styled } from "@mui/material/styles";
+import { getAdminStats } from "@/@core/services/stats";
 
 // Import the getRecruitmentAnalytics function from your services
 // import { getRecruitmentAnalytics } from "@/@core/services/analytics";
 
 interface RecruitmentStats {
-  totalCompaniesOnboarded: number;
-  totalTalentsOnboarded: number;
-  totalJobsListed: number;
-  totalApplications: number;
-  totalInterviewsHeld: number;
-  totalTalentsHired: number;
+  total_users: number;
+  total_applications: number;
+  total_interviews: number;
+  total_jobs: number;
+  active_jobs: number;
+  total_companies: number;
+  recent_users: {
+    id: number;
+    name: string;
+    email: string;
+    joined_date: string;
+  }[];
 }
+
 
 interface SupTextProps {
   color?: string;
@@ -50,14 +58,17 @@ const StatsCard = styled(Card)(({ theme }) => ({
 }));
 
 const RecruitmentAnalyticsFlow: React.FC = () => {
+  
   const [stats, setStats] = useState<RecruitmentStats>({
-    totalCompaniesOnboarded: 145,
-    totalTalentsOnboarded: 2367,
-    totalJobsListed: 389,
-    totalApplications: 1256,
-    totalInterviewsHeld: 425,
-    totalTalentsHired: 198,
+    total_users: 0,
+    total_applications: 0,
+    total_interviews: 0,
+    total_jobs: 0,
+    active_jobs: 0,
+    total_companies: 0,
+    recent_users: [],
   });
+  
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,9 +76,8 @@ const RecruitmentAnalyticsFlow: React.FC = () => {
     const fetchAnalytics = async () => {
       setLoading(true);
       try {
-        // Uncomment when API is available
-        // const data = await getRecruitmentAnalytics();
-        // setStats(data);
+        const data = await getAdminStats();
+        setStats(data);
       } catch (err) {
         setError("Failed to load recruitment analytics");
         console.error("Error fetching recruitment analytics:", err);
@@ -75,60 +85,61 @@ const RecruitmentAnalyticsFlow: React.FC = () => {
         setLoading(false);
       }
     };
-
+  
     fetchAnalytics();
   }, []);
 
-  const analyticsCards = [
-    {
-      title: "Total Companies Onboarded",
-      value: stats.totalCompaniesOnboarded,
-      icon: "ph:building-office-duotone",
-      color: "#997A00",
-      bg: "#FFF9E5",
-      imgSrc: Brown,
-    },
-    {
-      title: "Total Talents Onboarded",
-      value: stats.totalTalentsOnboarded,
-      icon: "circum:user",
-      color: "#008A5D",
-      bg: "#E5FCF5",
-      imgSrc: Green,
-    },
-    {
-      title: "Total Jobs Listed",
-      value: stats.totalJobsListed,
-      icon: "ion:briefcase-outline",
-      color: "#7A0099",
-      bg: "#F9E5FF",
-      imgSrc: Purple,
-    },
-    {
-      title: "Total Applications",
-      value: stats.totalApplications,
-      icon: "pepicons-print:file",
-      color: "#7A0099",
-      bg: "#F9E5FF",
-      imgSrc: Purple,
-    },
-    {
-      title: "Total Interviews Held",
-      value: stats.totalInterviewsHeld,
-      icon: "solar:calendar-line-duotone",
-      color: "#997A00",
-      bg: "#FFF9E5",
-      imgSrc: Brown,
-    },
-    {
-      title: "Total Talents Hired",
-      value: stats.totalTalentsHired,
-      icon: "mdi:person-check",
-      color: "#008A5D",
-      bg: "#E5FCF5",
-      imgSrc: Green,
-    },
-  ];
+const analyticsCards = [
+  {
+    title: "Total Companies Onboarded",
+    value: stats.total_companies,
+    icon: "ph:building-office-duotone",
+    color: "#997A00",
+    bg: "#FFF9E5",
+    imgSrc: Brown,
+  },
+  {
+    title: "Total Talents Onboarded",
+    value: stats.total_users,
+    icon: "circum:user",
+    color: "#008A5D",
+    bg: "#E5FCF5",
+    imgSrc: Green,
+  },
+  {
+    title: "Total Jobs Listed",
+    value: stats.total_jobs,
+    icon: "ion:briefcase-outline",
+    color: "#7A0099",
+    bg: "#F9E5FF",
+    imgSrc: Purple,
+  },
+  {
+    title: "Total Applications",
+    value: stats.total_applications,
+    icon: "pepicons-print:file",
+    color: "#7A0099",
+    bg: "#F9E5FF",
+    imgSrc: Purple,
+  },
+  {
+    title: "Total Interviews Held",
+    value: stats.total_interviews,
+    icon: "solar:calendar-line-duotone",
+    color: "#997A00",
+    bg: "#FFF9E5",
+    imgSrc: Brown,
+  },
+  {
+    title: "Active Jobs",
+    value: stats.active_jobs,
+    icon: "mdi:briefcase-check-outline",
+    color: "#008A5D",
+    bg: "#E5FCF5",
+    imgSrc: Green,
+  },
+];
+
 
   if (loading) {
     return <Typography sx={{ p: 3, textAlign: "center" }}>Loading analytics...</Typography>;

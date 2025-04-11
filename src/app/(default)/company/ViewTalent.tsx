@@ -20,8 +20,7 @@ import Divider from "@mui/material/Divider";
 import Badge from "@mui/material/Badge";
 import Tooltip from "@mui/material/Tooltip";
 import { styled, alpha } from "@mui/material/styles";
-import PostJobModal from "../../../app/(default)/component/PostJobPopup"; // adjust path if different
-
+import PostJobModal from "../../../app/(default)/component/PostJobPopup";
 type Talent = {
   id: number;
   name: string;
@@ -387,7 +386,7 @@ const TalentGrid = () => {
 ) : (
   filteredTalents.map((talent) => (
     <Box key={talent.id} sx={{ textAlign: 'center', py: 8 }}>
-      <Button
+      {/* <Button
         variant="contained"
         fullWidth
         endIcon={<Icon icon="material-symbols:arrow-forward-rounded" />}
@@ -404,7 +403,7 @@ const TalentGrid = () => {
         }}
       >
         View Profile
-      </Button>
+      </Button> */}
     </Box>
   ))
 )}

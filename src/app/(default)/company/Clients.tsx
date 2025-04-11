@@ -5,9 +5,9 @@ import React from "react";
 // *Third-Party Imports
 
 // *Images Imports
-import MakeLess from "../../../../public/clients/make.png";
-import Dorfus from "../../../../public/clients/dorfus.png";
-import Green from "../../../../public/clients/green.png";
+import MakeLess from "../../../../public/icon/mtn.jpg";
+import Dorfus from "../../../../public/icon/Petrocam.png";
+import Green from "../../../../public/icon/VFD.png";
 import Askimet from "../../../../public/clients/askimet.png";
 import Sass from "../../../../public/clients/sass.png";
 import Works from "../../../../public/clients/works.png";
