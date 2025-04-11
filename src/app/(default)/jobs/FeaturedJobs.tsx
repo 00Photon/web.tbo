@@ -17,7 +17,7 @@ import Grid from "@mui/material/Grid";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import { alpha, styled } from "@mui/material/styles";
-
+import Link from "next/link";
 interface Jobs {
   name: string;
   logo: string;
@@ -308,6 +308,7 @@ const FeaturedJobs = () => {
         >
           Join and get access to vacancies that best suit your profile...
         </Typography>
+           <Link href="/company">
         <Button
           variant="contained"
           sx={{
@@ -326,6 +327,7 @@ const FeaturedJobs = () => {
           Get Started
           <Icon icon="material-symbols-light:arrow-right-alt-rounded" />
         </Button>
+        </Link>
       </Paper>
     </Box>
   );

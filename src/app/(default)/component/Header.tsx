@@ -31,7 +31,7 @@ import { useRouter } from "next/navigation";
 const pages = [
   { href: "/", title: "Home" },
   { href: "/jobs", title: "Find a job" },
-  { href: "/clients", title: "Clients" },
+  { href: "/company", title: "Find Talents" },
   { href: "/contact", title: "Contact" },
   { href: "/support", title: "Support" },
 ];

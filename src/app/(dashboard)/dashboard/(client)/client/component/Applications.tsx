@@ -112,7 +112,7 @@ const Applications: React.FC = () => {
         borderRadius: 3,
         boxShadow: 2,
         width: "100%",
-        maxWidth: '960px',
+        maxWidth: '1600px',
         mx: 'auto',
         mt: { xs: 4, md: 0 },
         overflow: 'hidden'

@@ -28,6 +28,6 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "src/@core/component/mui/textfield/index.js"
-  ],
+, "src/app/(default)/component/TalentBannertsx"  ],
   "exclude": ["node_modules"]
 }

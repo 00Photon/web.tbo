@@ -109,8 +109,8 @@ const HeroSection = () => {
         minHeight: { xs: "80dvh", md: "100dvh" },
         background: theme => theme.palette.primary.dark,
         textAlign: "center",
-        borderBottomLeftRadius: 20,
-        borderBottomRightRadius: 20,
+        borderBottomLeftRadius: 2,
+        borderBottomRightRadius: 2,
 
         display: "flex",
         justifyContent: "center",
@@ -247,105 +247,60 @@ const HeroSection = () => {
         </Box>
       </Box>
 
-      <Card
-  sx={{
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    flexFlow: "column",
-    width: { xs: "100%", sm: "85%" },
-    height: { xs: "auto", lg: "30%" },
-    position: "absolute",
-    left: { xs: "0", sm: "7.5%" },
-    top: "90%",
-    borderRadius: 4,
-    background: (theme) => theme.palette.secondary.light,
-    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
-    p: (theme) => [
-      `${theme.spacing(3)} !important`,
-      `${theme.spacing(4)} !important`,
-    ],
-    overflow: "visible",
-  }}
->
-  <CardContent
-    sx={{
-      width: "100%",
-      height: "100%",
-      background: "white",
-      borderRadius: 3,
-      p: { xs: 2, md: 3 },
-      mt: 2,
-      border: "none",
-      boxShadow: "0 6px 18px rgba(0, 0, 0, 0.08)",
-      display: "flex",
-      alignItems: "center",
-      flexDirection: { xs: "column", sm: "row" },
-      transition: "all 0.3s ease",
-      "&:hover": {
-        boxShadow: "0 12px 28px rgba(0, 0, 0, 0.12)",
-        transform: "translateY(-3px)",
-      },
-    }}
-  >
-    <Grid container spacing={3} rowSpacing={2} columnSpacing={3}>
-      <Grid item xs={12} sm={6}>
-        <Controller
-          name="title"
-          control={control}
-          rules={{ required: true }}
-          render={({ field: { value, onChange } }) => (
-            <CustomTextField
-              fullWidth
-              value={value}
-              onChange={onChange}
-              size="medium"
-              placeholder="Job Title, Keywords, Company Name"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    boxShadow: "0 0 0 2px rgba(162, 5, 20, 0.1)",
-                  },
-                  "&.Mui-focused": {
-                    boxShadow: "0 0 0 2px rgba(162, 5, 20, 0.2)",
-                  },
-                },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment
-                    position="start"
-                    sx={{
-                      color: (theme) => theme.palette.primary.main,
-                      mr: 1,
-                    }}
-                  >
-                    <Icon icon="lets-icons:search-duotone" fontSize="1.25rem" />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          )}
-        />
-      </Grid>
-      <Grid item xs={12} sm={6}>
-        <Controller
-          name="location"
-          control={control}
-          rules={{ required: true }}
-          render={({ field: { value, onChange } }) => (
-            <Autocomplete
-              options={statesInNigeria}
-              value={value || null}
-              onChange={(_, newValue) => onChange(newValue)}
-              fullWidth
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  placeholder="Select Location"
+      {/* <Card
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        flexFlow: "column",
+        width: { xs: "100%", sm: "85%" },
+        height: { xs: "auto", lg: "30%" },
+        position: "absolute",
+        left: { xs: "0", sm: "7.5%" },
+        top: "90%",
+        borderRadius: 4,
+        background: (theme) => theme.palette.secondary.light,
+        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
+        p: (theme) => [
+          `${theme.spacing(3)} !important`,
+          `${theme.spacing(4)} !important`,
+        ],
+        overflow: "visible",
+      }}
+    >
+      <CardContent
+        sx={{
+          width: "100%",
+          height: "100%",
+          background: "white",
+          borderRadius: 3,
+          p: { xs: 2, md: 3 },
+          mt: 2,
+          border: "none",
+          boxShadow: "0 6px 18px rgba(0, 0, 0, 0.08)",
+          display: "flex",
+          alignItems: "center",
+          flexDirection: { xs: "column", sm: "row" },
+          transition: "all 0.3s ease",
+          "&:hover": {
+            boxShadow: "0 12px 28px rgba(0, 0, 0, 0.12)",
+            transform: "translateY(-3px)",
+          },
+        }}
+      >
+        <Grid container spacing={3} rowSpacing={2} columnSpacing={3}>
+          <Grid item xs={12} sm={6}>
+            <Controller
+              name="title"
+              control={control}
+              rules={{ required: true }}
+              render={({ field: { value, onChange } }) => (
+                <CustomTextField
+                  fullWidth
+                  value={value}
+                  onChange={onChange}
                   size="medium"
+                  placeholder="Job Title, Keywords, Company Name"
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 2,
@@ -359,101 +314,146 @@ const HeroSection = () => {
                     },
                   }}
                   InputProps={{
-                    ...params.InputProps,
                     startAdornment: (
-                      <InputAdornment position="start" sx={{ mr: 1 }}>
-                        <Icon icon="hugeicons:location-04" fontSize="1.25rem" color="#A20514" />
+                      <InputAdornment
+                        position="start"
+                        sx={{
+                          color: (theme) => theme.palette.primary.main,
+                          mr: 1,
+                        }}
+                      >
+                        <Icon icon="lets-icons:search-duotone" fontSize="1.25rem" />
                       </InputAdornment>
                     ),
                   }}
                 />
               )}
             />
-          )}
-        />
-      </Grid>
-    </Grid>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Controller
+              name="location"
+              control={control}
+              rules={{ required: true }}
+              render={({ field: { value, onChange } }) => (
+                <Autocomplete
+                  options={statesInNigeria}
+                  value={value || null}
+                  onChange={(_, newValue) => onChange(newValue)}
+                  fullWidth
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder="Select Location"
+                      size="medium"
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 2,
+                          transition: "all 0.2s ease",
+                          "&:hover": {
+                            boxShadow: "0 0 0 2px rgba(162, 5, 20, 0.1)",
+                          },
+                          "&.Mui-focused": {
+                            boxShadow: "0 0 0 2px rgba(162, 5, 20, 0.2)",
+                          },
+                        },
+                      }}
+                      InputProps={{
+                        ...params.InputProps,
+                        startAdornment: (
+                          <InputAdornment position="start" sx={{ mr: 1 }}>
+                            <Icon icon="hugeicons:location-04" fontSize="1.25rem" color="#A20514" />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  )}
+                />
+              )}
+            />
+          </Grid>
+        </Grid>
 
-    <CardActions
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        mt: { xs: 2, sm: 0 },
-      }}
-    >
-      <ButtonStyled
-        variant="contained"
-        size="large"
-        endIcon={<Icon icon="lets-icons:search-duotone" />}
-        sx={{
-          px: (theme) => [
-            `${theme.spacing(4)} !important`,
-            `${theme.spacing(5)} !important`,
-          ],
-          py: (theme) => [
-            `${theme.spacing(1.5)} !important`,
-            `${theme.spacing(2)} !important`,
-          ],
-          ml: { xs: 0, sm: 4 },
-          background: "linear-gradient(45deg, #A20514 30%, #C62828 90%)",
-          borderRadius: 2,
-          fontWeight: 600,
-          letterSpacing: "0.5px",
-          boxShadow: "0 4px 12px rgba(162, 5, 20, 0.3)",
-          transition: "all 0.3s ease",
-          "&:hover": {
-            boxShadow: "0 6px 16px rgba(162, 5, 20, 0.4)",
-            transform: "translateY(-2px)",
-          },
-        }}
-      >
-        Search
-      </ButtonStyled>
-    </CardActions>
-  </CardContent>
+        <CardActions
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            mt: { xs: 2, sm: 0 },
+          }}
+        >
+          <ButtonStyled
+            variant="contained"
+            size="large"
+            endIcon={<Icon icon="lets-icons:search-duotone" />}
+            sx={{
+              px: (theme) => [
+                `${theme.spacing(4)} !important`,
+                `${theme.spacing(5)} !important`,
+              ],
+              py: (theme) => [
+                `${theme.spacing(1.5)} !important`,
+                `${theme.spacing(2)} !important`,
+              ],
+              ml: { xs: 0, sm: 4 },
+              background: "linear-gradient(45deg, #A20514 30%, #C62828 90%)",
+              borderRadius: 2,
+              fontWeight: 600,
+              letterSpacing: "0.5px",
+              boxShadow: "0 4px 12px rgba(162, 5, 20, 0.3)",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                boxShadow: "0 6px 16px rgba(162, 5, 20, 0.4)",
+                transform: "translateY(-2px)",
+              },
+            }}
+          >
+            Search
+          </ButtonStyled>
+        </CardActions>
+      </CardContent>
 
-  <Box
-    sx={{
-      alignSelf: "flex-start",
-      display: "flex",
-      mt: 3,
-      fontSize: { xs: 12, sm: 14 },
-      color: (theme) => theme.palette.secondary.dark,
-      flexWrap: "wrap",
-      gap: 1,
-    }}
-  >
-    <Typography
-      sx={{
-        display: "flex",
-        fontSize: 14,
-        fontWeight: 600,
-        color: (theme) => theme.palette.primary.main,
-        mr: 1,
-      }}
-    >
-      Popular:
-    </Typography>
-    {["Software testers", "Business Development Officer", "Business Analyst", "Full Stack Developers", "DevOps engineers", "Platform engineers", "Service desk engineers", "Data analysts"].map((item, index) => (
       <Box
-        component="span"
-        key={index}
         sx={{
-          color: "#555",
-          transition: "all 0.2s ease",
-          cursor: "pointer",
-          "&:hover": {
-            color: "#A20514",
-            textDecoration: "underline",
-          },
+          alignSelf: "flex-start",
+          display: "flex",
+          mt: 3,
+          fontSize: { xs: 12, sm: 14 },
+          color: (theme) => theme.palette.secondary.dark,
+          flexWrap: "wrap",
+          gap: 1,
         }}
       >
-        {item}{index < 7 ? "," : ""}
+        <Typography
+          sx={{
+            display: "flex",
+            fontSize: 14,
+            fontWeight: 600,
+            color: (theme) => theme.palette.primary.main,
+            mr: 1,
+          }}
+        >
+          Popular:
+        </Typography>
+        {["Software testers", "Business Development Officer", "Business Analyst", "Full Stack Developers", "DevOps engineers", "Platform engineers", "Service desk engineers", "Data analysts"].map((item, index) => (
+          <Box
+            component="span"
+            key={index}
+            sx={{
+              color: "#555",
+              transition: "all 0.2s ease",
+              cursor: "pointer",
+              "&:hover": {
+                color: "#A20514",
+                textDecoration: "underline",
+              },
+            }}
+          >
+            {item}{index < 7 ? "," : ""}
+          </Box>
+        ))}
       </Box>
-    ))}
-  </Box>
-</Card>
+</Card> */}
     </Box>
   );
 };

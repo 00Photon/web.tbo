@@ -13,6 +13,7 @@ import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
+import Link from "next/link";
 
 const Banner: React.FC = () => {
   return (
@@ -22,7 +23,7 @@ const Banner: React.FC = () => {
         maxWidth: "100%",
      
         mx: "auto",
-        height: { xs: "auto", sm: "80vh" },
+        height: { xs: "100vh", md: "80vh" }, // Changed from "100%" to "100vh" for mobile
       }}
     >
       <Paper
@@ -30,8 +31,7 @@ const Banner: React.FC = () => {
           background: `url(${BannerImage.src})`,
           backgroundSize: "cover",
           backgroundRepeat: "no-repeat",
-       
-          mt: (theme) => theme.spacing(4),
+          // mt: (theme) => theme.spacing(4),
           height: { xs: "100%", md: "80vh" },
         }}
       >
@@ -45,6 +45,7 @@ const Banner: React.FC = () => {
             width: "100%",
             height: "100%",
             background: `rgba(0, 0, 0, 0.53)`,
+            paddingLeft: { xs: "0vh", md: "20vh" },
         
           }}
         >
@@ -60,17 +61,18 @@ const Banner: React.FC = () => {
               variant="h6"
               sx={{
                 my: 2,
-                fontSize: { xs: ".875rem", sm: "1rem" },
-                fontWeight: { xs: 200, sm: 500 },
+                fontSize: { xs: "2rem", sm: "3rem" },
+                fontWeight: { xs: 200, sm: 900 },
               }}
             >
-              Are you an Employer...
+              Are you an Employer? 🤔
             </Typography>
             <Typography
               variant="h4"
               sx={{
                 my: 2,
-                fontSize: { xs: "1.25rem", sm: "1.75rem" },
+                fontSize: { xs: "2rem", sm: "4rem" },
+                fontWeight: { xs: 200, sm: 100 },
               }}
             >
               Looking for top talents?
@@ -80,7 +82,7 @@ const Banner: React.FC = () => {
               sx={{
                 my: 2,
                 fontSize: { xs: "1rem", sm: "1.25rem" },
-                fontWeight: { xs: 200, sm: 500 },
+                fontWeight: { xs: 200, sm: 100 },
               }}
             >
              With numerous jobseekers, we've got your organization covered!
@@ -94,18 +96,21 @@ const Banner: React.FC = () => {
                 my: 4,
               }}
             >
+              <Link href="/company">
               <Button
                 variant="contained"
                 sx={{
                   py: ".5rem",
                   background: "#A20514",
+                  fontSize: { xs: "1rem", sm: "1.25rem" },
                   textTransform: "capitalize",
                 }}
                 size="medium"
               >
-                Explore more
+                Get started
                 <Icon icon="material-symbols-light:arrow-right-alt-rounded" />
               </Button>
+              </Link>
             </Box>
           </Stack>
         </Box>

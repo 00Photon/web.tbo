@@ -171,7 +171,7 @@ const Testimonial: React.FC = () => {
         <Box sx={{ mb: 8, textAlign: "center", marginTop: "40px" }}>
           <Chip 
             label="CLIENT FEEDBACK" 
-            color="primary" 
+           
             sx={{ 
               mb: 2, 
               fontWeight: 500,

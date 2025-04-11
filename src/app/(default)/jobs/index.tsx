@@ -12,10 +12,11 @@ const Clients: React.FC = () => {
   return (
     <>
       <TalentHero />
-      <JobOffers />
-      <JobCategories />
+      {/* <JobOffers /> */}
+     
       <FeaturedJobs />
-      <Careers />
+      <JobCategories />
+      {/* <Careers /> */}
     </>
   );
 };

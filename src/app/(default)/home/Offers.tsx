@@ -112,7 +112,8 @@ const GlowText = styled(Typography)(({ theme }) => ({
 const CARD_ICONS = {
   jobHunt: "icon-park-twotone:doc-search",
   hiringHunt: "mdi:building",
-  recruitment: "tabler:user-search"
+  recruitment: "tabler:user-search",
+  smartMatching: "mdi:account-sync" 
 };
 const cardData = [
   {
@@ -135,6 +136,13 @@ const cardData = [
     icon: CARD_ICONS.recruitment,
     content: "We handle the screening and interview process to find the perfect fit for your company.",
     highlight: "Streamlined Workflow"
+  },
+  {
+    id: "smartMatching", // <- New Card
+    title: "Smart Matching",
+    icon: CARD_ICONS.smartMatching,
+    content: "Our intelligent algorithm connects the right talent with the right job based on skills and preferences.",
+    highlight: "AI-Powered Fit"
   }
 ];
 
@@ -143,7 +151,7 @@ const HiringOffers: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [isVisible, setIsVisible] = useState(false);
   
-  // Animation sequence
+
   useEffect(() => {
     setIsVisible(true);
   }, []);
@@ -153,8 +161,6 @@ const HiringOffers: React.FC = () => {
       sx={{
         zIndex: -1,
         position: "relative",
- 
-        pt: "6rem",
         p: (theme) => [
           `${theme.spacing(2)} !important`,
           `${theme.spacing(4)} !important`,
@@ -172,6 +178,7 @@ const HiringOffers: React.FC = () => {
           backgroundImage: `url(${Bitmap.src})`,
           backgroundSize: "cover",
           backgroundPosition: "top right",
+    
         }}
       ></Box>
       <Typography
@@ -180,11 +187,11 @@ const HiringOffers: React.FC = () => {
           fontSize: { xs: "1rem", sm: "1.5rem" },
           fontWeight: 400,
           textTransform: "capitalize",
-          mb: 2,
-          mt: "8rem",
+     
+          mt: "1rem",
           textAlign: "center",
           color: (theme) => theme.palette.primary.main,
-          marginTop: { xs: "18rem", sm: "18rem" },
+          marginTop: { xs: "3rem", sm: "2rem" },
         }}
       >
         What we offer
@@ -216,7 +223,7 @@ const HiringOffers: React.FC = () => {
       >
         <Grid container spacing={4}>
           {cardData.map((card, index) => (
-            <Grid item xs={12} md={6} lg={4} key={card.id}>
+            <Grid item xs={12} md={6} lg={3} key={card.id}>
               <Zoom 
                 in={isVisible} 
                 style={{ transitionDelay: `${200 * index}ms` }}

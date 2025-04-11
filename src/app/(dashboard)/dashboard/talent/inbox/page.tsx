@@ -26,7 +26,7 @@ const Inbox = () => {
     },
   ]);
 
-  const deleteNotification = (id) => {
+  const deleteNotification = (id: number) => {
     setNotifications(notifications.filter((notification) => notification.id !== id));
   };
 

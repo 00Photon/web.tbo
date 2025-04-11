@@ -87,7 +87,7 @@ const StatsOverview: React.FC = () => {
   ];
 
   return (
-    <Paper sx={{ boxShadow: 2, borderRadius: 3, overflow: 'hidden' }}>
+    <Paper sx={{ boxShadow: 2, borderRadius: 3, overflow: 'hidden', height: '1800' }}>
       <CardHeader 
         title={
           <Typography variant="h6" sx={{ fontWeight: 600 }}>

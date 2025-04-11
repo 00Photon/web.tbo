@@ -9,7 +9,7 @@ const EmploymentCards: React.FC = () => {
   return (
     <Stack spacing={3} direction={{ xs: "column", md: "row" }} sx={{ my: 4 }}>
       <Applications />
-      <Schedules />
+      {/* <Schedules /> */}
     </Stack>
   );
 };

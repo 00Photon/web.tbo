@@ -109,17 +109,7 @@ const ClientHero = () => {
           backgroundImage: `url(${Bitmap.src})`,
         }}
       ></Box>
-      <Box
-        sx={{
-          position: "absolute",
-          top: { xs: "3%", sm: "25%" },
-          left: "80%",
-          width: "90%",
-          height: "90%",
-          backgroundImage: `url(${Gears.src})`,
-          backgroundRepeat: "no-repeat",
-        }}
-      ></Box>
+     
 
       <Box
         sx={{
@@ -212,7 +202,7 @@ const ClientHero = () => {
         </Box>
       </Box>
 
-      <Card
+      {/* <Card
         sx={{
           display: "flex",
           justifyContent: "center",
@@ -233,7 +223,8 @@ const ClientHero = () => {
         }}
       >
         <Clients />
-      </Card>
+
+      </Card> */}
     </Box>
   );
 };
