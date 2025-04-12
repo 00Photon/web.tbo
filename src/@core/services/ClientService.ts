@@ -1,21 +1,24 @@
 import axios, { AxiosResponse } from "axios";
 import { API_BASE_URL } from "@/@core/utils/constants"
+import { getSession } from 'next-auth/react';
 // Admin data Interface
 export interface ClientData {
-  created_at: any;
-  Avatar: any;
-  registrationDate: any;
-  applications: any;
-  activeJobs: any;
-  contactPerson: any;
-  company: any;
   id: number;
   name: string;
   account_type: string;
+  company_logo: string;
+  company_name: string;
+  company_email_address: string;
+  industry: string;
+  number_of_employees: string;
+  type_of_employer: string;
+  company_address: string;
+  company_phone_number: string | null;
+  country: string | null;
+  company_website: string;
   email: string;
   status: string;
-  clients: string;
-  level: string;
+  // Add other fields as needed
 }
 
 // API response interface
@@ -39,6 +42,45 @@ export const getClients = async (): Promise<ClientData[]> => {
     console.error("Error fetching admin data:", error);
     throw error;
   }
+};
+
+export const activateClient = async (jobId: number) => {
+  try {
+    const response = await fetch(`/api/jobs/${jobId}/activate`, {
+      method: 'PATCH',
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to activate job');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error activating job:', error);
+    throw error;
+  }
+};
+
+export const deactivateClient = async (jobId: number): Promise<any> => {
+  const session = await getSession(); 
+  if (!session || !session.user) throw new Error("User is not authenticated");
+
+  const token = session.user.accessToken; 
+
+  const response = await fetch(`${API_BASE_URL}/admin/clients/${jobId}/deactivate`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to deactivate job');
+  }
+
+  const data = await response.json();
+  return data; 
 };
 
 console.log(getClients());

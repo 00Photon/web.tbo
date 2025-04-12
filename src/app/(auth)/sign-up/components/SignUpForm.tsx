@@ -124,13 +124,13 @@ const SignUpForm: React.FC = () => {
                             activeAccountType === 'TALENT' && setActiveAccountType('CLIENT')
                         }} sx={{ display: "flex", flexDirection: 'column', justifyContent: "center", alignItems: "center", padding: '20px', borderRadius: '8px', ...(index===0 ? {marginRight: '5px'} : {marginLeft: '5px'}), ...(activeAccountType == account.name ? activeStyle : inActiveStyle), cursor: 'pointer' }}>
                             <Image src={account.icon} width={38.6} height={38.6} alt={`${account.name} Icon`}/>
-                            <Box sx={{ fontSize: '14.3px', fontWeight: 700 }}>{account.name === 'CLIENT' ? 'Client Account' : 'Talent Account'}</Box>
+                            <Box sx={{ fontSize: '14.3px', fontWeight: 700 }}>{account.name === 'CLIENT' ? 'Company Account' : 'Talent Account'}</Box>
                         </Box>
                     ))}
                 </Box>
                 <Box sx={{ textAlign: "center", marginBottom: '20px' }}>
                     <Box sx={{ fontSize: '20px', fontWeight: 700 }}>Create Account</Box>
-                    <Box sx={{ fontSize: '12px' }}>Enter your credentials to create a client account</Box>
+                    <Box sx={{ fontSize: '12px' }}>Enter your credentials to create your account</Box>
                 </Box>
                 {/**Hidden because OAuth has not been integrated */}
                 {/* <Box sx={{ display: "flex", justifyContent: 'center' }}>

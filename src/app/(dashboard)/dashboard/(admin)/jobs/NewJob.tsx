@@ -1,8 +1,9 @@
 // *React Imports
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // *Icon Imports
 import Icon from "@/@core/component/icon";
+import Loader from '@/@core/utils/loader';
 
 // *Custom Component Imports
 import CustomTextField from "@/@core/component/mui/text-field";
@@ -26,10 +27,10 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import MenuItem from "@mui/material/MenuItem";
 import Chip from "@mui/material/Chip";
-import { Autocomplete, IconButton, TextFieldProps } from "@mui/material";
+import { Autocomplete, IconButton, TextFieldProps, CircularProgress } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
 
-import { createJob }  from "@/@core/services/jobService"
+import { createJob } from "@/@core/services/jobService";
 
 interface Props {
   open: boolean;
@@ -48,6 +49,14 @@ interface IFormInput {
   maxSalary: string;
   application_deadline: string;
   information: string;
+  client_id: string;
+}
+
+interface Client {
+  id: number;
+  name: string;
+  email: string;
+  account_type: string;
 }
 
 const defaultValues = {
@@ -62,6 +71,7 @@ const defaultValues = {
   maxSalary: "",
   application_deadline: "",
   information: "",
+  client_id: "",
 };
 
 const availableSkills = [
@@ -70,12 +80,40 @@ const availableSkills = [
   "MARKETER",
   "MANAGER",
   "WRITER",
-
 ];
 
 const NewJob = ({ open, close }: Props) => {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>("");
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [submitting, setSubmitting] = useState<boolean>(false);
+
+
+  useEffect(() => {
+    // Fetch clients when the dialog opens
+    if (open) {
+      fetchClients();
+    }
+  }, [open]);
+
+  const fetchClients = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("https://api.tbo-taas.com/api/v1/users");
+      if (!response.ok) {
+        throw new Error("Failed to fetch clients");
+      }
+      const data = await response.json();
+      // Filter only users with account_type of CLIENT
+      const clientUsers = data.filter((user: Client) => user.account_type === "CLIENT");
+      setClients(clientUsers);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleRemoveSkill = (skill: string) => {
     setSelectedSkills((prev) => prev.filter((s) => s !== skill));
@@ -93,6 +131,8 @@ const NewJob = ({ open, close }: Props) => {
   });
 
   const submitForm: SubmitHandler<IFormInput> = (values) => {
+    setSubmitting(true); // Show loader when submission starts
+    
     const jobData = {
       title: values.title,
       job_type: values.type,
@@ -105,20 +145,23 @@ const NewJob = ({ open, close }: Props) => {
       location: values.location,
       application_deadline: dayjs(selectedDate).format("YYYY-MM-DD"), // Convert the selected date to the required format
       additional_info: values.information,
+      client_id: parseInt(values.client_id) // Add client_id to the job data
     };
   
     createJob(jobData)
-      .then((response) => {
-        console.log("Job created:", response);
-        reset();
-        close();
-      })
-      .catch((error) => {
-        console.error("Error creating job:", error);
-      });
+    .then((response) => {
+      console.log("Job created:", response);
+      reset();
+      close();
+    })
+    .catch((error) => {
+      console.error("Error creating job:", error);
+    })
+    .finally(() => {
+      setSubmitting(false); // Hide loader when submission completes or fails
+    });
   };
   
-
   return (
     <div>
       <Dialog
@@ -157,7 +200,6 @@ const NewJob = ({ open, close }: Props) => {
               pb: (theme) => `${theme.spacing(4)} !important`,
               px: (theme) => [`${theme.spacing(4)} !important`],
               m: (theme) => theme.spacing(3),
-              //   background: (theme) => theme.palette.secondary.main,
               borderRadius: "10px",
               overflowY: "scroll",
               scrollbarWidth: "none",
@@ -172,10 +214,42 @@ const NewJob = ({ open, close }: Props) => {
                 Job Details
               </Typography>
               <Grid container spacing={4}>
+                {/* Client Selection Field - Added at the top */}
+                <Grid item xs={12} md={12}>
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
+                    Select Company
+                  </Typography>
+
+                  <Controller
+                    name="client_id"
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field: { value, onChange } }) => (
+                      <CustomTextField
+                        fullWidth
+                        select
+                        value={value}
+                        onChange={onChange}
+                        size="medium"
+                        placeholder="Select a Company..."
+                        error={Boolean(errors.client_id)}
+                        helperText={errors.client_id?.message || "Please select a Company for this job"}
+                        InputProps={{
+                          endAdornment: loading ? <CircularProgress size={20} /> : null,
+                        }}
+                      >
+                        {clients.map((client) => (
+                          <MenuItem key={client.id} value={client.id.toString()}>
+                            {client.name} ({client.email})
+                          </MenuItem>
+                        ))}
+                      </CustomTextField>
+                    )}
+                  />
+                </Grid>
+
                 <Grid item xs={12} md={6}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Job Title
                   </Typography>
 
@@ -198,9 +272,7 @@ const NewJob = ({ open, close }: Props) => {
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Job Type
                   </Typography>
 
@@ -225,15 +297,12 @@ const NewJob = ({ open, close }: Props) => {
                         <MenuItem value="INTERNSHIP">Internship</MenuItem>
                         <MenuItem value="FREELANCE">Freelance</MenuItem>
                       </CustomTextField>
-                           
                     )}
                   />
                 </Grid>
 
                 <Grid item xs={12} md={12}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Description
                   </Typography>
 
@@ -267,9 +336,7 @@ const NewJob = ({ open, close }: Props) => {
                 </Grid>
 
                 <Grid item xs={12} md={12}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Requirements
                   </Typography>
 
@@ -303,9 +370,7 @@ const NewJob = ({ open, close }: Props) => {
                 </Grid>
 
                 <Grid item xs={12} md={12}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Skills
                   </Typography>
 
@@ -361,12 +426,10 @@ const NewJob = ({ open, close }: Props) => {
                     )}
                   />
 
-                  <Box
-                    sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 2 }}
-                  >
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 2 }}>
                     {selectedSkills.map((skill) => (
                       <Chip
-                        key={skill} // Ensure the key is unique
+                        key={skill}
                         label={skill}
                         onDelete={() => handleRemoveSkill(skill)}
                         deleteIcon={
@@ -380,9 +443,7 @@ const NewJob = ({ open, close }: Props) => {
                 </Grid>
 
                 <Grid item xs={2} md={2}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Currency
                   </Typography>
 
@@ -411,9 +472,7 @@ const NewJob = ({ open, close }: Props) => {
                 </Grid>
 
                 <Grid item xs={12} md={5}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Minimum
                   </Typography>
 
@@ -427,7 +486,7 @@ const NewJob = ({ open, close }: Props) => {
                         value={value}
                         onChange={onChange}
                         size="medium"
-                        placeholder="$1"
+                        placeholder="1"
                         error={Boolean(errors.minSalary)}
                         helperText={errors.minSalary?.message}
                       />
@@ -436,9 +495,7 @@ const NewJob = ({ open, close }: Props) => {
                 </Grid>
 
                 <Grid item xs={12} md={5}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Maximum
                   </Typography>
 
@@ -452,7 +509,7 @@ const NewJob = ({ open, close }: Props) => {
                         value={value}
                         onChange={onChange}
                         size="medium"
-                        placeholder="$999999"
+                        placeholder="999999"
                         error={Boolean(errors.maxSalary)}
                         helperText={errors.maxSalary?.message}
                       />
@@ -461,9 +518,7 @@ const NewJob = ({ open, close }: Props) => {
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Location
                   </Typography>
 
@@ -486,9 +541,7 @@ const NewJob = ({ open, close }: Props) => {
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Application Deadline
                   </Typography>
                   <Controller
@@ -498,13 +551,13 @@ const NewJob = ({ open, close }: Props) => {
                     render={({ field: { value, onChange } }) => (
                       <DatePicker
                         disablePast
-                        value={value ? dayjs(value) : null} // Use the value from the controller
+                        value={value ? dayjs(value) : null}
                         onChange={(newDate) => {
                           const formattedDate = newDate
                             ? newDate.format("YYYY-MM-DD")
                             : null;
-                          onChange(formattedDate); // Call onChange with the formatted date
-                          setSelectedDate(formattedDate); // Also update selectedDate
+                          onChange(formattedDate);
+                          setSelectedDate(formattedDate);
                         }}
                       />
                     )}
@@ -512,9 +565,7 @@ const NewJob = ({ open, close }: Props) => {
                 </Grid>
 
                 <Grid item xs={12}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Additional Information
                   </Typography>
 
@@ -549,25 +600,27 @@ const NewJob = ({ open, close }: Props) => {
               </Grid>
             </Box>
 
-            <DialogActions
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                gap: 2,
-              }}
+            
+          <DialogActions
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: 2,
+            }}
+          >
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={isSubmitting || submitting}
+              sx={{ textTransform: "capitalize", width: "30%" }}
             >
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={isSubmitting}
-                sx={{ textTransform: "capitalize", width: "30%" }}
-              >
-                Post
-              </Button>
-            </DialogActions>
+              {submitting ? <CircularProgress size={24} color="inherit" /> : "Create Job"}
+            </Button>
+          </DialogActions>
           </DialogContent>
         </form>
+        <Loader loading={submitting} />
       </Dialog>
     </div>
   );

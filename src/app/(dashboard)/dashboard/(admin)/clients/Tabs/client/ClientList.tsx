@@ -1,11 +1,8 @@
 // *React Imports
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 // * Icon Imports
 import Icon from "@/@core/component/icon";
-
-// * Image Imports
-import Google from "../../../../../../../../public/google.png";
 
 // * Next Imports
 import Link from "next/link";
@@ -30,117 +27,19 @@ import CardHeader from "@mui/material/CardHeader";
 import InputAdornment from "@mui/material/InputAdornment";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
-import { Divider } from "@mui/material";
+import { Divider, CircularProgress } from "@mui/material";
 import TablePagination from "@mui/material/TablePagination";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { Theme } from "@mui/material/styles";
 
-interface ClientProps {
-  data: MockData;
-}
-interface MockData {
-  logo: string;
-  company: string;
-  type: string;
-  vacancies: number;
-  applications: number;
+// Import the client service
+import { getClients, ClientData } from "@/@core/services/ClientService";
+
+interface ClientCardProps {
+  client: ClientData;
 }
 
-const data: MockData[] = [
-  {
-    logo: Google.src,
-    company: "Google LLC",
-    type: "IT Corporation",
-    vacancies: 23,
-    applications: 3440,
-  },
-  {
-    logo: Google.src,
-    company: "Google LLC",
-    type: "IT Corporation",
-    vacancies: 23,
-    applications: 3440,
-  },
-  {
-    logo: Google.src,
-    company: "Google LLC",
-    type: "IT Corporation",
-    vacancies: 23,
-    applications: 3440,
-  },
-  {
-    logo: Google.src,
-    company: "Google LLC",
-    type: "IT Corporation",
-    vacancies: 23,
-    applications: 3440,
-  },
-  {
-    logo: Google.src,
-    company: "Google LLC",
-    type: "IT Corporation",
-    vacancies: 23,
-    applications: 3440,
-  },
-  {
-    logo: Google.src,
-    company: "Google LLC",
-    type: "IT Corporation",
-    vacancies: 23,
-    applications: 3440,
-  },
-  {
-    logo: Google.src,
-    company: "Google LLC",
-    type: "IT Corporation",
-    vacancies: 23,
-    applications: 3440,
-  },
-  {
-    logo: Google.src,
-    company: "Google LLC",
-    type: "IT Corporation",
-    vacancies: 23,
-    applications: 3440,
-  },
-  {
-    logo: Google.src,
-    company: "Google LLC",
-    type: "IT Corporation",
-    vacancies: 23,
-    applications: 3440,
-  },
-  {
-    logo: Google.src,
-    company: "Google LLC",
-    type: "IT Corporation",
-    vacancies: 23,
-    applications: 3440,
-  },
-  {
-    logo: Google.src,
-    company: "Google LLC",
-    type: "IT Corporation",
-    vacancies: 23,
-    applications: 3440,
-  },
-  {
-    logo: Google.src,
-    company: "Google LLC",
-    type: "IT Corporation",
-    vacancies: 23,
-    applications: 3440,
-  },
-  {
-    logo: Google.src,
-    company: "Google LLC",
-    type: "IT Corporation",
-    vacancies: 23,
-    applications: 3440,
-  },
-];
-
-const ClientCard: React.FC<ClientProps> = ({ data }) => {
+const ClientCard: React.FC<ClientCardProps> = ({ client }) => {
   return (
     <Paper>
       <Box
@@ -154,14 +53,16 @@ const ClientCard: React.FC<ClientProps> = ({ data }) => {
         }}
       >
         <Box sx={{ maxWidth: 70, maxHeight: 70 }}>
-          <StyledImage src={data.logo} alt={data.company} />
+          <StyledImage src={client.company_logo} alt={client.company_name} />
         </Box>
         <Typography
           sx={{ fontSize: ".85rem", mb: "-10px", fontWeight: "bold" }}
         >
-          {data.company}
+          {client.company_name || client.name}
         </Typography>
-        <Typography sx={{ fontSize: ".685rem" }}>IT Corporation</Typography>
+        <Typography sx={{ fontSize: ".685rem" }}>
+          {client.industry || "Not specified"}
+        </Typography>
         <Box
           sx={{
             display: "flex",
@@ -171,11 +72,11 @@ const ClientCard: React.FC<ClientProps> = ({ data }) => {
           }}
         >
           <Typography sx={{ fontSize: ".6rem", fontWeight: "bold" }}>
-            {data.vacancies} Vacancies
+            Employees: {client.number_of_employees || "N/A"}
           </Typography>
-          <Divider />
+          <Divider orientation="vertical" flexItem />
           <Typography sx={{ fontSize: ".6rem", fontWeight: "bold" }}>
-            {data.applications} Applications
+            {client.status}
           </Typography>
         </Box>
       </Box>
@@ -184,12 +85,45 @@ const ClientCard: React.FC<ClientProps> = ({ data }) => {
 };
 
 const ClientsTable: React.FC = () => {
-  const [value, setValue] = React.useState<string>("");
-  const [page, setPage] = React.useState(2);
-  const [rowsPerPage, setRowsPerPage] = React.useState(10);
+  const [searchValue, setSearchValue] = useState<string>("");
+  const [page, setPage] = useState<number>(0);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(10);
+  const [clients, setClients] = useState<ClientData[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [totalCount, setTotalCount] = useState<number>(0);
 
   const smallScreen = useMediaQuery((theme: Theme) =>
     theme.breakpoints.up("md")
+  );
+
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        setLoading(true);
+        const fetchedClients = await getClients();
+        setClients(fetchedClients);
+        setTotalCount(fetchedClients.length);
+        setLoading(false);
+      } catch (err) {
+        setError("Failed to fetch clients");
+        setLoading(false);
+      }
+    };
+
+    fetchClients();
+  }, []);
+
+  // Filter clients based on search term
+  const filteredClients = clients.filter(client => 
+    client.name?.toLowerCase().includes(searchValue.toLowerCase()) || 
+    client.company_name?.toLowerCase().includes(searchValue.toLowerCase())
+  );
+
+  // Get current page of clients
+  const currentClients = filteredClients.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
   );
 
   const handleChangePage = (
@@ -228,8 +162,8 @@ const ClientsTable: React.FC = () => {
 
           <CustomTextField
             fullWidth
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
             size="small"
             placeholder="Client, Company name..."
             sx={{ maxWidth: 400 }}
@@ -247,25 +181,44 @@ const ClientsTable: React.FC = () => {
             }}
           />
         </Box>
-        {/* Place boxes here */}
-        <Grid container spacing={3}>
-          {data.map((item, i) => {
-            return (
-              <Grid item xs={6} sm={3} md={2.4} key={i}>
-                <ClientCard data={item} />
+        
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}>
+            <CircularProgress />
+          </Box>
+        ) : error ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}>
+            <Typography color="error">{error}</Typography>
+          </Box>
+        ) : (
+          <Grid container spacing={3}>
+            {currentClients.length > 0 ? (
+              currentClients.map((client) => (
+                <Grid item xs={6} sm={3} md={2.4} key={client.id}>
+                  <ClientCard client={client} />
+                </Grid>
+              ))
+            ) : (
+              <Grid item xs={12}>
+                <Box sx={{ textAlign: 'center', p: 5 }}>
+                  <Typography>No clients found</Typography>
+                </Box>
               </Grid>
-            );
-          })}
-        </Grid>
+            )}
+          </Grid>
+        )}
       </CardContent>
-      <TablePagination
-        component="div"
-        count={100}
-        page={page}
-        onPageChange={handleChangePage}
-        rowsPerPage={rowsPerPage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-      />
+      
+      {!loading && !error && (
+        <TablePagination
+          component="div"
+          count={filteredClients.length}
+          page={page}
+          onPageChange={handleChangePage}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+        />
+      )}
     </Card>
   );
 };

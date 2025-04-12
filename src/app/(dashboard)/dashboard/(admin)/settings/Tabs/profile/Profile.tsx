@@ -1,143 +1,165 @@
-// * React Imports
-import React from "react";
-
-// ** Third Party Imports
+import React, { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { AdminProfileSchema } from "@/@core/formSchema";
 
-// * MUI Imports
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 import Button from "@mui/material/Button";
-import CheckBox from "@mui/material/Checkbox";
-import Divider from "@mui/material/Divider";
 
-// * Custom Component Imports
-import ProfilePicture from "../../../component/ProfileImage";
 import CustomTextField from "@/@core/component/mui/text-field";
+import { getCurrentUser, updateUser } from "@/@core/services/user"; // Assuming there's a service function to update user
+import CircularProgress from "@mui/material/CircularProgress";
 
-const defaultValues = {
-  fullName: "",
-  username: "",
+
+interface CurrentUser {
+  id: number;
+  name: string;
+  email: string;
+  account_type: string;
+  admin_privileges: string;
+}
+
+type AdminProfileFormValues = {
+  name: string; // Change fullName to name
+  email: string;
+  role: string;
+  adminPrivileges: string;
+};
+
+const defaultValues: AdminProfileFormValues = {
+  name: "",
   email: "",
   role: "",
-  address: "",
-  city: "",
-  country: "",
-  postalCode: 0,
-  phoneNumber: "",
+  adminPrivileges: "",
 };
 
 const Profile = () => {
-  const user = {
-    name: "Test User",
-    job: "Developer",
-    avatar: "",
-  };
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isEditable, setIsEditable] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     control,
     reset,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm({
-    defaultValues: defaultValues,
+    formState: { errors },
+    handleSubmit,  // Add handleSubmit here to handle form submission
+  } = useForm<AdminProfileFormValues>({
+    defaultValues,
     mode: "onChange",
     resolver: yupResolver(AdminProfileSchema),
   });
 
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await getCurrentUser();
+        const userData = response.user;
+
+        setCurrentUser(userData);
+        console.log("Fetched User Data:", userData);  // Check if the data is correct
+
+        // Reset form with fetched data
+        reset({
+          name: userData.name,
+          email: userData.email,
+          role: userData.account_type,
+          adminPrivileges: userData.admin_privileges,
+        });
+      } catch (err) {
+        setError("Failed to load user data");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [reset]);
+
+  const onSubmit = async (data: AdminProfileFormValues) => {
+    setIsSubmitting(true); // Show loader
+    try {
+      const response = await updateUser(currentUser?.id || 0, data);
+      console.log("Updated User Data:", response);
+      // Handle success (e.g., show success notification or update state)
+    } catch (err) {
+      console.error("Error updating user:", err);
+      // Handle error (e.g., show error notification)
+    } finally {
+      setIsSubmitting(false); // Hide loader
+    }
+  };
+  
+
+  if (loading) return <div>Loading user data...</div>;
+  if (error) return <div>{error}</div>;
+  if (!currentUser) return <div>No user data available</div>;
+
   return (
     <Box sx={{ mb: 8 }}>
-      <ProfilePicture user={user} />
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 4 }}>
+        <Box>
+          <Typography sx={{ fontWeight: 600, color: "#39353D", fontSize: { xs: "1rem", sm: "1.2rem" } }}>
+            Admin Information
+          </Typography>
+          <Typography sx={{ fontSize: "13px", mb: "10px" }}>
+            Details about the Admin
+          </Typography>
+        </Box>
 
-      <Box sx={{ mt: 4 }}>
-        <Typography
-          sx={{
-            fontWeight: 600,
-            color: "#39353D",
-            fontSize: { xs: "1rem", sm: "1.2rem" },
-          }}
+        <Button
+          variant="contained"
+          onClick={() => setIsEditable(!isEditable)}
+          sx={{ textTransform: "none" }}
         >
-          Admin Information
-        </Typography>
-        <Typography sx={{ fontSize: "13px", mb: "10px" }}>
-          Details about the Admin
-        </Typography>
+          {isEditable ? "Cancel" : "Edit"}
+        </Button>
       </Box>
 
       <Box sx={{ my: 1 }}>
-        <form>
+        <form onSubmit={handleSubmit(onSubmit)}>
           <Grid container spacing={4} sx={{ my: 4 }}>
             <Grid item xs={12} sm={6} lg={6}>
-              <Typography
-                sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-              >
+              <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                 Full Name
               </Typography>
-
               <Controller
-                name="fullName"
+                name="name"
                 control={control}
-                rules={{ required: true }}
                 render={({ field: { value, onChange } }) => (
                   <CustomTextField
                     fullWidth
                     value={value}
                     onChange={onChange}
                     size="medium"
+                    disabled={!isEditable}  // Only editable if isEditable is true
                     placeholder="Sarah Doe"
-                    error={Boolean(errors.fullName)}
-                    helperText={errors.fullName?.message}
+                    error={Boolean(errors.name)}
+                    helperText={errors.name?.message}
                   />
                 )}
               />
             </Grid>
 
             <Grid item xs={12} sm={6} lg={6}>
-              <Typography
-                sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-              >
-                Username
-              </Typography>
-
-              <Controller
-                name="username"
-                control={control}
-                rules={{ required: true }}
-                render={({ field: { value, onChange } }) => (
-                  <CustomTextField
-                    fullWidth
-                    value={value}
-                    onChange={onChange}
-                    size="medium"
-                    placeholder="example12084"
-                    error={Boolean(errors.username)}
-                    helperText={errors.username?.message}
-                  />
-                )}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6} lg={6}>
-              <Typography
-                sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-              >
+              <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                 Email
               </Typography>
-
               <Controller
                 name="email"
                 control={control}
-                rules={{ required: true }}
                 render={({ field: { value, onChange } }) => (
                   <CustomTextField
                     fullWidth
                     value={value}
                     onChange={onChange}
                     size="medium"
-                    placeholder="abc@gmail.com"
+                    disabled  // Email is always disabled
+                    placeholder="admin@example.com"
                     error={Boolean(errors.email)}
                     helperText={errors.email?.message}
                   />
@@ -146,194 +168,65 @@ const Profile = () => {
             </Grid>
 
             <Grid item xs={12} sm={6} lg={6}>
-              <Typography
-                sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-              >
+              <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                 Role
               </Typography>
-
               <Controller
                 name="role"
                 control={control}
-                rules={{ required: true }}
                 render={({ field: { value, onChange } }) => (
                   <CustomTextField
                     fullWidth
                     value={value}
                     onChange={onChange}
                     size="medium"
-                    placeholder="Developer, Designer..."
-                    error={Boolean(errors?.role)}
-                    helperText={errors?.role?.message}
+                    disabled  // Role is always disabled
+                    placeholder="Admin"
+                    error={Boolean(errors.role)}
+                    helperText={errors.role?.message}
                   />
                 )}
               />
             </Grid>
 
             <Grid item xs={12} sm={6} lg={6}>
-              <Typography
-                sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-              >
-                Address
+              <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
+                Admin Privileges
               </Typography>
-
               <Controller
-                name="address"
+                name="adminPrivileges"
                 control={control}
-                rules={{ required: true }}
                 render={({ field: { value, onChange } }) => (
                   <CustomTextField
                     fullWidth
                     value={value}
                     onChange={onChange}
                     size="medium"
-                    placeholder="Diwali Street 84"
-                    error={Boolean(errors?.address)}
-                    helperText={errors?.address?.message}
-                  />
-                )}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6} lg={6}>
-              <Typography
-                sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-              >
-                City
-              </Typography>
-
-              <Controller
-                name="city"
-                control={control}
-                rules={{ required: true }}
-                render={({ field: { value, onChange } }) => (
-                  <CustomTextField
-                    fullWidth
-                    value={value}
-                    onChange={onChange}
-                    size="medium"
-                    placeholder="Abuja, Kigali, Nairobi"
-                    error={Boolean(errors?.city)}
-                    helperText={errors?.city?.message}
-                  />
-                )}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6} lg={6}>
-              <Typography
-                sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-              >
-                Country
-              </Typography>
-
-              <Controller
-                name="country"
-                control={control}
-                rules={{ required: true }}
-                render={({ field: { value, onChange } }) => (
-                  <CustomTextField
-                    fullWidth
-                    value={value}
-                    onChange={onChange}
-                    size="medium"
-                    placeholder="Ghana, Nigeria..."
-                    error={Boolean(errors?.country)}
-                    helperText={errors?.country?.message}
-                  />
-                )}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6} lg={6}>
-              <Typography
-                sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-              >
-                Postal Code
-              </Typography>
-
-              <Controller
-                name="postalCode"
-                control={control}
-                rules={{ required: true }}
-                render={({ field: { value, onChange } }) => (
-                  <CustomTextField
-                    fullWidth
-                    value={value}
-                    onChange={onChange}
-                    size="medium"
-                    placeholder="000000"
-                    error={Boolean(errors?.postalCode)}
-                    helperText={errors?.postalCode?.message}
-                  />
-                )}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6} lg={6}>
-              <Typography
-                sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-              >
-                Phone Number
-              </Typography>
-
-              <Controller
-                name="phoneNumber"
-                control={control}
-                rules={{ required: true }}
-                render={({ field: { value, onChange } }) => (
-                  <CustomTextField
-                    fullWidth
-                    value={value}
-                    onChange={onChange}
-                    size="medium"
-                    placeholder="+91 0000000000"
-                    error={Boolean(errors?.phoneNumber)}
-                    helperText={errors?.phoneNumber?.message}
+                    disabled  // Admin Privileges is always disabled
+                    placeholder="Access to admin panel"
+                    error={Boolean(errors.adminPrivileges)}
+                    helperText={errors.adminPrivileges?.message}
                   />
                 )}
               />
             </Grid>
           </Grid>
 
-          {/* <Divider variant="middle" /> */}
-
-          {/* <Box
-            sx={{
-              mt: 4,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: { xs: "center", sm: "flex-start" },
-              flexDirection: { xs: "column", sm: "row" },
-              gap: 3,
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                gap: 1,
-              }}
-            >
-              <Box>
-                <CheckBox color="primary" />
-              </Box>
-              <Typography sx={{ fontSize: "12px", width: { md: "70%" } }}>
-                Warning by clicking this box, it means you have read and agreed
-                with our terms and conditions and privacy policy
-              </Typography>
+          {isSubmitting ? (
+            <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
+              <CircularProgress />
             </Box>
-
-            <Button
-              variant="contained"
-              size="large"
-              sx={{
-                width: { xs: "fit-content", md: "30%" },
-                textTransform: "capitalize",
-              }}
-            >
-              Save
-            </Button>
-          </Box> */}
+          ) : (
+            isEditable && (
+              <Button
+                variant="contained"
+                type="submit"
+                sx={{ textTransform: "none", mt: 2 }}
+              >
+                Save Changes
+              </Button>
+            )
+          )}
         </form>
       </Box>
     </Box>

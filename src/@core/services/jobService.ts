@@ -98,6 +98,22 @@ export const createJob = async (jobDetails: {
 };
 
 
+export const activateJob = async (jobId: number) => {
+  try {
+    const response = await fetch(`/api/jobs/${jobId}/activate`, {
+      method: 'PATCH',
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to activate job');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error activating job:', error);
+    throw error;
+  }
+};
 
 export const deactivateJob = async (jobId: number): Promise<any> => {
   const session = await getSession(); 

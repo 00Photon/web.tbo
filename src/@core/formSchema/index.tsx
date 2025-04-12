@@ -43,6 +43,7 @@ export const companySchema = yup.object().shape({
   repCountryCode: yup.string().required("Please enter country code"),
 });
 
+
 export const passwordSchema = yup.object().shape({
   password: yup.string().required("Please enter your current password"),
   newPassword: yup
@@ -59,7 +60,7 @@ export const passwordSchema = yup.object().shape({
   confirmPassword: yup
     .string()
     .required("Confirm password is required")
-    .oneOf([yup.ref("password")], "Passwords must match"),
+    .oneOf([yup.ref("newPassword")], "Passwords must match"),
 });
 
 export const newJobSchema = yup.object().shape({
@@ -74,6 +75,7 @@ export const newJobSchema = yup.object().shape({
   maxSalary: yup.string().required("Maximum salary is required"),
   application_deadline: yup.string().required("Job deadline is required"),
   information: yup.string().required("Job information is required"),
+  client_id: yup.string().required(" Please select Company"),
 });
 
 export const newJobSchemaClone = yup.object().shape({
@@ -119,13 +121,8 @@ export const newAdminSchema = yup.object().shape({
 });
 
 export const AdminProfileSchema = yup.object().shape({
-  fullName: yup.string().required("Full Name is required"),
-  username: yup.string().required("Username is required"),
+  name: yup.string().required("Full Name is required"),
   email: yup.string().required("Email is required"),
   role: yup.string().required("Role is required"),
-  address: yup.string().required("Address is required"),
-  city: yup.string().required("City is required"),
-  country: yup.string().required("Country is required"),
-  postalCode: yup.number().required("Postal Code is required"),
-  phoneNumber: yup.string().required("Phone Number is required"),
+  adminPrivileges: yup.string().required("adminPrivileges is required"),
 });

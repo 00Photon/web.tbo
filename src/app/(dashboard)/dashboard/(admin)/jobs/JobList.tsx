@@ -39,7 +39,7 @@ import TableBody from "@mui/material/TableBody";
 import TablePagination from "@mui/material/TablePagination";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { Theme } from "@mui/material/styles";
-import { fetchJobs, deactivateJob, deleteJob   } from "@/@core/services/jobService"; 
+import { fetchJobs,activateJob, deactivateJob, deleteJob   } from "@/@core/services/jobService"; 
 // * Component Imports
 import JobDialog from "./JobDialog";
 import NewJob from "./NewJob";
@@ -139,26 +139,40 @@ const JobListTable: React.FC = () => {
     }
   };
 
-    // Function to handle deactivate job
-    const handleDeactivateJob = async (jobId: number) => {
-      try {
-        const result = await deactivateJob(jobId); // Call the deactivateJob service
-        console.log("Job deactivated:", result); // Optionally log or use the response data
-    
-        // After deactivating, update the job status in the local state
+  const handleToggleJobStatus = async (jobId: number, currentStatus: string) => {
+    try {
+      if (currentStatus === "active") {
+        // Deactivate the job
+        const result = await deactivateJob(jobId);
+        console.log("Job deactivated:", result);
+        
+        // Update local state
         const updatedJobs = jobs.map(job =>
           job.id === jobId ? { ...job, status: "inactive" } : job
         );
-        setJobs(updatedJobs); // Update the state with the new job data
-      } catch (error: unknown) { // Explicitly type 'error' as 'unknown'
-        if (error instanceof Error) { // Check if the error is an instance of the Error class
-          console.error("Failed to deactivate job:", error.message);
-        } else {
-          console.error("Failed to deactivate job: Unknown error");
-        }
+        setJobs(updatedJobs);
+      } else {
+        // Activate the job
+        const result = await activateJob(jobId);
+        console.log("Job activated:", result);
+        
+        // Update local state
+        const updatedJobs = jobs.map(job =>
+          job.id === jobId ? { ...job, status: "active" } : job
+        );
+        setJobs(updatedJobs);
       }
-    };
-    
+      
+      // Close the menu after action
+      handleRowOptionsClose(jobId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Failed to toggle job status:", error.message);
+      } else {
+        console.error("Failed to toggle job status: Unknown error");
+      }
+    }
+  };
   const handleRowOptionsClick = (event: React.MouseEvent<HTMLButtonElement>, jobId: number) => {
     setAnchorEl((prev) => ({
       ...prev,
@@ -375,12 +389,21 @@ return (
                             </MenuItem>
 
                             <MenuItem
-                            sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                            onClick={() => handleDeactivateJob(job.id)} // Call the deactivate function
-                          >
-                            <Icon icon="tabler:eye-off" />
-                            Deactivate
-                          </MenuItem>
+                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
+                              onClick={() => handleToggleJobStatus(job.id, job.status)}
+                            >
+                              {job.status === "active" ? (
+                                <>
+                                  <Icon icon="tabler:eye-off" />
+                                  Deactivate
+                                </>
+                              ) : (
+                                <>
+                                  <Icon icon="tabler:eye" />
+                                  Activate
+                                </>
+                              )}
+                            </MenuItem>
 
                            <MenuItem 
                               sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }} 

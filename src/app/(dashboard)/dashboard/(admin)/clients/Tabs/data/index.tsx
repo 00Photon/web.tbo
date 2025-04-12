@@ -2,15 +2,15 @@ import { WorkTwoTone, HandshakeTwoTone, People } from "@mui/icons-material";
 
 export const ClientJobTabs = [
   {
-    icon: <HandshakeTwoTone />,
-    name: "Clients",
+    icon: <People />,
+    name: "All Client",
   },
-  {
+ {
     icon: <WorkTwoTone />,
     name: "Jobs",
   },
   {
-    icon: <People />,
-    name: "All Client",
+    icon: <HandshakeTwoTone />,
+    name: "Clients",
   },
 ];

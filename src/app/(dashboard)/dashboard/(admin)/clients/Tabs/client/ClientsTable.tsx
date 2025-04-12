@@ -1,11 +1,8 @@
 // *React Imports
-import React, { ReactNode } from "react";
+import React, { useState, useEffect } from "react";
 
 // * Icon Imports
 import Icon from "@/@core/component/icon";
-
-// * Image Imports
-import Google from "../../../../../../../../public/google.png";
 
 // * Next Imports
 import Link from "next/link";
@@ -15,7 +12,8 @@ import CustomTextField from "@/@core/component/mui/text-field";
 import { TableCellStyled } from "@/@core/component/mui/tableStyled";
 import StyledImage from "@/@core/component/mui/image";
 import { ClientData, getClients } from "@/@core/services/ClientService";
-
+import ClientModal from '../../../component/ClientModal'; // Import the Modal Component
+import CircularProgress from "@mui/material/CircularProgress";
 // ** Third Party Imports
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -44,110 +42,34 @@ import TableBody from "@mui/material/TableBody";
 import TablePagination from "@mui/material/TablePagination";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { Theme } from "@mui/material/styles";
+import Alert from '@mui/material/Alert';
 
-interface MockData {
-  created_at: ReactNode;
-  name: ReactNode;
-  id: number;
-  account_type: string | undefined;
-  company: string;
-  contactPerson: string;
-  email: string;
-  activeJobs: number;
-  applications: number;
-  registrationDate: string;
-  status: boolean;
-  Avatar: string;
+import { activateClient, deactivateClient } from "@/@core/services/ClientService";
+interface AlertState {
+  open: boolean;
+  message: string;
+  severity: 'success' | 'error' | 'info' | 'warning';
 }
-
-const data: MockData[] = [
-  {
-    company: "Google",
-    contactPerson: "Nataly",
-    email: "nat@mail.com",
-    activeJobs: 14,
-    id: 1,
-    applications: 213,
-    registrationDate: "12-05-2022",
-    status: true,
-    Avatar: Google.src,
-    account_type: undefined,
-    created_at: undefined,
-    name: undefined
-  },
-  {
-    company: "Google",
-    contactPerson: "Nataly",
-    email: "nat@mail.com",
-    activeJobs: 14,
-    id: 1,
-    applications: 213,
-    registrationDate: "12-05-2022",
-    status: false,
-    Avatar: Google.src,
-    account_type: undefined,
-    name: undefined,
-    created_at: undefined
-  },
-  {
-    company: "Google",
-    contactPerson: "Nataly",
-    email: "nat@mail.com",
-    activeJobs: 14,
-    id: 1,
-    applications: 213,
-    registrationDate: "12-05-2022",
-    status: true,
-    Avatar: Google.src,
-    account_type: undefined,
-    name: undefined,
-    created_at: undefined
-  },
-  {
-    company: "Google",
-    contactPerson: "Nataly",
-    email: "nat@mail.com",
-    activeJobs: 14,
-    id: 1,
-    applications: 213,
-    registrationDate: "12-05-2022",
-    status: false,
-    Avatar: Google.src,
-    account_type: undefined,
-    name: undefined,
-    created_at: undefined
-  },
-  {
-    company: "Google",
-    contactPerson: "Nataly",
-    email: "nat@mail.com",
-    activeJobs: 14,
-    id: 1,
-    applications: 213,
-    registrationDate: "12-05-2022",
-    status: true,
-    Avatar: Google.src,
-    account_type: undefined,
-    name: undefined,
-    created_at: undefined
-  },
-];
-
 const ClientListTable: React.FC = () => {
   const [openFilter, setOpenFilter] = React.useState<boolean>(false);
   const [value, setValue] = React.useState<string>("");
   const [status, setStatus] = React.useState<string>("");
-  const [page, setPage] = React.useState(2);
+  const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
-  const [anchorEl, setAnchorEl] = React.useState<(HTMLElement | null)[]>(
-    Array(data?.length)?.fill(null)
-  );
-  const [clients, setClients] = React.useState<MockData[]>([]);
+  const [clients, setClients] = React.useState<ClientData[]>([]);
   const [loading, setLoading] = React.useState<boolean>(true);
-
+  const [anchorEl, setAnchorEl] = React.useState<(HTMLElement | null)[]>([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<ClientData | null>(null);
+  const [processingId, setProcessingId] = React.useState<number | null>(null);
   const smallScreen = useMediaQuery((theme: Theme) =>
     theme.breakpoints.up("md")
   );
+  const [alert, setAlert] = useState<AlertState>({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
 
   const handleChangePage = (
     event: React.MouseEvent<HTMLButtonElement> | null,
@@ -174,40 +96,103 @@ const ClientListTable: React.FC = () => {
     newAnchorEl[index] = null;
     setAnchorEl(newAnchorEl);
   };
+  const handleToggleActivation = async (client: ClientData) => {
+    try {
+      setProcessingId(client.id);
+      
+      let updatedClient;
+      
+      if (client.status) {
+        updatedClient = await deactivateClient(client.id);
+        setAlert({
+          open: true,
+          message: 'Client deactivated successfully',
+          severity: 'success'
+        });
+      } else {
+        updatedClient = await activateClient(client.id);
+        setAlert({
+          open: true,
+          message: 'Client activated successfully',
+          severity: 'success'
+        });
+      }
+
+      setClients(prevClients => 
+        prevClients.map(c => 
+          c.id === client.id ? { 
+            ...c, 
+            status: client.status === 'active' ? 'inactive' : 'active' 
+          } : c
+        )
+      );
+
+      const index = clients.findIndex(c => c.id === client.id);
+      handleRowOptionsClose(index);
+      
+    } catch (error) {
+      console.error('Error toggling client status:', error);
+      setAlert({
+        open: true,
+        message: error instanceof Error ? error.message : 'Failed to update client status',
+        severity: 'error'
+      });
+    } finally {
+      setProcessingId(null);
+      
+      // Auto-hide alert after 5 seconds
+      setTimeout(() => {
+        setAlert(prev => ({...prev, open: false}));
+      }, 5000);
+    }
+  };
 
   const toggleFilter = () => setOpenFilter(!openFilter);
 
-  // Fetch client data on component mount
+  const handleViewClient = (client: ClientData) => {
+    setSelectedClient(client);
+    setModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+    setSelectedClient(null);
+  };
   React.useEffect(() => {
     const fetchClients = async () => {
       try {
-        const data = await getClients();
-        const formattedData = data.map((client: ClientData) => ({
-          company: client.company,
-          contactPerson: client.contactPerson,
-          email: client.email,
-          activeJobs: client.activeJobs,
-          id: client.id,
-          applications: client.applications,
-          registrationDate: client.registrationDate,
-          status: client.status === "active",
-          Avatar: client.Avatar,
-          account_type: client.account_type,
-          created_at: client.created_at,
-          name: client.name
-        }));
-        setClients(formattedData);
+        const apiData: ClientData[] = await getClients();
+        
+        // Set the clients state using the ClientData type directly
+        setClients(apiData as any);
+        setAnchorEl(Array(apiData.length).fill(null));
       } catch (error) {
         console.error("Error fetching clients:", error);
       } finally {
         setLoading(false);
       }
     };
-
+  
     fetchClients();
   }, []);
-
+  
   return (
+   <> 
+    {alert.open && (
+        <Alert 
+          sx={{ 
+            position: 'fixed', 
+            right: 20, 
+            top: 10, 
+            zIndex: 1000 
+          }} 
+          variant="filled" 
+          severity={alert.severity}
+          onClose={() => setAlert(prev => ({...prev, open: false}))}
+        >
+          {alert.message}
+        </Alert>
+      )}
     <Card
       sx={{
         borderBottomLeftRadius: 0,
@@ -245,15 +230,13 @@ const ClientListTable: React.FC = () => {
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
                   size="small"
-                  placeholder="Reviewed, Hired, Short..."
+                  placeholder="Active, Inactive"
                   fullWidth
                   label="Status"
                 >
-                  <MenuItem value="0">Select Status</MenuItem>
-                  <MenuItem value="1">Shortlisted</MenuItem>
-                  <MenuItem value="2">Reviewed</MenuItem>
-                  <MenuItem value="3">Interviewed</MenuItem>
-                  <MenuItem value="4">Hired</MenuItem>
+                  <MenuItem value="">Select Status</MenuItem>
+                  <MenuItem value="active">Active</MenuItem>
+                  <MenuItem value="inactive">Inactive</MenuItem>
                 </CustomTextField>
               </Grid>
               <Grid item xs={6} sm={3}>
@@ -262,15 +245,15 @@ const ClientListTable: React.FC = () => {
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
                   size="small"
-                  placeholder="Senior, mid-level, entry..."
+                  placeholder="Technology, Healthcare..."
                   fullWidth
-                  label="Level of Experience"
+                  label="Industry"
                 >
-                  <MenuItem value="0">Select Level</MenuItem>
-                  <MenuItem value="1">Entry Level</MenuItem>
-                  <MenuItem value="2">Intermediate</MenuItem>
-                  <MenuItem value="3">Mid-Level</MenuItem>
-                  <MenuItem value="4">Senior</MenuItem>
+                  <MenuItem value="">Select Industry</MenuItem>
+                  <MenuItem value="technology">Technology</MenuItem>
+                  <MenuItem value="healthcare">Healthcare</MenuItem>
+                  <MenuItem value="finance">Finance</MenuItem>
+                  <MenuItem value="education">Education</MenuItem>
                 </CustomTextField>
               </Grid>
               <Grid item xs={6} sm={3}>
@@ -279,15 +262,15 @@ const ClientListTable: React.FC = () => {
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
                   size="small"
-                  placeholder="less than 3..."
+                  placeholder="Company size..."
                   fullWidth
-                  label="Years of Experience"
+                  label="Company Size"
                 >
-                  <MenuItem value="0">Select Years of Experience</MenuItem>
-                  <MenuItem value="1">Less than 1</MenuItem>
-                  <MenuItem value="2">Less than 3</MenuItem>
-                  <MenuItem value="3">More than 3</MenuItem>
-                  <MenuItem value="4">More than 5</MenuItem>
+                  <MenuItem value="">Select Company Size</MenuItem>
+                  <MenuItem value="1-10">1-10</MenuItem>
+                  <MenuItem value="11-50">11-50</MenuItem>
+                  <MenuItem value="50-100">50-100</MenuItem>
+                  <MenuItem value="100+">100+</MenuItem>
                 </CustomTextField>
               </Grid>
               <Grid item xs={6} sm={3}>
@@ -298,32 +281,14 @@ const ClientListTable: React.FC = () => {
                   size="small"
                   placeholder="Month and Year..."
                   fullWidth
-                  label="Date Applied"
+                  label="Date Registered"
                 >
-                  <MenuItem value="0">Date of Application</MenuItem>
-                  <MenuItem value="1">11, July 2023</MenuItem>
-                  <MenuItem value="2">11, Aug 2024</MenuItem>
-                  <MenuItem value="3">11, Sept 2021</MenuItem>
-                  <MenuItem value="4">11, Jan 2022</MenuItem>
+                  <MenuItem value="">Registration Date</MenuItem>
+                  <MenuItem value="2023">2023</MenuItem>
+                  <MenuItem value="2024">2024</MenuItem>
+                  <MenuItem value="2025">2025</MenuItem>
                 </CustomTextField>
               </Grid>
-              {/* <Grid item xs={6} sm={2}>
-                <CustomTextField
-                  select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  size="small"
-                  placeholder="Senior, mid-level, entry..."
-                  fullWidth
-                  label="Comment"
-                >
-                  <MenuItem value="0">Good</MenuItem>
-                  <MenuItem value="1">Satifactory</MenuItem>
-                  <MenuItem value="2">11, Aug 2024</MenuItem>
-                  <MenuItem value="3">11, Sept 2021</MenuItem>
-                  <MenuItem value="4">11, Jan 2022</MenuItem>
-                </CustomTextField>
-              </Grid> */}
             </Grid>
           </Paper>
         </Collapse>
@@ -353,7 +318,7 @@ const ClientListTable: React.FC = () => {
               value={value}
               onChange={(e) => setValue(e.target.value)}
               size="small"
-              placeholder="Job title, company name, applicant"
+              placeholder="Company name, email, industry"
               sx={{ maxWidth: 400 }}
               InputProps={{
                 startAdornment: (
@@ -394,38 +359,48 @@ const ClientListTable: React.FC = () => {
                 sx={{ background: (theme) => theme.palette.secondary.dark }}
               >
                 <TableCellStyled>Company</TableCellStyled>
-                <TableCellStyled>ID</TableCellStyled>
-                <TableCellStyled>Name</TableCellStyled>
+                {/* <TableCellStyled>ID</TableCellStyled> */}
+                {/* <TableCellStyled>Name</TableCellStyled> */}
                 <TableCellStyled>Email</TableCellStyled>
-                <TableCellStyled>Active Jobs</TableCellStyled>
-                <TableCellStyled>Date(Registered)</TableCellStyled>
+                {/* <TableCellStyled>Account Type</TableCellStyled> */}
+                <TableCellStyled>Industry</TableCellStyled>
+                <TableCellStyled>Website</TableCellStyled>
                 <TableCellStyled>Status</TableCellStyled>
                 <TableCellStyled>Actions</TableCellStyled>
               </TableRow>
             </TableHead>
             <TableBody>
-              {/* WORK HERE */}
-              {clients.map((item, i) => {
-                return (
-                  <TableRow key={i}>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={9} align="center">Loading clients...</TableCell>
+                </TableRow>
+              ) : clients.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9} align="center">No clients found</TableCell>
+                </TableRow>
+              ) : (
+                clients.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((client, i) => (
+                  <TableRow key={client.id}>
                     <TableCell>
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                      >
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                         <Box sx={{ maxWidth: 25, maxHeight: 25 }}>
                           <StyledImage
-                            src={item.Avatar}
-                            alt={item.account_type}
+                            src={client.company_logo || ""}
+                            alt={client.company_name}
                           />
                         </Box>
-                        {/* {item.company} */}
+                        {client.company_name}
                       </Box>
                     </TableCell>
-                    <TableCell>{item.id}</TableCell>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell>{item.email}</TableCell>
-                    <TableCell>{item.account_type}</TableCell>
-                    <TableCell>{item.created_at}</TableCell>
+                
+                    <TableCell>{client.email}</TableCell>
+                  
+                    <TableCell>{client.industry}</TableCell>
+                    <TableCell>
+                      <Link href={client.company_website} target="_blank" rel="noopener noreferrer">
+                        {client.company_website.replace(/(^\w+:|^)\/\//, '').replace(/\/$/, '')}
+                      </Link>
+                    </TableCell>
                     <TableCell
                       align="center"
                       sx={{
@@ -433,7 +408,7 @@ const ClientListTable: React.FC = () => {
                         fontWeight: "semibold",
                       }}
                     >
-                      {item.status ? (
+                    {client.status.toLowerCase() === 'active' ? (
                         <CustomChip
                           label="Active"
                           color="success"
@@ -465,7 +440,7 @@ const ClientListTable: React.FC = () => {
                             disableScrollLock
                             anchorEl={anchorEl[i]}
                             open={Boolean(anchorEl[i])}
-                            onBlur={() => handleRowOptionsClose(i)}
+                            onClose={() => handleRowOptionsClose(i)}
                             anchorOrigin={{
                               vertical: "bottom",
                               horizontal: "right",
@@ -476,19 +451,26 @@ const ClientListTable: React.FC = () => {
                             }}
                             PaperProps={{ style: { minWidth: "8rem" } }}
                           >
-                            <MenuItem
-                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                            >
-                              <Icon icon="tabler:eye" fontSize={20} />
-                              View
-                            </MenuItem>
+                              <MenuItem
+                                sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
+                                onClick={() => handleViewClient(client)}
+                              >
+                                <Icon icon="tabler:eye" fontSize={20} />
+                                View
+                              </MenuItem>
 
-                            <MenuItem
-                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                            >
-                              <Icon icon="tabler:eye-off" />
-                              Deactivate
-                            </MenuItem>
+                             <MenuItem
+                                sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
+                                onClick={() => handleToggleActivation(client)}
+                                disabled={processingId === client.id}
+                              >
+                                {processingId === client.id ? (
+                                  <CircularProgress size={20} sx={{ mr: 2 }} />
+                                ) : (
+                                  <Icon icon="tabler:eye-off" />
+                                )}
+                                {client.status ? "Deactivate" : "Activate"}
+                              </MenuItem>
 
                             <MenuItem
                               sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
@@ -504,21 +486,23 @@ const ClientListTable: React.FC = () => {
                       </Box>
                     </TableCell>
                   </TableRow>
-                );
-              })}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
       </CardContent>
       <TablePagination
         component="div"
-        count={100}
+        count={clients.length}
         page={page}
         onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
+       <ClientModal open={modalOpen} onClose={handleModalClose} client={selectedClient} />
     </Card>
+    </>
   );
 };
 

@@ -48,6 +48,7 @@ interface IFormInput {
   maxSalary: string;
   application_deadline: string;
   information: string;
+  client_id: string;
 }
 
 const defaultValues = {

@@ -5,7 +5,7 @@ const SignUpInfo: React.FC = () => {
   const suitableAccountsInfo = [
     {
       icon: '/icons/client_account.png',
-      name: 'Client Account',
+      name: 'Company Account',
       description:
         'This account is suitable for employers and organizations. With this client account, you can post, update and delete jobs.',
     },
