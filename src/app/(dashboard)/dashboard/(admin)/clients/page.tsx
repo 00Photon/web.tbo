@@ -76,7 +76,7 @@ export default function ClientProfilePage() {
             </Box>
           ))}
         </Box>
-        {activeTab == 0 ? (
+        {/* {activeTab == 0 ? (
           <Button
             onClick={toggleInterviewModal}
             variant="contained"
@@ -92,7 +92,7 @@ export default function ClientProfilePage() {
           >
             Post New Job
           </Button>
-        ) : null}
+        ) : null} */}
       </Box>
 
       <section>

@@ -44,6 +44,8 @@ import TablePagination from "@mui/material/TablePagination";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { Theme } from "@mui/material/styles";
 
+import { fetchJobs, activateJob, deactivateJob, deleteJob } from "@/@core/services/jobService";
+
 interface MockData {
   id: number;
   title: string;
@@ -53,56 +55,7 @@ interface MockData {
   status: string;
 }
 
-const data: MockData[] = [
-  {
-    id: 1,
-    title: "Software Engineer",
-    company: "Google",
-    applications: 40,
-    postingDate: "7-11-2024",
-    status: "active",
-  },
-  {
-    id: 1,
-    title: "Software Engineer",
-    company: "Google",
-    applications: 40,
-    postingDate: "7-11-2024",
-    status: "active",
-  },
-  {
-    id: 1,
-    title: "Software Engineer",
-    company: "Google",
-    applications: 40,
-    postingDate: "7-11-2024",
-    status: "filled",
-  },
-  {
-    id: 1,
-    title: "Software Engineer",
-    company: "Google",
-    applications: 40,
-    postingDate: "7-11-2024",
-    status: "expired",
-  },
-  {
-    id: 1,
-    title: "Software Engineer",
-    company: "Google",
-    applications: 40,
-    postingDate: "7-11-2024",
-    status: "active",
-  },
-  {
-    id: 1,
-    title: "Software Engineer",
-    company: "Google",
-    applications: 40,
-    postingDate: "7-11-2024",
-    status: "expired",
-  },
-];
+
 
 const JobListTable: React.FC = () => {
   const [openFilter, setOpenFilter] = React.useState<boolean>(false);
@@ -110,9 +63,32 @@ const JobListTable: React.FC = () => {
   const [status, setStatus] = React.useState<string>("");
   const [page, setPage] = React.useState(2);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
-  const [anchorEl, setAnchorEl] = React.useState<(HTMLElement | null)[]>(
-    Array(data?.length)?.fill(null)
-  );
+  const [jobs, setJobs] = React.useState<any[]>([]);
+const [loading, setLoading] = React.useState(false);
+const [anchorEl, setAnchorEl] = React.useState<(HTMLElement | null)[]>([]);
+
+React.useEffect(() => {
+  setAnchorEl(Array(jobs.length).fill(null));
+}, [jobs]);
+
+
+  React.useEffect(() => {
+    const loadJobs = async () => {
+      setLoading(true);
+      try {
+        const response = await fetchJobs();
+        if (response.status) {
+          setJobs(response.jobs);
+        }
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    loadJobs();
+  }, []);
 
   const smallScreen = useMediaQuery((theme: Theme) =>
     theme.breakpoints.up("md")
@@ -131,7 +107,30 @@ const JobListTable: React.FC = () => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
-
+  const handleActivate = async (id: number, currentStatus: string) => {
+    try {
+      if (currentStatus === "active") {
+        await deactivateJob(id);
+      } else {
+        await activateJob(id);
+      }
+      // Refresh job list
+      const response = await fetchJobs();
+      setJobs(response.jobs);
+    } catch (error) {
+      console.error("Error updating job status:", error);
+    }
+  };
+  
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteJob(id);
+      setJobs(prev => prev.filter(job => job.id !== id));
+    } catch (error) {
+      console.error("Error deleting job:", error);
+    }
+  };
+  
   const handleRowOptionsClick = (event: any, index: number) => {
     const newAnchorEl = [...anchorEl];
     newAnchorEl[index] = event.currentTarget;
@@ -246,23 +245,7 @@ const JobListTable: React.FC = () => {
                   <MenuItem value="4">11, Jan 2022</MenuItem>
                 </CustomTextField>
               </Grid>
-              {/* <Grid item xs={6} sm={2}>
-                <CustomTextField
-                  select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  size="small"
-                  placeholder="Senior, mid-level, entry..."
-                  fullWidth
-                  label="Comment"
-                >
-                  <MenuItem value="0">Good</MenuItem>
-                  <MenuItem value="1">Satifactory</MenuItem>
-                  <MenuItem value="2">11, Aug 2024</MenuItem>
-                  <MenuItem value="3">11, Sept 2021</MenuItem>
-                  <MenuItem value="4">11, Jan 2022</MenuItem>
-                </CustomTextField>
-              </Grid> */}
+              
             </Grid>
           </Paper>
         </Collapse>
@@ -342,102 +325,46 @@ const JobListTable: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {data.map((item, i) => {
-                return (
-                  <TableRow key={i}>
-                    <TableCell>{item.id}</TableCell>
-                    <TableCell>{item.title}</TableCell>
-                    <TableCell>{item.company}</TableCell>
-                    <TableCell>{item.applications}</TableCell>
-                    <TableCell>{item.postingDate}</TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{
-                        textTransform: "capitalize",
-                        fontWeight: "semibold",
-                      }}
-                    >
-                      {item.status === "active" ? (
-                        <CustomChip
-                          label="Active"
-                          color="success"
-                          skin="light"
-                          size="small"
-                          sx={{ width: "100%", borderRadius: "5px" }}
-                        />
-                      ) : item.status === "filled" ? (
-                        <CustomChip
-                          color="default"
-                          label="Inactive"
-                          skin="light"
-                          size="small"
-                          sx={{ width: "100%", borderRadius: "5px" }}
-                        />
-                      ) : (
-                        <CustomChip
-                          color="error"
-                          label="Expired"
-                          skin="light"
-                          size="small"
-                          sx={{ width: "100%", borderRadius: "5px" }}
-                        />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ alignSelf: "end" }}>
-                        <Avatar sx={{ background: "transparent" }}>
-                          <IconButton
-                            size="small"
-                            onClick={(event) => handleRowOptionsClick(event, i)}
-                          >
-                            <Icon icon="tabler:dots-vertical" />
-                          </IconButton>
-                          <Menu
-                            keepMounted
-                            disableScrollLock
-                            anchorEl={anchorEl[i]}
-                            open={Boolean(anchorEl[i])}
-                            onBlur={() => handleRowOptionsClose(i)}
-                            anchorOrigin={{
-                              vertical: "bottom",
-                              horizontal: "right",
-                            }}
-                            transformOrigin={{
-                              vertical: "top",
-                              horizontal: "right",
-                            }}
-                            PaperProps={{ style: { minWidth: "8rem" } }}
-                          >
-                            <MenuItem
-                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                            >
-                              <Icon icon="tabler:eye" fontSize={20} />
-                              View
-                            </MenuItem>
+            {jobs.map((item, i) => (
+  <TableRow key={item.id}>
+    <TableCell>{item.id}</TableCell>
+    <TableCell>{item.title}</TableCell>
+    <TableCell>{item.client?.company_name}</TableCell>
+    <TableCell>{item.applicant_count}</TableCell>
+    <TableCell>{new Date(item.created_at).toLocaleDateString()}</TableCell>
+    <TableCell align="center">
+      <CustomChip
+        label={item.status === "active" ? "Active" : item.status === "inactive" ? "Inactive" : "Expired"}
+        color={item.status === "active" ? "success" : item.status === "inactive" ? "default" : "error"}
+        skin="light"
+        size="small"
+        sx={{ width: "100%", borderRadius: "5px" }}
+      />
+    </TableCell>
+    <TableCell>
+      <Box>
+        <IconButton size="small" onClick={(e) => handleRowOptionsClick(e, i)}>
+          <Icon icon="tabler:dots-vertical" />
+        </IconButton>
+        <Menu
+          anchorEl={anchorEl[i]}
+          open={Boolean(anchorEl[i])}
+          onClose={() => handleRowOptionsClose(i)}
+        >
+          <MenuItem onClick={() => handleActivate(item.id, item.status)}>
+            <Icon icon={item.status === "active" ? "tabler:eye-off" : "tabler:eye"} />
+            {item.status === "active" ? "Deactivate" : "Activate"}
+          </MenuItem>
+          <MenuItem onClick={() => handleDelete(item.id)}>
+            <Icon icon="fluent:delete-24-regular" />
+            Delete
+          </MenuItem>
+        </Menu>
+      </Box>
+    </TableCell>
+  </TableRow>
+))}
 
-                            <MenuItem
-                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                            >
-                              <Icon icon="tabler:eye-off" />
-                              Deactivate
-                            </MenuItem>
-
-                            <MenuItem
-                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                            >
-                              <Icon
-                                icon="fluent:delete-24-regular"
-                                fontSize={20}
-                              />
-                              Delete
-                            </MenuItem>
-                          </Menu>
-                        </Avatar>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
             </TableBody>
           </Table>
         </TableContainer>
