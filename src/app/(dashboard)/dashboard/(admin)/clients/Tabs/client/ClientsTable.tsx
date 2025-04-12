@@ -397,10 +397,21 @@ const ClientListTable: React.FC = () => {
                   
                     <TableCell>{client.industry}</TableCell>
                     <TableCell>
-                      <Link href={client.company_website} target="_blank" rel="noopener noreferrer">
-                        {client.company_website.replace(/(^\w+:|^)\/\//, '').replace(/\/$/, '')}
-                      </Link>
+                      {client.company_website ? (
+                        <Link
+                          href={client.company_website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {client.company_website
+                            .replace(/(^\w+:|^)\/\//, '')
+                            .replace(/\/$/, '')}
+                        </Link>
+                      ) : (
+                        '-' // Or any placeholder/fallback
+                      )}
                     </TableCell>
+
                     <TableCell
                       align="center"
                       sx={{

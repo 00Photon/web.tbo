@@ -215,65 +215,68 @@ const Testimonial: React.FC = () => {
           }}
         >
           {/* Desktop View */}
-          <Box
+        {/* Desktop View */}
+<Box
+  sx={{
+    display: { xs: "none", md: "flex" },
+    gap: 4,
+    justifyContent: "center",
+    alignItems: "stretch",
+  }}
+>
+  {visibleItems.map((item, idx) => (
+    <TestimonialCard
+      key={`${item.index}-${idx}`}
+      sx={{
+        flex: 1,
+        maxWidth: "30%",
+        opacity: 1,
+        transform: "none",
+      }}
+    >
+      <Box>
+        <QuoteIcon>
+          <Icon icon="mdi:format-quote-open" fontSize={30} color={theme.palette.primary.main} />
+        </QuoteIcon>
+        
+        <Typography
+          sx={{
+            fontSize: "1rem",
+            mb: 4,
+            lineHeight: 1.8,
+            color: theme.palette.text.secondary,
+          }}
+        >
+          {item.data.testimony}
+        </Typography>
+      </Box>
+      
+      <Box sx={{ pt: 3, borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}>
+        <Typography
+          sx={{
+            fontWeight: 700,
+            fontSize: "1.1rem",
+            color: theme.palette.text.primary,
+          }}
+        >
+          {item.data.name}
+        </Typography>
+        
+        {item.data.industry && (
+          <Typography
             sx={{
-              display: { xs: "none", md: "flex" },
-              gap: 4,
-              justifyContent: "center",
-              alignItems: "stretch",
+              fontSize: "0.875rem",
+              color: theme.palette.primary.main,
             }}
           >
-            {visibleItems.map((item, idx) => (
-              <TestimonialCard
-                key={`${item.index}-${idx}`}
-                sx={{
-                  width: "30%",
-                  opacity: idx === 1 ? 1 : 0.85,
-                  transform: idx === 1 ? "scale(1.05)" : "scale(1)",
-                }}
-              >
-                <Box>
-                  <QuoteIcon>
-                    <Icon icon="mdi:format-quote-open" fontSize={30} color={theme.palette.primary.main} />
-                  </QuoteIcon>
-                  
-                  <Typography
-                    sx={{
-                      fontSize: "1rem",
-                      mb: 4,
-                      lineHeight: 1.8,
-                      color: theme.palette.text.secondary,
-                    }}
-                  >
-                    {item.data.testimony}
-                  </Typography>
-                </Box>
-                
-                <Box sx={{ pt: 3, borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}>
-                  <Typography
-                    sx={{
-                      fontWeight: 700,
-                      fontSize: "1.1rem",
-                      color: theme.palette.text.primary,
-                    }}
-                  >
-                    {item.data.name}
-                  </Typography>
-                  
-                  {item.data.industry && (
-                    <Typography
-                      sx={{
-                        fontSize: "0.875rem",
-                        color: theme.palette.primary.main,
-                      }}
-                    >
-                      {item.data.industry}
-                    </Typography>
-                  )}
-                </Box>
-              </TestimonialCard>
-            ))}
-          </Box>
+            {item.data.industry}
+          </Typography>
+        )}
+      </Box>
+    </TestimonialCard>
+  ))}
+</Box>
+
 
           {/* Mobile View */}
           <Box
