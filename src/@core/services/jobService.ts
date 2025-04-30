@@ -4,7 +4,7 @@ import { getSession } from 'next-auth/react';
 
 
 export const fetchJobs = async () => {
-  const session = await getSession(); // Get the session, which includes the token
+  const session = await getSession(); 
   if (!session || !session.user) throw new Error("User is not authenticated");
 
   const token = session.user.accessToken; 
@@ -12,7 +12,7 @@ export const fetchJobs = async () => {
   const response = await fetch(`${API_BASE_URL}/admin/jobs`, {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${token}`, // Add the token to the Authorization header
+      Authorization: `Bearer ${token}`, 
       'Content-Type': 'application/json',
     },
   });
@@ -100,8 +100,8 @@ export const createJob = async (jobDetails: {
 
 export const activateJob = async (jobId: number) => {
   try {
-    const response = await fetch(`/api/jobs/${jobId}/activate`, {
-      method: 'PATCH',
+    const response = await fetch(`${API_BASE_URL}/admin/jobs/${jobId}/activate`, {
+      method: 'PUT',
     });
     
     if (!response.ok) {
@@ -139,7 +139,7 @@ export const deactivateJob = async (jobId: number): Promise<any> => {
 
 
 export const deleteJob = async (jobId: number) => {
-  const session = await getSession(); // Get the session, which includes the token
+  const session = await getSession(); 
   if (!session || !session.user) throw new Error("User is not authenticated");
 
   const token = session.user.accessToken;

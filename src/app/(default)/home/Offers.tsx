@@ -66,7 +66,7 @@ const HoverCard = styled(Card)(({ theme }) => ({
   height: "100%",
   borderRadius: theme.spacing(3),
   padding: theme.spacing(4),
-  transition: "all 0.4s ease",
+  transition: "all 0.4s ease, transform 0.3s ease",
   background: theme.palette.background.paper,
   boxShadow: `0 8px 25px -15px ${theme.palette.text.primary}40`,
   overflow: "hidden",
@@ -83,11 +83,15 @@ const HoverCard = styled(Card)(({ theme }) => ({
     transition: "opacity 0.3s ease",
   },
   "&:hover": {
-    transform: "translateY(-8px)",
+    transform: "translateY(-8px) scale(1.05)", // Add scaling on hover
     boxShadow: `0 20px 30px -10px ${theme.palette.text.primary}30`,
     "&::before": {
       opacity: 1,
-    }
+    },
+    // Optional: Add color change on hover for the card title
+    "& .MuiCardHeader-title": {
+      color: theme.palette.primary.dark,
+    },
   }
 }));
 

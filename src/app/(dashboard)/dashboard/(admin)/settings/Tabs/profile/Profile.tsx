@@ -18,6 +18,7 @@ interface CurrentUser {
   name: string;
   email: string;
   account_type: string;
+  phone_number: string;
   admin_privileges: string;
 }
 
@@ -81,18 +82,28 @@ const Profile = () => {
   }, [reset]);
 
   const onSubmit = async (data: AdminProfileFormValues) => {
-    setIsSubmitting(true); // Show loader
+    setIsSubmitting(true);
     try {
-      const response = await updateUser(currentUser?.id || 0, data);
+      const accountType: "EMPLOYER" | "TALENT" =
+        data.role === "Admin" ? "EMPLOYER" : "TALENT"; // adjust logic as needed
+  
+      const payload = {
+        name: data.name,
+        email: data.email,
+        account_type: accountType,
+        admin_privileges: data.adminPrivileges,
+        phone_number: currentUser?.phone_number || "",
+      };
+  
+      const response = await updateUser(currentUser?.id || 0, payload);
       console.log("Updated User Data:", response);
-      // Handle success (e.g., show success notification or update state)
     } catch (err) {
       console.error("Error updating user:", err);
-      // Handle error (e.g., show error notification)
     } finally {
-      setIsSubmitting(false); // Hide loader
+      setIsSubmitting(false);
     }
   };
+  
   
 
   if (loading) return <div>Loading user data...</div>;

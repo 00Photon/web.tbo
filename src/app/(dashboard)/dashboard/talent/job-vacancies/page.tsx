@@ -5,7 +5,8 @@ import JobFilter from "./components/filter";
 import JobFind from "./components/find";
 import { Person } from "@mui/icons-material";
 import { useEffect, useState } from "react";
-import { getJobs, Job } from "@/@core/services/jobVanciesService";
+import { Job } from "@/@core/services/types/job"; 
+import { getJobs, saveJob } from "@/@core/services/jobVanciesService";
 import ApplicationFormModal from "./components/modals/application-form";
 
 export default function TalentJobVacanciesPage() {
@@ -18,6 +19,15 @@ export default function TalentJobVacanciesPage() {
   const hoverTabStyle = {
     backgroundColor: "#F5F0F0",
     color: "#E61C31",
+  };
+
+  const handleSaveJob = async (jobId: number) => {
+    try {
+      await saveJob(jobId);
+      alert("Job saved successfully!");
+    } catch {
+      alert("Failed to save job.");
+    }
   };
 
   const tabs = [
@@ -130,29 +140,28 @@ export default function TalentJobVacanciesPage() {
         </Grid>
         <Grid sm={8} md={8} lg={9} item>
           <Grid rowSpacing={3} columnSpacing={3} container>
-            {jobs.map((job) => (
-              <Grid key={job.id} xs={12} lg={6} item>
-                <JobCard
-                  setOpenApplicationFormModal={() =>
-                    setOpenApplicationFormModal(true)
-                  }
-                  logo={"/icons/google.png"}
-                  name={job.title}
-                  location={job.location}
-                  title={job.title}
-                  commitment={job.job_type}
-                  salary={`${job.currency} ${job.minimum_salary} - ${job.maximum_salary}`}
-                  description={job.description}
-                  noOfApplied={"45"} // To be replaced when available
-                  postedAt={new Date(job.created_at).toLocaleDateString()} // Format the date
-                  daysLeft={Math.ceil(
-                    (new Date(job.application_deadline).getTime() -
-                      new Date().getTime()) /
-                      (1000 * 60 * 60 * 24)
-                  ).toString()} // Calculate days left
-                />
-              </Grid>
-            ))}
+          {jobs.map((job) => (
+            <Grid key={job.id} xs={12} lg={6} item>
+              <JobCard
+                id={job.id} // Include the id here
+                setOpenApplicationFormModal={() => setOpenApplicationFormModal(true)}
+                logo={job.client?.company_logo ?? "/icons/default-logo.png"}
+                name={job.client?.company_name ?? "Unknown Company"}
+                location={job.location}
+                title={job.title}
+                commitment={job.job_type}
+                salary={`${job.currency} ${job.minimum_salary} - ${job.maximum_salary}`}
+                description={job.description}
+                noOfApplied={job.applicant_count.toString()}
+                postedAt={new Date(job.created_at).toLocaleDateString()}
+                daysLeft={Math.ceil(
+                  (new Date(job.application_deadline).getTime() - new Date().getTime()) /
+                    (1000 * 60 * 60 * 24)
+                ).toString()}
+              />
+            </Grid>
+          ))}
+
           </Grid>
         </Grid>
       </Grid>

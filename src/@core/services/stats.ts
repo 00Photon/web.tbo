@@ -31,3 +31,14 @@ export const getAdminStats = async (): Promise<StatsData> => {
     throw error;
   }
 };
+export const getTalentStats = async (): Promise<StatsData> => {
+  try {
+    const response: AxiosResponse<StatsData> = await axios.get(
+      `${API_BASE_URL}/talent/stats`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching admin stats:", error);
+    throw error;
+  }
+};

@@ -10,18 +10,33 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-
-interface JobApplication {
-  image: string;
-  companyName: string;
-  role: string;
-  dateOfApplication: string;
-  status: 'Awaiting Feedback' | 'Interview In Progress';
-}
+import { useEffect, useState } from 'react';
+import { getAppliedJobs } from "@/@core/services/jobVanciesService";
+import { AppliedJob } from "@/@core/services/types/job"; 
 
 const JobApplicationsTable: React.FC<{
-  setOpenApplicationModal: () => void;
-}> = ({ setOpenApplicationModal }) => {
+  setOpenWithdrawModal: () => void;
+}> = ({ setOpenWithdrawModal }) => {
+  const [appliedJobs, setAppliedJobs] = useState<AppliedJob[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchAppliedJobs = async () => {
+      try {
+        const jobs = await getAppliedJobs();
+        setAppliedJobs(jobs);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+        setError("Failed to load applied jobs.");
+        setLoading(false);
+      }
+    };
+
+    fetchAppliedJobs();
+  }, []);
+
   const headerFields = [
     'Company Name',
     'Role Applied For',
@@ -58,44 +73,37 @@ const JobApplicationsTable: React.FC<{
     </TableCell>
   );
 
-  const applicationStatusField = (status: JobApplication['status']) => {
-    const statusVariant = status === 'Awaiting Feedback' ? 'grey' : 'success';
+  const applicationStatusField = (status: string) => {
+    const statusVariant = status === 'pending' ? 'grey' : 'success';
+    const statusText = status === 'pending' ? 'Awaiting Feedback' : 'Interview In Progress';
 
     return (
       <TableCell>
-        <TextOnlyPill variant={statusVariant} text={status} />
+        <TextOnlyPill variant={statusVariant} text={statusText} />
       </TableCell>
     );
   };
 
-  const viewButtonField = () => (
+  const viewButtonField = (jobId: number) => (
     <TableCell>
-      <Button
-        onClick={setOpenApplicationModal}
+   <Button
+    onClick={() => setOpenWithdrawModal()}
         variant="contained"
         sx={{ textTransform: 'none' }}
       >
-        View
+        Withdraw Application
       </Button>
     </TableCell>
   );
 
-  const rowsData: JobApplication[] = [
-    {
-      image: '/icons/google.png',
-      companyName: 'Google',
-      role: 'Software Engineer',
-      dateOfApplication: '09-12-2024',
-      status: 'Awaiting Feedback',
-    },
-    {
-      image: '/icons/microsoft.png',
-      companyName: 'Microsoft',
-      role: 'Data Analyst',
-      dateOfApplication: '15-03-2025',
-      status: 'Interview In Progress',
-    },
-  ];
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB');
+  };
+
+  if (loading) return <Typography>Loading...</Typography>;
+  if (error) return <Typography color="error">{error}</Typography>;
+  if (!appliedJobs.length) return <Typography>No applied jobs found.</Typography>;
 
   return (
     <TableContainer sx={{ backgroundColor: 'white', padding: '20px' }}>
@@ -108,13 +116,13 @@ const JobApplicationsTable: React.FC<{
           </TableRow>
         </TableHead>
         <TableBody>
-          {rowsData.map((row, index) => (
-            <TableRow key={index}>
-              {companyNameField(row.image, row.companyName)}
-              {textOnlyField(row.role)}
-              {textOnlyField(row.dateOfApplication)}
-              {applicationStatusField(row.status)}
-              {viewButtonField()}
+          {appliedJobs.map((job) => (
+            <TableRow key={job.id}>
+              {companyNameField('/icons/default-company.png', job.job.location)}
+              {textOnlyField(job.job.title)}
+              {textOnlyField(formatDate(job.created_at))}
+              {applicationStatusField(job.status)}
+              {viewButtonField(job.job_id)}
             </TableRow>
           ))}
         </TableBody>

@@ -1,5 +1,6 @@
 // * React Imports
 import React, { useRef, useEffect } from "react";
+import { ArrowForward } from '@mui/icons-material';
 
 // ** Icon Imports
 import Icon from "@/@core/component/icon";
@@ -9,9 +10,9 @@ import anime from "animejs";
 
 // * Image Imports
 import Bitmap from "../assets/Bitmap.svg";
-import ImageOne from "../assets/imageOne.svg";
-import ImageTwo from "../assets/imageTwo.svg";
-import ImageThree from "../assets/imageThree.svg";
+import ImageOne from "../assets/1.png";
+import ImageTwo from "../assets/2.png";
+import ImageThree from "../assets/3.png";
 import GroupedImages from "../assets/groupImages.svg";
 import Gears from "../assets/gears.svg";
 import Gem from "../assets/gem.svg";
@@ -38,6 +39,7 @@ import Grid from "@mui/material/Grid";
 import InputAdornment from "@mui/material/InputAdornment";
 import { alpha, styled } from "@mui/material/styles";
 import { jobSearchSchema } from "@/@core/formSchema";
+import {  useTheme, useMediaQuery } from '@mui/material';
 
 interface Defaults {
   title?: string;
@@ -52,6 +54,10 @@ const HeroSection = () => {
   const gemRef = useRef<HTMLDivElement>(null);
   const starRef = useRef<HTMLDivElement>(null);
   const AvatarRef = useRef<HTMLDivElement>(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const imageRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const arrowRefs = useRef<(SVGSVGElement | null)[]>([]);
 
   useEffect(() => {
     anime({
@@ -86,6 +92,25 @@ const HeroSection = () => {
     "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger",
     "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara"
   ];
+
+
+  const services = [
+    { image: ImageOne.src },
+    { image: ImageTwo.src },
+    { image: ImageThree.src }
+  ];
+
+  useEffect(() => {
+    // Simple hover animation on arrows
+    anime({
+      targets: arrowRefs.current,
+      translateX: 5,
+      duration: 1000,
+      direction: "alternate",
+      loop: true,
+      easing: "easeInOutSine"
+    });
+  }, []);
 
   const {
     control,
@@ -194,7 +219,7 @@ const HeroSection = () => {
         </Box>
 
         {/* Here */}
-        <Box
+        {/* <Box
           sx={{
             position: "relative",
             display: { xs: "none", sm: "flex" },
@@ -244,7 +269,50 @@ const HeroSection = () => {
           <Box>
             <StyledImage src={ImageThree.src} />
           </Box>
-        </Box>
+        </Box> */}
+       <Box
+      sx={{
+        display: "flex",
+        flexDirection: isMobile ? "column" : "row",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: 4
+      }}
+    >
+      {services.map((service, index) => (
+        <React.Fragment key={index}>
+          <Box 
+            ref={(el: HTMLDivElement | null) => {
+              imageRefs.current[index] = el;
+            }}
+            sx={{ display: "flex", justifyContent: "center" }}
+          >
+            <img 
+              src={service.image} 
+              alt=""
+              style={{ 
+                maxWidth: isMobile ? "200px" : "250px",
+                height: "auto",
+                objectFit: "contain"
+              }}
+            />
+          </Box>
+          
+          {index < services.length - 1 && (
+            <ArrowForward 
+              ref={(el) => {
+                arrowRefs.current[index] = el;
+              }}
+              sx={{ 
+                color: theme.palette.primary.main,
+                fontSize: 40,
+                transform: isMobile ? "rotate(90deg)" : "none"
+              }} 
+            />
+          )}
+        </React.Fragment>
+      ))}
+    </Box>
       </Box>
 
       {/* <Card

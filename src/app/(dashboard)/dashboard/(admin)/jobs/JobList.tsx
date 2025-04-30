@@ -380,13 +380,20 @@ return (
                           }}
                           PaperProps={{ style: { minWidth: "8rem" } }}
                         >
-                         <MenuItem
-                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                              onClick={() => toggleViewJobModal(job.id)} // Use job.id instead of id
-                            >
-                              <Icon icon="tabler:eye" fontSize={20} />
-                              View
-                            </MenuItem>
+            <Link href={`/dashboard/jobs/application/${job.id}`}>
+            <MenuItem
+              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
+              onClick={() => handleRowOptionsClose(job.id)}
+            >
+              <Icon icon="tabler:eye" fontSize={20} />
+              View
+            </MenuItem>
+          </Link>
+
+
+
+
+
 
                             <MenuItem
                               sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}

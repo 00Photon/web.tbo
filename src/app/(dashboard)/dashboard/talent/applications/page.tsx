@@ -4,11 +4,10 @@ import JobApplicationsTable from './components/table';
 import JobApplicationsPanel from './components/panel';
 import PaginationControl from './components/pagination-control';
 import { useState } from 'react';
-import ApplicationFormModal from '../job-vacancies/components/modals/application-form';
+// Removed: import ApplicationFormModal from '../job-vacancies/components/modals/application-form';
 import ConfirmationModal from '@/@core/utils/modals/confirmation';
 
 export default function TalentApplicationsPage() {
-  const [openApplicationModal, setOpenApplicationModal] = useState(false);
   const [openWithdrawModal, setOpenWithdrawModal] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
 
@@ -29,16 +28,10 @@ export default function TalentApplicationsPage() {
         <Stack gap={1}>
           <PaginationControl />
           <JobApplicationsTable
-            setOpenApplicationModal={() => setOpenApplicationModal(true)}
-        
+            setOpenWithdrawModal={() => setOpenWithdrawModal(true)}
           />
         </Stack>
       </Stack>
-      <ApplicationFormModal
-        open={openApplicationModal}
-        onClose={() => setOpenApplicationModal(false)}
-        onDeleteClick={() => setOpenDeleteModal(true)}
-      />
       <ConfirmationModal
         title='Withdraw Application'
         message={`Are you sure you want to withdraw your application? \n \n The Job will be deleted from your list and a notification would be sent to the Job Poster`}
