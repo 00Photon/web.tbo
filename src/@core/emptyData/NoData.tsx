@@ -11,7 +11,78 @@ import TableBody from "@mui/material/TableBody";
 import Paper from "@mui/material/Paper";
 import CircularProgress from "@mui/material/CircularProgress";
 import NoData from "./NoData";
-import { fetchInterviews } from "@/@core/services/interviewService";
+import { fetchInterviews, updateInterviewStatus } from "@/@core/services/interviewService";
+import IconButton from "@mui/material/IconButton";
+import EditIcon from "@mui/icons-material/Edit";
+import Modal from "@mui/material/Modal";
+import Select, { SelectChangeEvent } from "@mui/material/Select";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Button from "@mui/material/Button";
+import Tooltip from "@mui/material/Tooltip";
+import Fade from "@mui/material/Fade";
+import { styled } from "@mui/material/styles";
+import CloseIcon from "@mui/icons-material/Close";
+import CheckIcon from "@mui/icons-material/Check";
+
+// Styled modal component
+const StyledModal = styled(Box)(({ theme }) => ({
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: 450,
+  backgroundColor: theme.palette.background.paper,
+  boxShadow: theme.shadows[24],
+  borderRadius: theme.shape.borderRadius * 2,
+  padding: theme.spacing(4),
+  outline: 'none',
+  '&:focus': {
+    outline: 'none',
+  },
+}));
+
+const ModalHeader = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: theme.spacing(3),
+}));
+
+const ModalTitle = styled(Typography)(({ theme }) => ({
+  fontWeight: 600,
+  color: theme.palette.primary.main,
+}));
+
+const ModalContent = styled(Box)(({ theme }) => ({
+  marginBottom: theme.spacing(4),
+}));
+
+const ModalFooter = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  justifyContent: 'flex-end',
+  gap: theme.spacing(2),
+}));
+
+const StatusBadge = styled(Box)<{ status: string }>(({ theme, status }) => ({
+  display: 'inline-flex',
+  alignItems: 'center',
+  padding: theme.spacing(0.5, 1.5),
+  borderRadius: 20,
+  backgroundColor: 
+    status === 'completed' ? theme.palette.success.light :
+    status === 'scheduled' ? theme.palette.info.light :
+    status === 'canceled' ? theme.palette.error.light :
+    theme.palette.warning.light,
+  color: 
+    status === 'completed' ? theme.palette.success.dark :
+    status === 'scheduled' ? theme.palette.info.dark :
+    status === 'canceled' ? theme.palette.error.dark :
+    theme.palette.warning.dark,
+  fontWeight: 500,
+  fontSize: '0.75rem',
+}));
 
 interface Interview {
   id: number;
@@ -37,6 +108,9 @@ const Interviews = () => {
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState("");
 
   useEffect(() => {
     const loadInterviews = async () => {
@@ -52,6 +126,39 @@ const Interviews = () => {
 
     loadInterviews();
   }, []);
+
+  const handleOpenModal = (interview: Interview) => {
+    setSelectedInterview(interview);
+    setSelectedStatus(interview.status);
+    setOpenModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+    setSelectedInterview(null);
+  };
+
+  const handleStatusChange = (event: SelectChangeEvent) => {
+    setSelectedStatus(event.target.value as string);
+  };
+
+  const handleSaveStatus = async () => {
+    if (!selectedInterview) return;
+    
+    try {
+      await updateInterviewStatus(selectedInterview.id, selectedStatus);
+      
+      setInterviews(interviews.map(interview => 
+        interview.id === selectedInterview.id 
+          ? { ...interview, status: selectedStatus } 
+          : interview
+      ));
+      
+      handleCloseModal();
+    } catch (err) {
+      setError("Failed to update interview status.");
+    }
+  };
 
   if (loading) {
     return (
@@ -71,26 +178,30 @@ const Interviews = () => {
 
   return (
     <Box sx={{ p: 4 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: "bold" }}>
+      <Typography variant="h5" sx={{ mb: 3, fontWeight: "bold", color: 'primary.main' }}>
         Interviews
       </Typography>
 
-      <TableContainer component={Paper} sx={{ borderRadius: 3 }}>
+      <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 3 }}>
         <Table>
-          <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
+          <TableHead sx={{ backgroundColor: "primary.light" }}>
             <TableRow>
-              <TableCell sx={{ fontWeight: "bold" }}>Job</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Candidate</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Interview Date</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Time</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Location</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Interviewer</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: 'primary.contrastText' }}>Job</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: 'primary.contrastText' }}>Candidate</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: 'primary.contrastText' }}>Interview Date</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: 'primary.contrastText' }}>Time</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: 'primary.contrastText' }}>Location</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: 'primary.contrastText' }}>Interviewer</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: 'primary.contrastText' }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: 'primary.contrastText' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {interviews.map((interview) => (
-              <TableRow key={interview.id}>
+              <TableRow 
+                key={interview.id}
+                sx={{ '&:hover': { backgroundColor: 'action.hover' } }}
+              >
                 <TableCell>{interview.job}</TableCell>
                 <TableCell>{interview.qualified_user.name}</TableCell>
                 <TableCell>{interview.interview_date}</TableCell>
@@ -98,17 +209,126 @@ const Interviews = () => {
                 <TableCell>{interview.interview_location}</TableCell>
                 <TableCell>{interview.interviewer.name}</TableCell>
                 <TableCell align="center">
-                    <CustomChip
-                      label={interview.status}
-                      color={interview.status === "completed" ? "success" : "error"}
-                    />
-                  </TableCell>
-                
+                  <StatusBadge status={interview.status}>
+                    {interview.status}
+                  </StatusBadge>
+                </TableCell>
+                <TableCell align="center">
+                  <Tooltip title="Edit status" arrow>
+                    <IconButton 
+                      color="primary"
+                      onClick={() => handleOpenModal(interview)}
+                      sx={{
+                        '&:hover': {
+                          backgroundColor: 'primary.light',
+                          color: 'primary.dark'
+                        }
+                      }}
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Status Edit Modal */}
+      <Modal
+        open={openModal}
+        onClose={handleCloseModal}
+        aria-labelledby="edit-status-modal"
+        closeAfterTransition
+      >
+        <Fade in={openModal}>
+          <StyledModal>
+            <ModalHeader>
+              <ModalTitle variant="h6">
+                Update Interview Status
+              </ModalTitle>
+              <IconButton 
+                onClick={handleCloseModal}
+                size="small"
+                sx={{ color: 'text.secondary' }}
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </ModalHeader>
+            
+            {selectedInterview && (
+              <>
+                <ModalContent>
+                  <Box mb={3}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Job Position
+                    </Typography>
+                    <Typography variant="body1" fontWeight={500}>
+                      {selectedInterview.job}
+                    </Typography>
+                  </Box>
+                  
+                  <Box mb={3}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Candidate
+                    </Typography>
+                    <Typography variant="body1" fontWeight={500}>
+                      {selectedInterview.qualified_user.name}
+                    </Typography>
+                  </Box>
+                  
+                  <FormControl fullWidth>
+                    <InputLabel id="status-select-label">Interview Status</InputLabel>
+                    <Select
+                      labelId="status-select-label"
+                      id="status-select"
+                      value={selectedStatus}
+                      label="Interview Status"
+                      onChange={handleStatusChange}
+                      sx={{ mt: 1 }}
+                    >
+                      <MenuItem value="scheduled">Scheduled</MenuItem>
+                      <MenuItem value="completed">Completed</MenuItem>
+                      <MenuItem value="canceled">Canceled</MenuItem>
+                      <MenuItem value="rescheduled">Rescheduled</MenuItem>
+                    </Select>
+                  </FormControl>
+                </ModalContent>
+                
+                <ModalFooter>
+                  <Button 
+                    variant="outlined" 
+                    onClick={handleCloseModal}
+                    startIcon={<CloseIcon />}
+                    sx={{
+                      textTransform: 'none',
+                      borderRadius: 2
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    variant="contained" 
+                    onClick={handleSaveStatus}
+                    startIcon={<CheckIcon />}
+                    sx={{
+                      textTransform: 'none',
+                      borderRadius: 2,
+                      boxShadow: 'none',
+                      '&:hover': {
+                        boxShadow: 'none'
+                      }
+                    }}
+                  >
+                    Update Status
+                  </Button>
+                </ModalFooter>
+              </>
+            )}
+          </StyledModal>
+        </Fade>
+      </Modal>
     </Box>
   );
 };

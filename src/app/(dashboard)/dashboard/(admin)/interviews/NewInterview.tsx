@@ -1,5 +1,5 @@
 // *React Imports
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // *Icon Imports
 import Icon from "@/@core/component/icon";
@@ -27,25 +27,122 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import MenuItem from "@mui/material/MenuItem";
 
-import { scheduleInterview }from "@/@core/services/interviewService"
+import { scheduleInterview } from "@/@core/services/interviewService";
+import { getAppliedJob } from "@/@core/services/jobVanciesService";
 
 interface Props {
   open: boolean;
   close: () => void;
 }
 
+interface Job {
+  id: number;
+  title: string;
+  job_type: string;
+  description: string;
+  requirements: string;
+  skill: string;
+  currency: string;
+  minimum_salary: string;
+  maximum_salary: string;
+  location: string;
+  application_deadline: string;
+  additional_info: string | null;
+  created_by: number;
+  client_id: number;
+  created_at: string;
+  updated_at: string;
+  status: string;
+  applicant_count: number;
+  client: Client;
+}
+
+interface Client {
+  id: number;
+  name: string;
+  account_type: string;
+  company_logo: string | null;
+  company_name: string | null;
+  company_email_address: string | null;
+  industry: string | null;
+  number_of_employees: number | null;
+  type_of_employer: string | null;
+  company_address: string | null;
+  company_phone_number: string | null;
+  country: string | null;
+  company_website: string | null;
+  contact_person: string | null;
+  work_email: string | null;
+  position_in_company: string | null;
+  phone_number: string | null;
+  cv_upload: string | null;
+  cover_letter_upload: string | null;
+  id_upload: string | null;
+  video_url: string | null;
+  project_screenshots: string | null;
+  work_sample_upload: string | null;
+  portfolio_link: string | null;
+  profile_image: string | null;
+  email: string;
+  email_verified_at: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  status: string;
+}
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  phone_number: string | null;
+  account_type: string;
+  company_logo: string | null;
+  company_name: string | null;
+  company_email_address: string | null;
+  industry: string | null;
+  number_of_employees: string | null;
+  type_of_employer: string | null;
+  company_address: string | null;
+  company_phone_number: string | null;
+  country: string | null;
+  company_website: string | null;
+  contact_person: string | null;
+  work_email: string | null;
+  position_in_company: string | null;
+  cv_upload: string | null;
+  cover_letter_upload: string | null;
+  id_upload: string | null;
+  video_url: string | null;
+  project_screenshots: string | null;
+  work_sample_upload: string | null;
+  portfolio_link: string | null;
+  profile_image: string | null;
+  email_verified_at: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  status: string;
+}
+
+interface Application {
+  id: number;
+  job_id: number;
+  user_id: number;
+  created_at: string;
+  updated_at: string;
+  status: string;
+  job: Job;
+  user: User;
+}
+
 interface IFormInput {
-  // candidate Info
-  fullName: string;
-  positionApplied: string;
-  candidateEmail: string;
-  candidatePhone: string;
-  // Interviewer Info
+  applicationId: number;
+  userId: number; // Fetched internally, not displayed
   interviewerName: string;
   interviewerDepartment: string;
   interviewerEmail: string;
   interviewerPhone: string;
-  // interview details
   interviewDate: string;
   interviewTime: string;
   duration: string;
@@ -54,17 +151,14 @@ interface IFormInput {
   reminder?: string;
 }
 
-const defaultValues = {
-  fullName: "",
-  positionApplied: "",
-  candidateEmail: "",
-  candidatePhone: "",
+const defaultValues: IFormInput = {
+  applicationId: 0,
+  userId: 0,
   interviewerName: "",
   interviewerDepartment: "",
   interviewerEmail: "",
   interviewerPhone: "",
   interviewDate: "",
-
   interviewTime: "",
   duration: "",
   format: "",
@@ -73,524 +167,388 @@ const defaultValues = {
 };
 
 const NewInterview = ({ open, close }: Props) => {
-  const [selectedDate, setSelectedDate] = useState<string | null>("");
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const {
     control,
     reset,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<IFormInput>({
-    defaultValues: defaultValues,
+    defaultValues,
     mode: "onChange",
     resolver: yupResolver(interviewSchema),
   });
 
-const submitForm: SubmitHandler<IFormInput> = async (values) => {
-  try {
-    // Format the data for API request
-    const formattedData = {
-      application_id: 123, // Replace with actual application ID
-      user_id: 456, // Replace with actual user ID
-      interview_date: values.interviewDate,
-      interview_time: values.interviewTime,
-      interview_location: "Virtual", // Replace if needed
-      interviewer_department: values.interviewerDepartment,
-      interviewer_name: values.interviewerName,
-      interviewer_role: "Hiring Manager", // Replace if needed
-      interviewer_email: values.interviewerEmail,
-      interviewer_phone: values.interviewerPhone,
+  // Watch applicationId to update userId when changed
+  const selectedApplicationId = watch("applicationId");
+
+  useEffect(() => {
+    const fetchApplications = async () => {
+      try {
+        setLoading(true);
+        const applications = await getAppliedJob();
+        setApplications(applications);
+      } catch (error) {
+        console.error("Error fetching applications:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    // Call API service
-    const response = await scheduleInterview(formattedData);
+    if (open) {
+      fetchApplications();
+    }
+  }, [open]);
 
-    console.log("Interview scheduled successfully:", response);
+  useEffect(() => {
+    if (selectedApplicationId) {
+      const selectedApp = applications.find((app) => app.id === selectedApplicationId);
+      if (selectedApp) {
+        setValue("userId", selectedApp.user_id);
+      }
+    }
+  }, [selectedApplicationId, applications, setValue]);
 
-    // Show success message (optional)
-    alert("Interview scheduled successfully!");
+  const submitForm: SubmitHandler<IFormInput> = async (values) => {
+    try {
+      const formattedData = {
+        application_id: values.applicationId,
+        user_id: values.userId,
+        interview_date: values.interviewDate,
+        interview_time: values.interviewTime,
+        interview_location: values.format === "In-Person" ? "Company Headquarters, Meeting Room 3" : "Virtual",
+        interviewer_department: values.interviewerDepartment,
+        interviewer_name: values.interviewerName,
+        interviewer_role: "Senior Manager", // Can be made dynamic if needed
+        interviewer_email: values.interviewerEmail,
+        interviewer_phone: values.interviewerPhone,
+      };
 
-    // Reset form and close modal
-    reset();
-    close();
-  } catch (error) {
-    console.error("Error scheduling interview:", error);
-    alert("Failed to schedule interview. Please try again.");
-  }
-};
-
+      const response = await scheduleInterview(formattedData);
+      console.log("Interview scheduled successfully:", response);
+      alert("Interview scheduled successfully!");
+      reset();
+      close();
+    } catch (error) {
+      console.error("Error scheduling interview:", error);
+      alert("Failed to schedule interview. Please try again.");
+    }
+  };
 
   return (
-    <div>
-      <Dialog
-        disableScrollLock
-        open={open}
-        sx={{
-          "& .MuiPaper-root": {
-            width: "100%",
-            minWidth: { md: 800 },
-            borderRadius: "8px",
-            mx: "auto",
-          },
-        }}
-      >
-        <form onSubmit={handleSubmit(submitForm)}>
-          <Box sx={{ display: "flex", alignItems: "center", p: 3 }}>
-            <Button onClick={close} sx={{ color: "#111" }}>
-              <Icon icon="basil:caret-left-solid" fontSize={25} />
-            </Button>
+    <Dialog
+      disableScrollLock
+      open={open}
+      sx={{
+        "& .MuiPaper-root": {
+          width: "100%",
+          minWidth: { md: 800 },
+          borderRadius: "8px",
+          mx: "auto",
+        },
+      }}
+    >
+      <form onSubmit={handleSubmit(submitForm)}>
+        <Box sx={{ display: "flex", alignItems: "center", p: 3 }}>
+          <Button onClick={close} sx={{ color: "#111" }}>
+            <Icon icon="basil:caret-left-solid" fontSize={25} />
+          </Button>
+          <Typography
+            sx={{
+              flex: 1,
+              textAlign: "center",
+              fontWeight: 600,
+              fontSize: { xs: "1rem", md: "1.2rem" },
+              mr: "4rem",
+            }}
+          >
+            Schedule Interview
+          </Typography>
+        </Box>
 
-            <Typography
-              sx={{
-                flex: 1,
-                textAlign: "center",
-                fontWeight: 600,
-                fontSize: { xs: "1rem", md: "1.2rem" },
-                mr: "4rem",
-              }}
-            >
-              Schedule Interview
-            </Typography>
+        <DialogContent
+          sx={{
+            pb: (theme) => `${theme.spacing(4)} !important`,
+            px: (theme) => [`${theme.spacing(4)} !important`],
+            m: (theme) => theme.spacing(3),
+            borderRadius: "10px",
+            overflowY: "scroll",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+            "&::-webkit-scrollbar": { display: "none" },
+          }}
+        >
+          <Box sx={{ mb: 4 }}>
+            <Typography sx={{ mt: 4, mb: 2, fontWeight: 600 }}>Application Details</Typography>
+            <Grid container spacing={4}>
+              <Grid item xs={12}>
+                <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
+                  Select Application
+                </Typography>
+                <Controller
+                  name="applicationId"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <CustomTextField
+                      fullWidth
+                      value={value}
+                      onChange={onChange}
+                      size="medium"
+                      select
+                      disabled={loading}
+                      error={Boolean(errors.applicationId)}
+                      helperText={errors.applicationId?.message}
+                    >
+                      <MenuItem value={0} disabled>
+                        {loading ? "Loading applications..." : "Select an application"}
+                      </MenuItem>
+                      {applications.map((app) => (
+                        <MenuItem key={app.id} value={app.id}>
+                          {app.job.title} - {app.user.name}
+                        </MenuItem>
+                      ))}
+                    </CustomTextField>
+                  )}
+                />
+              </Grid>
+            </Grid>
+
+            <Typography sx={{ mt: 4, mb: 2, fontWeight: 600 }}>Interviewer Information</Typography>
+            <Grid container spacing={4}>
+              <Grid item xs={12} md={6}>
+                <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
+                  Interviewer Name
+                </Typography>
+                <Controller
+                  name="interviewerName"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <CustomTextField
+                      fullWidth
+                      value={value}
+                      onChange={onChange}
+                      size="medium"
+                      placeholder="John Doe"
+                      error={Boolean(errors.interviewerName)}
+                      helperText={errors.interviewerName?.message}
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
+                  Department
+                </Typography>
+                <Controller
+                  name="interviewerDepartment"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <CustomTextField
+                      fullWidth
+                      value={value}
+                      onChange={onChange}
+                      size="medium"
+                      placeholder="HR Management"
+                      error={Boolean(errors.interviewerDepartment)}
+                      helperText={errors.interviewerDepartment?.message}
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
+                  Email Address
+                </Typography>
+                <Controller
+                  name="interviewerEmail"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <CustomTextField
+                      fullWidth
+                      value={value}
+                      onChange={onChange}
+                      size="medium"
+                      placeholder="johndoe@example.com"
+                      error={Boolean(errors.interviewerEmail)}
+                      helperText={errors.interviewerEmail?.message}
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
+                  Phone Number
+                </Typography>
+                <Controller
+                  name="interviewerPhone"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <CustomTextField
+                      fullWidth
+                      value={value}
+                      onChange={onChange}
+                      size="medium"
+                      placeholder="+1234567890"
+                      error={Boolean(errors.interviewerPhone)}
+                      helperText={errors.interviewerPhone?.message}
+                    />
+                  )}
+                />
+              </Grid>
+            </Grid>
+
+            <Typography sx={{ mt: 4, mb: 2, fontWeight: 600 }}>Interview Details</Typography>
+            <Grid container spacing={4}>
+              <Grid item xs={12} md={6}>
+                <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
+                  Interview Date
+                </Typography>
+                <Controller
+                  name="interviewDate"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <DatePicker
+                      value={value ? dayjs(value) : null}
+                      onChange={(date) => onChange(date ? date.format("YYYY-MM-DD") : "")}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          size: "medium",
+                          error: Boolean(errors.interviewDate),
+                          helperText: errors.interviewDate?.message,
+                        },
+                      }}
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
+                  Interview Time
+                </Typography>
+                <Controller
+                  name="interviewTime"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <TimeField
+                      value={value ? dayjs(`2023-01-01T${value}`) : null}
+                      onChange={(time) => onChange(time ? time.format("HH:mm:ss") : "")}
+                      format="HH:mm:ss"
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          size: "medium",
+                          error: Boolean(errors.interviewTime),
+                          helperText: errors.interviewTime?.message,
+                        },
+                      }}
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
+                  Duration
+                </Typography>
+                <Controller
+                  name="duration"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <CustomTextField
+                      fullWidth
+                      value={value}
+                      onChange={onChange}
+                      size="medium"
+                      select
+                      error={Boolean(errors.duration)}
+                      helperText={errors.duration?.message}
+                    >
+                      <MenuItem value="30">30 minutes</MenuItem>
+                      <MenuItem value="60">1 hour</MenuItem>
+                      <MenuItem value="90">1.5 hours</MenuItem>
+                    </CustomTextField>
+                  )}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
+                  Interview Format
+                </Typography>
+                <Controller
+                  name="format"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <CustomTextField
+                      fullWidth
+                      value={value}
+                      onChange={onChange}
+                      size="medium"
+                      select
+                      error={Boolean(errors.format)}
+                      helperText={errors.format?.message}
+                    >
+                      <MenuItem value="In-Person">In-Person</MenuItem>
+                      <MenuItem value="Virtual">Virtual</MenuItem>
+                    </CustomTextField>
+                  )}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
+                  Additional Information (Optional)
+                </Typography>
+                <Controller
+                  name="information"
+                  control={control}
+                  render={({ field: { value, onChange } }) => (
+                    <CustomTextField
+                      fullWidth
+                      value={value}
+                      onChange={onChange}
+                      size="medium"
+                      multiline
+                      rows={3}
+                      placeholder="Any additional details..."
+                    />
+                  )}
+                />
+              </Grid>
+            </Grid>
           </Box>
+        </DialogContent>
 
-          <DialogContent
-            sx={{
-              pb: (theme) => `${theme.spacing(4)} !important`,
-              px: (theme) => [`${theme.spacing(4)} !important`],
-              m: (theme) => theme.spacing(3),
-              //   background: (theme) => theme.palette.secondary.main,
-              borderRadius: "10px",
-              overflowY: "scroll",
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
-              "&::-webkit-scrollbar": {
-                display: "none",
-              },
-            }}
+        <DialogActions
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 2,
+          }}
+        >
+          <Button
+            type="submit"
+            variant="contained"
+            sx={{ textTransform: "capitalize", width: "30%", mb: 4 }}
+            disabled={isSubmitting || !selectedApplicationId}
           >
-            <Box sx={{ mb: 4 }}>
-              <Typography sx={{ mt: 4, mb: 2, fontWeight: 600 }}>
-                Candidate Information:
-              </Typography>
-              <Grid container spacing={4}>
-                <Grid item xs={12} md={6}>
-                  <Typography
-                    sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}
-                  >
-                    Full Name
-                  </Typography>
-
-                  <Controller
-                    name="fullName"
-                    control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
-                      <CustomTextField
-                        fullWidth
-                        value={value}
-                        onChange={onChange}
-                        size="medium"
-                        placeholder="John Abraham"
-                        error={Boolean(errors.fullName)}
-                        helperText={errors.fullName?.message}
-                      />
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Typography
-                    sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}
-                  >
-                    Position applied for
-                  </Typography>
-
-                  <Controller
-                    name="positionApplied"
-                    control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
-                      <CustomTextField
-                        fullWidth
-                        value={value}
-                        onChange={onChange}
-                        size="medium"
-                        placeholder="Front Desk Officer"
-                        error={Boolean(errors.positionApplied)}
-                        helperText={errors.positionApplied?.message}
-                      />
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Typography
-                    sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}
-                  >
-                    Email Address
-                  </Typography>
-
-                  <Controller
-                    name="candidateEmail"
-                    control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
-                      <CustomTextField
-                        fullWidth
-                        value={value}
-                        onChange={onChange}
-                        size="medium"
-                        placeholder="example@gmail.com"
-                        error={Boolean(errors.candidateEmail)}
-                        helperText={errors.candidateEmail?.message}
-                      />
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Typography
-                    sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}
-                  >
-                    Phone Number
-                  </Typography>
-
-                  <Controller
-                    name="candidatePhone"
-                    control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
-                      <CustomTextField
-                        fullWidth
-                        value={value}
-                        onChange={onChange}
-                        size="medium"
-                        placeholder="+234-000-000-00"
-                        error={Boolean(errors.candidatePhone)}
-                        helperText={errors.candidatePhone?.message}
-                      />
-                    )}
-                  />
-                </Grid>
-              </Grid>
-
-              <Typography sx={{ mt: 4, mb: 2, fontWeight: 600 }}>
-                Interviewer Information:
-              </Typography>
-              <Grid container spacing={4}>
-                <Grid item xs={12} md={6}>
-                  <Typography
-                    sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}
-                  >
-                    Interviewer(s) Name(s)
-                  </Typography>
-
-                  <Controller
-                    name="interviewerName"
-                    control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
-                      <CustomTextField
-                        fullWidth
-                        value={value}
-                        onChange={onChange}
-                        size="medium"
-                        placeholder="John Abraham, Samantha Paul, Aisha Isah"
-                        error={Boolean(errors.interviewerName)}
-                        helperText={errors.interviewerName?.message}
-                      />
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Typography
-                    sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}
-                  >
-                    Department/Role
-                  </Typography>
-
-                  <Controller
-                    name="interviewerDepartment"
-                    control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
-                      <CustomTextField
-                        fullWidth
-                        value={value}
-                        onChange={onChange}
-                        size="medium"
-                        placeholder="Human Resource"
-                        error={Boolean(errors.interviewerDepartment)}
-                        helperText={errors.interviewerDepartment?.message}
-                      />
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Typography
-                    sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}
-                  >
-                    Email Address
-                  </Typography>
-
-                  <Controller
-                    name="interviewerEmail"
-                    control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
-                      <CustomTextField
-                        fullWidth
-                        value={value}
-                        onChange={onChange}
-                        size="medium"
-                        placeholder="example@gmail.com"
-                        error={Boolean(errors.interviewerEmail)}
-                        helperText={errors.interviewerEmail?.message}
-                      />
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Typography
-                    sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}
-                  >
-                    Phone Number
-                  </Typography>
-
-                  <Controller
-                    name="interviewerPhone"
-                    control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
-                      <CustomTextField
-                        fullWidth
-                        value={value}
-                        onChange={onChange}
-                        size="medium"
-                        placeholder="+234-000-000-00"
-                        error={Boolean(errors.interviewerPhone)}
-                        helperText={errors.interviewerPhone?.message}
-                      />
-                    )}
-                  />
-                </Grid>
-              </Grid>
-
-              <Typography sx={{ mt: 4, mb: 2, fontWeight: 600 }}>
-                Interview Details:
-              </Typography>
-              <Grid container spacing={4}>
-                <Grid item xs={12} md={6}>
-                  <Typography
-                    sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}
-                  >
-                    Date
-                  </Typography>
-                  <Controller
-                    name="interviewDate"
-                    control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
-                      <DatePicker
-                        disablePast
-                        value={value ? dayjs(value) : null} // Use the value from the controller
-                        onChange={(newDate) => {
-                          const formattedDate = newDate
-                            ? newDate.format("YYYY-MM-DD")
-                            : null;
-                          onChange(formattedDate); // Call onChange with the formatted date
-                          setSelectedDate(formattedDate); // Also update selectedDate
-                        }}
-                      />
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Typography
-                    sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}
-                  >
-                    Time
-                  </Typography>
-                  <Controller
-                    name="interviewTime"
-                    control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
-                      <TimeField defaultValue={dayjs("2022-04-17T15:30")} />
-                      // <DatePicker
-                      //   disablePast
-                      //   value={value ? dayjs(value) : null} // Use the value from the controller
-                      //   onChange={(newDate) => {
-                      //     const formattedDate = newDate
-                      //       ? newDate.format("YYYY-MM-DD")
-                      //       : null;
-                      //     onChange(formattedDate); // Call onChange with the formatted date
-                      //     setSelectedDate(formattedDate); // Also update selectedDate
-                      //   }}
-                      // />
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Typography
-                    sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}
-                  >
-                    Duration
-                  </Typography>
-
-                  <Controller
-                    name="duration"
-                    control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
-                      <CustomTextField
-                        fullWidth
-                        value={value}
-                        onChange={onChange}
-                        size="medium"
-                        select
-                        error={Boolean(errors.duration)}
-                        helperText={errors.duration?.message}
-                      >
-                        <MenuItem value="1">1hour</MenuItem>
-                        <MenuItem value="2">2hour</MenuItem>
-                        <MenuItem value="3">3hour</MenuItem>
-                        <MenuItem value="4">4hour</MenuItem>
-                      </CustomTextField>
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Typography
-                    sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}
-                  >
-                    Format
-                  </Typography>
-
-                  <Controller
-                    name="format"
-                    control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
-                      <CustomTextField
-                        fullWidth
-                        value={value}
-                        onChange={onChange}
-                        size="medium"
-                        select
-                        error={Boolean(errors.format)}
-                        helperText={errors.format?.message}
-                      >
-                        <MenuItem value="physical">Physical</MenuItem>
-                        <MenuItem value="virtual">Virtual</MenuItem>
-                        <MenuItem value="hybrid">Hybrid</MenuItem>
-                      </CustomTextField>
-                    )}
-                  />
-                </Grid>
-              </Grid>
-
-              <Typography sx={{ mt: 4, mb: 2, fontWeight: 600 }}>
-                Additional Information
-              </Typography>
-              <Grid container spacing={4}>
-                <Grid item xs={12}>
-                  <Typography
-                    sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}
-                  >
-                    Send special instructions
-                  </Typography>
-
-                  <Controller
-                    name="information"
-                    control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
-                      <CustomTextField
-                        fullWidth
-                        multiline
-                        rows={4}
-                        value={value}
-                        onChange={onChange}
-                        size="medium"
-                        InputProps={{
-                          disableUnderline: true,
-                          sx: {
-                            "& textarea": {
-                              overflow: "hidden",
-                              resize: "none",
-                            },
-                          },
-                        }}
-                        placeholder="Enter Text..."
-                        error={Boolean(errors.information)}
-                        helperText={errors.information?.message}
-                      />
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Typography
-                    sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}
-                  >
-                    Confirmation & Reminder
-                  </Typography>
-                  <Typography
-                    sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}
-                  >
-                    Send Reminder to:
-                  </Typography>
-
-                  <Controller
-                    name="reminder"
-                    control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
-                      <CustomTextField
-                        fullWidth
-                        value={value}
-                        onChange={onChange}
-                        size="medium"
-                        select
-                        error={Boolean(errors.reminder)}
-                        helperText={errors.reminder?.message}
-                      >
-                        <MenuItem value="candidate">Select Candidate</MenuItem>
-                      </CustomTextField>
-                    )}
-                  />
-                </Grid>
-              </Grid>
-            </Box>
-          </DialogContent>
-
-          <DialogActions
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              gap: 2,
-            }}
-          >
-            <Button
-              type="submit" // Updated to submit the form
-              variant="contained"
-              sx={{ textTransform: "capitalize", width: "30%", mb: 4 }}
-              disabled={isSubmitting} // Disable button during submission
-            >
-              Schedule Interview
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
-    </div>
+            Schedule Interview
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
   );
 };
 

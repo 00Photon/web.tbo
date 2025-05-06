@@ -5,10 +5,10 @@ export const profileTabs = [
     icon: <Person />,
     name: "Company Information",
   },
-  {
-    icon: <Person />,
-    name: "Company Representative Information",
-  },
+  // {
+  //   icon: <Person />,
+  //   name: "Company Representative Information",
+  // },
 
   {
     icon: <LockReset />,

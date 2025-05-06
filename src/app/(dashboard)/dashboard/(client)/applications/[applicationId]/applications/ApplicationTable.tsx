@@ -1,25 +1,14 @@
-// *React Imports
-import React from "react";
-
-// * Icon Imports
+import React, { useEffect, useState } from "react";
 import Icon from "@/@core/component/icon";
-import { useRouter } from "next/router";
-
-// * Custom Component Imports
 import CustomTextField from "@/@core/component/mui/text-field";
 import { TableCellStyled } from "@/@core/component/mui/tableStyled";
 import CustomChip from "@/@core/component/mui/chip";
-
-// ** Third Party Imports
-import { Controller, useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-
-// ** MUI Imports
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Paper from "@mui/material/Paper";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
+import CardHeader from "@mui/material/CardHeader";
 import InputAdornment from "@mui/material/InputAdornment";
 import { Avatar, Menu } from "@mui/material";
 import Checkbox from "@mui/material/Checkbox";
@@ -37,80 +26,105 @@ import TableBody from "@mui/material/TableBody";
 import TablePagination from "@mui/material/TablePagination";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { Theme } from "@mui/material/styles";
+import Link from "next/link";
 
-interface MockData {
+// Assume these services are imported from your API client
+import { fetchApplications, fetchApplicationById } from "@/@core/services/jobService";
+
+interface Job {
+  id: number;
+  title: string;
+  job_type: string;
+  description: string;
+  requirements: string;
+  skill: string;
+  currency: string;
+  minimum_salary: string;
+  maximum_salary: string;
+  location: string;
+  application_deadline: string;
+  additional_info: string;
+  created_by: number;
+  client_id: number;
+  created_at: string;
+  updated_at: string;
+  status: string;
+  applicant_count: number;
+}
+
+interface User {
   id: number;
   name: string;
   email: string;
-  job: string;
-  date: string;
+  account_type: string;
+  phone_number: string | null;
+  cv_upload: string | null;
+  cover_letter_upload: string | null;
+  id_upload: string | null;
+  video_url: string | null;
+  project_screenshots: string[] | null;
+  work_sample_upload: string | null;
+  portfolio_link: string | null;
+  profile_image: string | null;
+  created_at: string;
+  updated_at: string;
   status: string;
 }
 
-const data: MockData[] = [
-  {
-    id: 1289,
-    name: "John Doe",
-    email: "DqkR8@example.com",
-    job: "Software Engineer",
-    date: "2022-01-01",
-    status: "rejected",
-  },
-  {
-    id: 2412,
-    name: "Sarah Doe",
-    email: "sara@example.com",
-    job: "Designer",
-    date: "2021-01-01",
-    status: "hired",
-  },
-  {
-    id: 2129,
-    name: "Rizzy Elesius",
-    email: "sara@example.com",
-    job: "Human Resource",
-    date: "2024-02-01",
-    status: "under review",
-  },
-  {
-    id: 2129,
-    name: "Rizzy Elesius",
-    email: "sara@example.com",
-    job: "Human Resource",
-    date: "2024-02-01",
-    status: "Reviewed",
-  },
-  {
-    id: 2129,
-    name: "Rizzy Elesius",
-    email: "sara@example.com",
-    job: "Human Resource",
-    date: "2024-02-01",
-    status: "shortlisted",
-  },
-  {
-    id: 2129,
-    name: "Rizzy Elesius",
-    email: "sara@example.com",
-    job: "Human Resource",
-    date: "2024-02-01",
-    status: "interviewed",
-  },
-];
+interface Application {
+  id: number;
+  job_id: number;
+  user_id: number;
+  created_at: string;
+  updated_at: string;
+  status: string;
+  job: Job;
+  user: User;
+}
 
-const ApplicationTable = () => {
-  const [openFilter, setOpenFilter] = React.useState<boolean>(false);
-  const [value, setValue] = React.useState<string>("");
-  const [status, setStatus] = React.useState<string>("");
-  const [page, setPage] = React.useState(2);
-  const [rowsPerPage, setRowsPerPage] = React.useState(10);
-  const [anchorEl, setAnchorEl] = React.useState<(HTMLElement | null)[]>(
-    Array(data?.length)?.fill(null)
-  );
+interface ApplicationTableProps {
+  jobId: number;
+}
 
-  const smallScreen = useMediaQuery((theme: Theme) =>
-    theme.breakpoints.up("md")
-  );
+const ApplicationTable: React.FC<ApplicationTableProps> = ({ jobId }) => {
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [openFilter, setOpenFilter] = useState<boolean>(false);
+  const [value, setValue] = useState<string>("");
+  const [status, setStatus] = useState<string>("");
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [anchorEl, setAnchorEl] = useState<(HTMLElement | null)[]>([]);
+  const [totalApplications, setTotalApplications] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [checked, setChecked] = useState<number[]>([]);
+  const [allChecked, setAllChecked] = useState(false);
+
+  const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up("md"));
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetchApplications();
+        if (response.status) {
+          const jobApplications = response.applications.filter(
+            (app: Application) => app.job_id === jobId
+          );
+          const start = page * rowsPerPage;
+          const end = start + rowsPerPage;
+          setApplications(jobApplications.slice(start, end));
+          setTotalApplications(jobApplications.length);
+          setAnchorEl(Array(jobApplications.slice(start, end).length).fill(null));
+        }
+      } catch (error) {
+        console.error("Error fetching applications:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [jobId, page, rowsPerPage]);
 
   const handleChangePage = (
     event: React.MouseEvent<HTMLButtonElement> | null,
@@ -140,6 +154,29 @@ const ApplicationTable = () => {
 
   const toggleFilter = () => setOpenFilter(!openFilter);
 
+  const handleAllChecked = () => {
+    if (allChecked) {
+      setAllChecked(false);
+      setChecked([]);
+    } else {
+      setAllChecked(true);
+      setChecked(applications.map((app) => app.id));
+    }
+  };
+
+  const handleRowChecked = (id: number) => {
+    if (checked.includes(id)) {
+      const restChecked = checked.filter((c) => c !== id);
+      setChecked(restChecked);
+      setAllChecked(false);
+    } else {
+      if (checked.length + 1 === applications.length) {
+        setAllChecked(true);
+      }
+      setChecked([...checked, id]);
+    }
+  };
+
   return (
     <Card
       sx={{
@@ -159,18 +196,8 @@ const ApplicationTable = () => {
           unmountOnExit
           sx={{ mb: 3, boxShadow: 4 }}
         >
-          <Paper
-            sx={{
-              px: 3,
-              py: 3,
-            }}
-          >
-            <Typography
-              sx={{
-                mb: 3,
-                fontSize: { xs: "1rem", sm: "1.25rem", md: "1.5rem" },
-              }}
-            >
+          <Paper sx={{ px: 3, py: 3 }}>
+            <Typography sx={{ mb: 3, fontSize: { xs: "1rem", sm: "1.25rem", md: "1.5rem" } }}>
               Filter
             </Typography>
             <Grid container spacing={3}>
@@ -180,15 +207,17 @@ const ApplicationTable = () => {
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
                   size="small"
-                  placeholder="Reviewed, Hired, Short..."
+                  placeholder="Select status..."
                   fullWidth
                   label="Status"
                 >
-                  <MenuItem value="0">Select Status</MenuItem>
-                  <MenuItem value="1">Shortlisted</MenuItem>
-                  <MenuItem value="2">Reviewed</MenuItem>
-                  <MenuItem value="3">Interviewed</MenuItem>
-                  <MenuItem value="4">Hired</MenuItem>
+                  <MenuItem value="">Select Status</MenuItem>
+                  <MenuItem value="PENDING">Pending</MenuItem>
+                  <MenuItem value="SHORTLISTED">Shortlisted</MenuItem>
+                  <MenuItem value="REJECTED">Rejected</MenuItem>
+                  <MenuItem value="HIRED">Hired</MenuItem>
+                  <MenuItem value="REVIEWED">Reviewed</MenuItem>
+                  <MenuItem value="INTERVIEWED">Interviewed</MenuItem>
                 </CustomTextField>
               </Grid>
               <Grid item xs={6} sm={3}>
@@ -201,11 +230,11 @@ const ApplicationTable = () => {
                   fullWidth
                   label="Level of Experience"
                 >
-                  <MenuItem value="0">Select Level</MenuItem>
-                  <MenuItem value="1">Entry Level</MenuItem>
-                  <MenuItem value="2">Intermediate</MenuItem>
-                  <MenuItem value="3">Mid-Level</MenuItem>
-                  <MenuItem value="4">Senior</MenuItem>
+                  <MenuItem value="">Select Level</MenuItem>
+                  <MenuItem value="entry">Entry Level</MenuItem>
+                  <MenuItem value="intermediate">Intermediate</MenuItem>
+                  <MenuItem value="mid-level">Mid-Level</MenuItem>
+                  <MenuItem value="senior">Senior</MenuItem>
                 </CustomTextField>
               </Grid>
               <Grid item xs={6} sm={3}>
@@ -218,11 +247,11 @@ const ApplicationTable = () => {
                   fullWidth
                   label="Years of Experience"
                 >
-                  <MenuItem value="0">Select Years of Experience</MenuItem>
-                  <MenuItem value="1">Less than 1</MenuItem>
-                  <MenuItem value="2">Less than 3</MenuItem>
-                  <MenuItem value="3">More than 3</MenuItem>
-                  <MenuItem value="4">More than 5</MenuItem>
+                  <MenuItem value="">Select Years of Experience</MenuItem>
+                  <MenuItem value="less than 1">Less than 1</MenuItem>
+                  <MenuItem value="less than 3">Less than 3</MenuItem>
+                  <MenuItem value="more than 3">More than 3</MenuItem>
+                  <MenuItem value="more than 5">More than 5</MenuItem>
                 </CustomTextField>
               </Grid>
               <Grid item xs={6} sm={3}>
@@ -235,30 +264,13 @@ const ApplicationTable = () => {
                   fullWidth
                   label="Date Applied"
                 >
-                  <MenuItem value="0">Date of Application</MenuItem>
-                  <MenuItem value="1">11, July 2023</MenuItem>
-                  <MenuItem value="2">11, Aug 2024</MenuItem>
-                  <MenuItem value="3">11, Sept 2021</MenuItem>
-                  <MenuItem value="4">11, Jan 2022</MenuItem>
+                  <MenuItem value="">Date of Application</MenuItem>
+                  <MenuItem value="2023-07-11">11, July 2023</MenuItem>
+                  <MenuItem value="2024-08-11">11, Aug 2024</MenuItem>
+                  <MenuItem value="2021-09-11">11, Sept 2021</MenuItem>
+                  <MenuItem value="2022-01-11">11, Jan 2022</MenuItem>
                 </CustomTextField>
               </Grid>
-              {/* <Grid item xs={6} sm={2}>
-                <CustomTextField
-                  select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  size="small"
-                  placeholder="Senior, mid-level, entry..."
-                  fullWidth
-                  label="Comment"
-                >
-                  <MenuItem value="0">Good</MenuItem>
-                  <MenuItem value="1">Satifactory</MenuItem>
-                  <MenuItem value="2">11, Aug 2024</MenuItem>
-                  <MenuItem value="3">11, Sept 2021</MenuItem>
-                  <MenuItem value="4">11, Jan 2022</MenuItem>
-                </CustomTextField>
-              </Grid> */}
             </Grid>
           </Paper>
         </Collapse>
@@ -273,14 +285,7 @@ const ApplicationTable = () => {
           }}
         >
           {smallScreen && <Typography variant="h6">All Applicants</Typography>}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              minWidth: 400,
-            }}
-          >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, minWidth: 400 }}>
             <CustomTextField
               value={value}
               onChange={(e) => setValue(e.target.value)}
@@ -291,16 +296,13 @@ const ApplicationTable = () => {
                 startAdornment: (
                   <InputAdornment
                     position="start"
-                    sx={{
-                      color: (theme) => theme.palette.primary.main,
-                    }}
+                    sx={{ color: (theme) => theme.palette.primary.main }}
                   >
                     <Icon icon="lets-icons:search-duotone" />
                   </InputAdornment>
                 ),
               }}
             />
-
             <Button
               onClick={toggleFilter}
               variant={openFilter ? "contained" : "outlined"}
@@ -312,7 +314,7 @@ const ApplicationTable = () => {
               }}
             >
               {smallScreen && (
-                <Typography sx={{ fontSize: ".857rem" }}> Filter</Typography>
+                <Typography sx={{ fontSize: ".857rem" }}>Filter</Typography>
               )}
               <Icon icon="basil:filter-outline" />
             </Button>
@@ -322,73 +324,58 @@ const ApplicationTable = () => {
         <TableContainer component={Paper}>
           <Table stickyHeader>
             <TableHead>
-              <TableRow
-                sx={{ background: (theme) => theme.palette.secondary.dark }}
-              >
+              <TableRow sx={{ background: (theme) => theme.palette.secondary.dark }}>
                 <TableCellStyled align="left" sx={{ minWidth: 50 }}>
                   <Checkbox
                     size="small"
-                    // name={"all-checked"}
-                    // onChange={() => {
-                    //   if (allChecked) {
-                    //     setAllChecked(false)
-                    //     setChecked([])
-                    //   } else {
-                    //     setAllChecked(true)
-                    //     setChecked(PayrollData?.map(p => p?.id))
-                    //   }
-                    // }}
+                    checked={allChecked}
+                    onChange={handleAllChecked}
                   />
                 </TableCellStyled>
-                <TableCellStyled align={"left"}>ID</TableCellStyled>
+                <TableCellStyled align="left">ID</TableCellStyled>
                 <TableCellStyled align="left" sx={{ minWidth: 150 }}>
                   Name
                 </TableCellStyled>
                 <TableCellStyled align="left">Email</TableCellStyled>
-                <TableCellStyled align="center">Job&nbsp;Title</TableCellStyled>
-                <TableCellStyled align="left">
-                  Application&nbsp;Date
-                </TableCellStyled>
+                <TableCellStyled align="center">Job Title</TableCellStyled>
+                <TableCellStyled align="left">Application Date</TableCellStyled>
                 <TableCellStyled align="center">Status</TableCellStyled>
                 <TableCellStyled align="left">Actions</TableCellStyled>
               </TableRow>
             </TableHead>
             <TableBody>
-              {data.map((item, i) => {
-                return (
-                  <TableRow key={i}>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={8} align="center">
+                    Loading...
+                  </TableCell>
+                </TableRow>
+              ) : applications.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} align="center">
+                    No applications found for this job
+                  </TableCell>
+                </TableRow>
+              ) : (
+                applications.map((item, i) => (
+                  <TableRow key={item.id}>
                     <TableCell align="left">
                       <Checkbox
                         size="small"
-                        // name={`${payroll?.id}-checked`}
-                        // checked={checked.includes(payroll?.id)}
-                        // onChange={() => {
-                        //   if (checked.includes(payroll.id)) {
-                        //     const restChecked = checked.filter(c => c !== payroll?.id)
-                        //     setChecked(restChecked)
-                        //     setAllChecked(false)
-                        //   } else {
-                        //     if (checked.length + 1 === payroll?.length) {
-                        //       setAllChecked(true)
-                        //     }
-                        //     setChecked([...checked, payroll?.id])
-                        //   }
-                        // }}
+                        checked={checked.includes(item.id)}
+                        onChange={() => handleRowChecked(item.id)}
                       />
                     </TableCell>
                     <TableCell>{item.id}</TableCell>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell>{item.email}</TableCell>
-                    <TableCell align="center">{item.job}</TableCell>
-                    <TableCell>{item.date}</TableCell>
+                    <TableCell>{item.user.name}</TableCell>
+                    <TableCell>{item.user.email}</TableCell>
+                    <TableCell align="center">{item.job.title}</TableCell>
+                    <TableCell>{new Date(item.created_at).toLocaleDateString()}</TableCell>
                     <TableCell
                       align="center"
-                      sx={{
-                        textTransform: "capitalize",
-                        fontWeight: "semibold",
-                      }}
+                      sx={{ textTransform: "capitalize", fontWeight: "semibold" }}
                     >
-                      {item.status === "hired" ? (
+                      {item.status === "HIRED" ? (
                         <CustomChip
                           size="small"
                           skin="light"
@@ -396,7 +383,7 @@ const ApplicationTable = () => {
                           color="info"
                           sx={{ width: "100%", borderRadius: "5px" }}
                         />
-                      ) : item.status === "interviewed" ? (
+                      ) : item.status === "INTERVIEWED" ? (
                         <CustomChip
                           size="small"
                           skin="light"
@@ -404,7 +391,7 @@ const ApplicationTable = () => {
                           color="success"
                           sx={{ width: "100%", borderRadius: "5px" }}
                         />
-                      ) : item.status === "rejected" ? (
+                      ) : item.status === "REJECTED" ? (
                         <CustomChip
                           size="small"
                           skin="light"
@@ -412,7 +399,7 @@ const ApplicationTable = () => {
                           color="error"
                           sx={{ width: "100%", borderRadius: "5px" }}
                         />
-                      ) : item.status === "shortlisted" ? (
+                      ) : item.status === "SHORTLISTED" ? (
                         <CustomChip
                           size="small"
                           skin="light"
@@ -420,20 +407,19 @@ const ApplicationTable = () => {
                           color="warning"
                           sx={{ width: "100%", borderRadius: "5px" }}
                         />
-                      ) : item.status === "under review" ? (
+                      ) : item.status === "PENDING" ? (
                         <CustomChip
                           size="small"
                           skin="light"
-                          label="Under Review"
+                          label="Pending"
                           color="warning"
-                          rounded
                           sx={{ width: "100%", borderRadius: "5px" }}
                         />
                       ) : (
                         <CustomChip
                           size="small"
                           skin="light"
-                          label="reviewed"
+                          label="Reviewed"
                           color="primary"
                           sx={{ width: "100%", borderRadius: "5px" }}
                         />
@@ -464,25 +450,18 @@ const ApplicationTable = () => {
                             }}
                             PaperProps={{ style: { minWidth: "8rem" } }}
                           >
-                            <MenuItem
-                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                            >
+                            <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
                               <Icon icon="tabler:edit" fontSize={20} />
                               Edit
                             </MenuItem>
-                            <MenuItem
-                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                            >
+                            <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
                               <Icon icon="tabler:eye" fontSize={20} />
-                              View
+                              <Link href={`/dashboard/applications/${item.id}`}>
+                                View
+                              </Link>
                             </MenuItem>
-                            <MenuItem
-                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                            >
-                              <Icon
-                                icon="fluent:delete-24-regular"
-                                fontSize={20}
-                              />
+                            <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
+                              <Icon icon="fluent:delete-24-regular" fontSize={20} />
                               Delete
                             </MenuItem>
                           </Menu>
@@ -490,8 +469,8 @@ const ApplicationTable = () => {
                       </Box>
                     </TableCell>
                   </TableRow>
-                );
-              })}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
@@ -499,12 +478,146 @@ const ApplicationTable = () => {
 
       <TablePagination
         component="div"
-        count={100}
+        count={totalApplications}
         page={page}
         onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
+    </Card>
+  );
+};
+
+export const ApplicationDetail: React.FC<{ applicationId: string }> = ({ applicationId }) => {
+  const [application, setApplication] = useState<Application | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchApplication = async () => {
+      try {
+        setLoading(true);
+        const response = await fetchApplicationById(applicationId);
+        if (response.status) {
+          setApplication(response.application);
+        }
+      } catch (error) {
+        console.error("Error fetching application:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchApplication();
+  }, [applicationId]);
+
+  if (loading) {
+    return <Typography>Loading...</Typography>;
+  }
+
+  if (!application) {
+    return <Typography>Application not found</Typography>;
+  }
+
+  return (
+    <Card sx={{ m: 4 }}>
+      <CardHeader title={`Application #${application.id}`} />
+      <CardContent>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <Typography variant="h6">Applicant Details</Typography>
+          <Typography><strong>Name:</strong> {application.user.name}</Typography>
+          <Typography><strong>Email:</strong> {application.user.email}</Typography>
+          {application.user.phone_number && (
+            <Typography><strong>Phone:</strong> {application.user.phone_number}</Typography>
+          )}
+          {application.user.profile_image && (
+            <Box sx={{ mt: 1 }}>
+              <Typography><strong>Profile Image:</strong></Typography>
+              <img
+                src={application.user.profile_image}
+                alt="Profile"
+                style={{ maxWidth: "200px", borderRadius: "8px" }}
+              />
+            </Box>
+          )}
+
+          <Typography variant="h6" sx={{ mt: 2 }}>Application Details</Typography>
+          <Typography><strong>Job Title:</strong> {application.job.title}</Typography>
+          <Typography><strong>Application Date:</strong> {new Date(application.created_at).toLocaleDateString()}</Typography>
+          <Typography><strong>Status:</strong> {application.status}</Typography>
+          <Typography>
+            <strong>Job:</strong>{" "}
+            <Link href={`/dashboard/jobs/${application.job_id}`}>
+              View Job Details
+            </Link>
+          </Typography>
+
+          <Typography variant="h6" sx={{ mt: 2 }}>Submitted Documents</Typography>
+          {application.user.cv_upload && (
+            <Typography>
+              <strong>CV:</strong>{" "}
+              <a href={application.user.cv_upload} target="_blank" rel="noopener noreferrer">
+                Download CV
+              </a>
+            </Typography>
+          )}
+          {application.user.cover_letter_upload && (
+            <Typography>
+              <strong>Cover Letter:</strong>{" "}
+              <a href={application.user.cover_letter_upload} target="_blank" rel="noopener noreferrer">
+                Download Cover Letter
+              </a>
+            </Typography>
+          )}
+          {application.user.id_upload && (
+            <Typography>
+              <strong>ID:</strong>{" "}
+              <a href={application.user.id_upload} target="_blank" rel="noopener noreferrer">
+                View ID
+              </a>
+            </Typography>
+          )}
+          {application.user.video_url && (
+            <Typography>
+              <strong>Intro Video:</strong>{" "}
+              <a href={application.user.video_url} target="_blank" rel="noopener noreferrer">
+                Watch Video
+              </a>
+            </Typography>
+          )}
+          {application.user.work_sample_upload && (
+            <Typography>
+              <strong>Work Sample:</strong>{" "}
+              <a href={application.user.work_sample_upload} target="_blank" rel="noopener noreferrer">
+                Download Work Sample
+              </a>
+            </Typography>
+          )}
+          {application.user.portfolio_link && (
+            <Typography>
+              <strong>Portfolio:</strong>{" "}
+              <a href={application.user.portfolio_link} target="_blank" rel="noopener noreferrer">
+                View Portfolio
+              </a>
+            </Typography>
+          )}
+
+          {application.user.project_screenshots && application.user.project_screenshots.length > 0 && (
+            <>
+              <Typography variant="h6" sx={{ mt: 2 }}>Project Screenshots</Typography>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                {application.user.project_screenshots.map((screenshot, index) => (
+                  <img
+                    key={index}
+                    src={screenshot}
+                    alt={`Project screenshot ${index + 1}`}
+                    style={{ maxWidth: "150px", borderRadius: "8px" }}
+                  />
+                ))}
+              </Box>
+            </>
+          )}
+        </Box>
+      </CardContent>
     </Card>
   );
 };

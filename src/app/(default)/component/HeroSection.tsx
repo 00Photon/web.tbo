@@ -271,48 +271,167 @@ const HeroSection = () => {
           </Box>
         </Box> */}
        <Box
-      sx={{
-        display: "flex",
-        flexDirection: isMobile ? "column" : "row",
-        justifyContent: "center",
-        alignItems: "center",
-        gap: 4
-      }}
-    >
-      {services.map((service, index) => (
-        <React.Fragment key={index}>
-          <Box 
-            ref={(el: HTMLDivElement | null) => {
-              imageRefs.current[index] = el;
-            }}
-            sx={{ display: "flex", justifyContent: "center" }}
-          >
-            <img 
-              src={service.image} 
-              alt=""
-              style={{ 
-                maxWidth: isMobile ? "200px" : "250px",
-                height: "auto",
-                objectFit: "contain"
-              }}
-            />
-          </Box>
-          
-          {index < services.length - 1 && (
-            <ArrowForward 
-              ref={(el) => {
-                arrowRefs.current[index] = el;
-              }}
-              sx={{ 
-                color: theme.palette.primary.main,
-                fontSize: 40,
-                transform: isMobile ? "rotate(90deg)" : "none"
-              }} 
-            />
-          )}
-        </React.Fragment>
-      ))}
-    </Box>
+          sx={{
+            position: 'relative',
+            display: {
+              xs: 'none', // hidden on extra-small and small screens
+              sm: 'flex'  // shown on small screens and up
+            },
+            flexDirection: { sm: 'row' },
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: 10,
+            py: 8,
+            px: 2
+          }}
+        >
+          {[ImageOne, ImageTwo, ImageThree].map((image, index) => (
+            <React.Fragment key={`process-${index}`}>
+              <Box
+                sx={{
+                  position: 'relative',
+                  width: { xs: 200, sm: 340 },
+                  height: { xs: 200, sm: 340 },
+                  borderRadius: '50%',
+                  border: '3px solid',
+                  borderColor: 'primary.main',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  overflow: 'hidden',
+                  boxShadow: 4,
+                  transition: 'all 0.3s ease-in-out',
+                  flexShrink: 0,
+                  '&:hover': {
+                    transform: 'scale(1.07)',
+                    boxShadow: 8,
+                    borderColor: 'secondary.main'
+                  }
+                }}
+              >
+                <Box
+                  component="img"
+                  src={image.src}
+                  alt={`Step ${index + 1}`}
+                  sx={{
+                    width: '80%',
+                    height: '80%',
+                    objectFit: 'contain',
+                    filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.15))'
+                  }}
+                />
+
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    bgcolor: 'primary.main',
+                    color: 'white',
+                    width: { xs: 36, sm: 44 },
+                    height: { xs: 36, sm: 44 },
+                    borderRadius: '50%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    fontWeight: 'bold',
+                    fontSize: { xs: '1rem', sm: '1.25rem' },
+                    boxShadow: 3
+                  }}
+                >
+                  {index + 1}
+                </Box>
+              </Box>
+
+              {/* Animated Connector */}
+              {index < 2 && (
+                <Box
+                  sx={theme => ({
+                    position: 'relative',
+                    width: { xs: 40, sm: 80 },
+                    height: { xs: 40, sm: 20 },
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      backgroundColor: theme.palette.primary.main,
+                      [theme.breakpoints.up('sm')]: {
+                        width: '100%',
+                        height: '2px',
+                        top: '50%',
+                        left: 0,
+                        transform: 'translateY(-50%)'
+                      },
+                      [theme.breakpoints.down('sm')]: {
+                        height: '100%',
+                        width: '2px',
+                        left: '50%',
+                        top: 0,
+                        transform: 'translateX(-50%)'
+                      }
+                    },
+                    '&::after': {
+                      content: '""',
+                      position: 'absolute',
+                      [theme.breakpoints.up('sm')]: {
+                        right: 0,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        borderStyle: 'solid',
+                        borderWidth: '8px 0 8px 12px',
+                        borderColor: `transparent transparent transparent ${theme.palette.primary.main}`
+                      },
+                      [theme.breakpoints.down('sm')]: {
+                        bottom: 0,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        borderStyle: 'solid',
+                        borderWidth: '12px 8px 0 8px',
+                        borderColor: `${theme.palette.primary.main} transparent transparent transparent`
+                      }
+                    }
+                  })}
+                >
+                  <Box
+                    sx={theme => ({
+                      position: 'absolute',
+                      width: 12,
+                      height: 12,
+                      borderRadius: '50%',
+                      backgroundColor: theme.palette.secondary.main,
+                      [theme.breakpoints.up('sm')]: {
+                        left: 0,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        animation: 'moveRight 2s infinite ease-in-out'
+                      },
+                      [theme.breakpoints.down('sm')]: {
+                        top: 0,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        animation: 'moveDown 2s infinite ease-in-out'
+                      },
+                      '@keyframes moveRight': {
+                        '0%': { left: 0, opacity: 0 },
+                        '50%': { opacity: 1 },
+                        '100%': { left: '100%', opacity: 0 }
+                      },
+                      '@keyframes moveDown': {
+                        '0%': { top: 0, opacity: 0 },
+                        '50%': { opacity: 1 },
+                        '100%': { top: '100%', opacity: 0 }
+                      }
+                    })}
+                  />
+                </Box>
+              )}
+            </React.Fragment>
+          ))}
+        </Box>
+
       </Box>
 
       {/* <Card

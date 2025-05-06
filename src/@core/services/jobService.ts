@@ -24,6 +24,92 @@ export const fetchJobs = async () => {
   const data = await response.json();
   return data;
 };
+
+export const fetchApplications = async () => {
+  const session = await getSession(); 
+  if (!session || !session.user) throw new Error("User is not authenticated");
+
+  const token = session.user.accessToken; 
+
+  const response = await fetch(`${API_BASE_URL}/admin/applications`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`, 
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch jobs');
+  }
+
+  const data = await response.json();
+  return data;
+};
+
+export const fetchApplicationById = async (id: string) => {
+  const session = await getSession();
+  if (!session || !session.user) throw new Error("User is not authenticated");
+
+  const token = session.user.accessToken;
+
+  const response = await fetch(`${API_BASE_URL}/client/applications/${id}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`, 
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch job details');
+  }
+
+  const data = await response.json();
+  return data;
+};
+export const fetchJobsClients = async () => {
+  const session = await getSession(); 
+  if (!session || !session.user) throw new Error("User is not authenticated");
+
+  const token = session.user.accessToken; 
+
+  const response = await fetch(`${API_BASE_URL}/client/jobs`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`, 
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch jobs');
+  }
+
+  const data = await response.json();
+  return data;
+};
+export const fetchJobsclinetsById = async (id: string) => {
+  const session = await getSession();
+  if (!session || !session.user) throw new Error("User is not authenticated");
+
+  const token = session.user.accessToken;
+
+  const response = await fetch(`${API_BASE_URL}/client/jobs/${id}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`, 
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch job details');
+  }
+
+  const data = await response.json();
+  return data;
+};
 export const fetchJobsById = async (id: string) => {
   const session = await getSession();
   if (!session || !session.user) throw new Error("User is not authenticated");

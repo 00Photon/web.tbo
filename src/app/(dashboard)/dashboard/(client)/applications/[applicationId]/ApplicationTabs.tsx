@@ -1,34 +1,32 @@
-// ** React Imports
 import { useState, useEffect, SyntheticEvent } from "react";
-
-// ** MUI Components
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import TabPanel from "@mui/lab/TabPanel";
 import TabContext from "@mui/lab/TabContext";
-
 import { styled, Theme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import MuiTabList from "@mui/lab/TabList";
-
-// ** Icon Imports
 import Icon from "@/@core/component/icon";
+import Modal from "@mui/material/Modal";
+import Typography from "@mui/material/Typography";
+import FormControl from "@mui/material/FormControl";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import InputLabel from "@mui/material/InputLabel";
+import CircularProgress from "@mui/material/CircularProgress";
+import Alert from "@mui/material/Alert";
 
 import ApplicationTable from "./applications/ApplicationTable";
-import UnderReviewTable from "./applications/UnderReviewTable";
-import ReviewedTable from "./applications/ReviewedTable";
-import Interviewed from "./applications/InterviewedTable";
 import ShortListedTable from "./applications/ShortListedTable";
 import HiredTable from "./applications/HiredTable";
-import JobInfoCard from "../JobInfoCard";
+import { sendApplicationToAdmin, getAppliedJob } from "@/@core/services/jobVanciesService";
 
 const TabList = styled(MuiTabList)(({ theme }) => ({
   borderBottom: "0 !important",
   "&, & .MuiTabs-scroller": {
     boxSizing: "content-box",
-    // padding: theme.spacing(1.25, 1.25, 2),
     margin: `${theme.spacing(-1.25, -1.25, -2)} !important`,
   },
   "& .MuiTabs-indicator": {
@@ -43,7 +41,6 @@ const TabList = styled(MuiTabList)(({ theme }) => ({
     minWidth: 65,
     minHeight: 38,
     lineHeight: 1,
-    // borderRadius: theme.shape.borderRadius,
     "&:hover": {
       color: theme.palette.primary.main,
     },
@@ -58,41 +55,113 @@ type TabProps = {
   applicationId: string;
 };
 
-const ApplicationTabs = ({ tab, applicationId }: TabProps) => {
-  // ** State
-  const [activeTab, setActiveTab] = useState<string>(tab);
+interface Candidate {
+  id: number;
+  name: string;
+}
 
-  // ** Hooks
-  const hideText = useMediaQuery((theme: Theme) =>
-    theme.breakpoints.down("sm")
-  );
+const ApplicationTabs = ({ tab, applicationId }: TabProps) => {
+  const [activeTab, setActiveTab] = useState<string>(tab);
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
+  const [selectedCandidates, setSelectedCandidates] = useState<number[]>([]);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const hideText = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
 
   const handleChange = (e: SyntheticEvent, value: string) => {
     setActiveTab(value);
+  };
+
+  const handleOpenModal = () => {
+    setModalOpen(true);
+    fetchCandidates();
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedCandidates([]);
+    setError(null);
+    setSuccess(null);
+  };
+
+  const fetchCandidates = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const applicationsData = await getAppliedJob();
+      console.log("getAppliedJob response:", applicationsData); // Debug API response
+      if (!Array.isArray(applicationsData)) {
+        throw new Error("Expected an array of applications");
+      }
+      const shortlisted = applicationsData
+        .filter(
+          (app: any) =>
+            app.job_id === parseInt(applicationId, 10) &&
+            app.status === "SHORTLISTED"
+        )
+        .map((app: any) => ({
+          id: app.id,
+          name: app.user.name,
+        }));
+      console.log("Shortlisted candidates:", shortlisted); // Debug filtered candidates
+      setCandidates(shortlisted);
+      if (shortlisted.length === 0) {
+        setError("No shortlisted candidates found for this job");
+      }
+    } catch (err: any) {
+      console.error("Error fetching candidates:", err);
+      setError(err.message || "Failed to fetch candidates");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendToAdmin = async () => {
+    if (selectedCandidates.length === 0) {
+      setError("Please select at least one candidate");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const data = {
+        job_id: parseInt(applicationId, 10),
+        applications: selectedCandidates,
+        selected_candidates: selectedCandidates,
+      };
+      await sendApplicationToAdmin(data);
+      setSuccess("Candidates sent to admin successfully");
+      setSelectedCandidates([]);
+      setTimeout(handleCloseModal, 2000);
+    } catch (err: any) {
+      setError(err.message || "Failed to send candidates to admin");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     if (tab && tab !== activeTab) {
       setActiveTab(tab);
     }
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
   const tabContentList = {
-    all: <ApplicationTable />,
-    underReview: <UnderReviewTable />,
-    reviewed: <ReviewedTable />,
-    interviewed: <Interviewed />,
-    hired: <HiredTable />,
+    all: <ApplicationTable jobId={parseInt(applicationId, 10)} />,
     shortlisted: <ShortListedTable />,
+    hired: <HiredTable />,
   };
 
   return (
     <Grid container spacing={6}>
-      {activeTab === undefined ? null : (
+      {activeTab !== undefined && (
         <Grid item xs={12}>
-          <JobInfoCard applicationId={applicationId} />
           <TabContext value={activeTab}>
             <Grid container spacing={6}>
               <Box
@@ -117,7 +186,6 @@ const ApplicationTabs = ({ tab, applicationId }: TabProps) => {
                     alignItems: "center",
                     background: "#fff",
                     borderRadius: 2,
-
                     alignSelf: { xs: "flex-start !important" },
                   }}
                 >
@@ -145,38 +213,6 @@ const ApplicationTabs = ({ tab, applicationId }: TabProps) => {
                         }
                       />
                       <Tab
-                        value="underReview"
-                        label={
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              ...(!hideText && { "& svg": { mr: 2 } }),
-                              textTransform: "capitalize",
-                            }}
-                          >
-                            <Icon fontSize="1.5rem" icon="basil:search-solid" />
-                            {!hideText && "Under Review"}
-                          </Box>
-                        }
-                      />
-                      <Tab
-                        value="reviewed"
-                        label={
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              ...(!hideText && { "& svg": { mr: 2 } }),
-                              textTransform: "capitalize",
-                            }}
-                          >
-                            <Icon fontSize="1.575rem" icon="ph:eye" />
-                            {!hideText && "Reviewed"}
-                          </Box>
-                        }
-                      />
-                      <Tab
                         value="shortlisted"
                         label={
                           <Box
@@ -189,25 +225,6 @@ const ApplicationTabs = ({ tab, applicationId }: TabProps) => {
                           >
                             <Icon fontSize="1.575rem" icon="prime:users" />
                             {!hideText && "Shortlisted"}
-                          </Box>
-                        }
-                      />
-                      <Tab
-                        value="interviewed"
-                        label={
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              ...(!hideText && { "& svg": { mr: 2 } }),
-                              textTransform: "capitalize",
-                            }}
-                          >
-                            <Icon
-                              fontSize="1.125rem"
-                              icon="fluent:mic-28-regular"
-                            />
-                            {!hideText && "Interviewed"}
                           </Box>
                         }
                       />
@@ -232,42 +249,11 @@ const ApplicationTabs = ({ tab, applicationId }: TabProps) => {
                 </Box>
 
                 <Box sx={{ mt: { xs: 4, lg: 0 } }}>
-                  {activeTab === "reviewed" && (
-                    <Button
-                      variant="contained"
-                      size="large"
-                      sx={{
-                        textTransform: "capitalize",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        minWidth: "fit-content",
-                      }}
-                    >
-                      <Icon icon="tabler:send" sx={{ mr: 2 }} />
-                      Send to client
-                    </Button>
-                  )}
-                  {activeTab === "interviewed" && (
-                    <Button
-                      variant="contained"
-                      size="large"
-                      sx={{
-                        textTransform: "capitalize",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        minWidth: "fit-content",
-                      }}
-                    >
-                      <Icon icon="tabler:send" sx={{ mr: 2 }} />
-                      Update admin
-                    </Button>
-                  )}
                   {activeTab === "shortlisted" && (
                     <Button
                       variant="contained"
                       size="large"
+                      onClick={handleOpenModal}
                       sx={{
                         textTransform: "capitalize",
                         display: "flex",
@@ -277,7 +263,7 @@ const ApplicationTabs = ({ tab, applicationId }: TabProps) => {
                       }}
                     >
                       <Icon icon="tabler:send" sx={{ mr: 2 }} />
-                      Update admin
+                      Hire Talents
                     </Button>
                   )}
                 </Box>
@@ -292,6 +278,73 @@ const ApplicationTabs = ({ tab, applicationId }: TabProps) => {
           </TabContext>
         </Grid>
       )}
+
+      <Modal open={modalOpen} onClose={handleCloseModal} aria-labelledby="hire-talents-modal">
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: { xs: "90%", sm: 400 },
+            bgcolor: "background.paper",
+            boxShadow: 24,
+            p: 4,
+            borderRadius: 2,
+          }}
+        >
+          <Typography id="hire-talents-modal" variant="h6" sx={{ mb: 4 }}>
+            Hire Talents
+          </Typography>
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+          {success && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {success}
+            </Alert>
+          )}
+
+          <FormControl fullWidth sx={{ mb: 4 }}>
+            <InputLabel id="candidates-select-label">Select Candidates</InputLabel>
+            <Select
+              labelId="candidates-select-label"
+              multiple
+              value={selectedCandidates}
+              onChange={(e) => setSelectedCandidates(e.target.value as number[])}
+              label="Select Candidates"
+              disabled={loading}
+            >
+              {candidates.length === 0 && !loading ? (
+                <MenuItem disabled>No shortlisted candidates available</MenuItem>
+              ) : (
+                candidates.map((candidate) => (
+                  <MenuItem key={candidate.id} value={candidate.id}>
+                    {candidate.name}
+                  </MenuItem>
+                ))
+              )}
+            </Select>
+          </FormControl>
+
+          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+            <Button onClick={handleCloseModal} disabled={loading}>
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleSendToAdmin}
+              disabled={loading || selectedCandidates.length === 0}
+              startIcon={loading ? <CircularProgress size={20} /> : null}
+            >
+              Send
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
     </Grid>
   );
 };

@@ -32,3 +32,15 @@ export const fetchInterviews = async () => {
     throw new Error("Failed to fetch interviews.");
   }
 };
+
+
+export const updateInterviewStatus = async (interviewId: number, status: string) => {
+  try {
+    const response = await axios.put(`${API_BASE_URL}/admin/interviews/${interviewId}/update`, {
+    
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error('Failed to update interview status');
+  }
+};

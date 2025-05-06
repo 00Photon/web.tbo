@@ -1,18 +1,17 @@
+
 // *React Imports
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 // * Icon Imports
 import Icon from "@/@core/component/icon";
-import { useRouter } from "next/router";
+
+// * Service Imports
+import { getAppliedJob } from "@/@core/services/jobVanciesService"; // Adjust the import path to your service file
 
 // * Custom Component Imports
 import CustomTextField from "@/@core/component/mui/text-field";
 import { TableCellStyled } from "@/@core/component/mui/tableStyled";
 import CustomChip from "@/@core/component/mui/chip";
-
-// ** Third Party Imports
-import { Controller, useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
 
 // ** MUI Imports
 import Box from "@mui/material/Box";
@@ -38,79 +37,107 @@ import TablePagination from "@mui/material/TablePagination";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { Theme } from "@mui/material/styles";
 
-interface MockData {
+// ** Types (based on service response)
+interface Job {
+  id: number;
+  title: string;
+  job_type: string;
+  description: string;
+  requirements: string;
+  skill: string;
+  currency: string;
+  minimum_salary: string;
+  maximum_salary: string;
+  location: string;
+  application_deadline: string;
+  additional_info: string;
+  created_by: number;
+  client_id: number;
+  created_at: string;
+  updated_at: string;
+  status: string;
+  applicant_count: number;
+}
+
+interface User {
   id: number;
   name: string;
   email: string;
-  experience: string;
-  dateApplied: string;
-  status: boolean;
+  account_type: string;
+  phone_number: string | null;
+  cv_upload: string | null;
+  cover_letter_upload: string | null;
+  id_upload: string | null;
+  video_url: string | null;
+  project_screenshots: string[] | null;
+  work_sample_upload: string | null;
+  portfolio_link: string | null;
+  profile_image: string | null;
+  created_at: string;
+  updated_at: string;
+  status: string;
 }
 
-const data: MockData[] = [
-  {
-    id: 1289,
-    name: "John Doe",
-    email: "DqkR8@example.com",
-    experience: "mid-level",
-    dateApplied: "2022-01-01",
-    status: true,
-  },
-  {
-    id: 2412,
-    name: "Sarah Doe",
-    email: "sara@example.com",
-    experience: "mid-level",
-    dateApplied: "2021-01-01",
-    status: true,
-  },
-  {
-    id: 2129,
-    name: "Rizzy Elesius",
-    email: "sara@example.com",
-    experience: "mid-level",
-    dateApplied: "2024-02-01",
-    status: true,
-  },
-  {
-    id: 2129,
-    name: "Rizzy Elesius",
-    email: "sara@example.com",
-    experience: "mid-level",
-    dateApplied: "2024-02-01",
-    status: true,
-  },
-  {
-    id: 2129,
-    name: "Rizzy Elesius",
-    email: "sara@example.com",
-    experience: "mid-level",
-    dateApplied: "2024-02-01",
-    status: true,
-  },
-  {
-    id: 2129,
-    name: "Rizzy Elesius",
-    email: "sara@example.com",
-    experience: "mid-level",
-    dateApplied: "2024-02-01",
-    status: true,
-  },
-];
+interface Application {
+  id: number;
+  job_id: number;
+  user_id: number;
+  created_at: string;
+  updated_at: string;
+  status: string;
+  job: Job;
+  user: User;
+}
 
 const ShortlistedTalents = () => {
-  const [openFilter, setOpenFilter] = React.useState<boolean>(false);
-  const [value, setValue] = React.useState<string>("");
-  const [status, setStatus] = React.useState<string>("");
-  const [page, setPage] = React.useState(2);
-  const [rowsPerPage, setRowsPerPage] = React.useState(10);
-  const [anchorEl, setAnchorEl] = React.useState<(HTMLElement | null)[]>(
-    Array(data?.length)?.fill(null)
-  );
+  const [openFilter, setOpenFilter] = useState<boolean>(false);
+  const [value, setValue] = useState<string>("");
+  const [status, setStatus] = useState<string>("");
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [anchorEl, setAnchorEl] = useState<(HTMLElement | null)[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const smallScreen = useMediaQuery((theme: Theme) =>
-    theme.breakpoints.up("md")
-  );
+  const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up("md"));
+
+  // Fetch applications on component mount
+  useEffect(() => {
+    const fetchApplications = async () => {
+      try {
+        setLoading(true);
+        const data = await getAppliedJob();
+        // Filter for SHORTLISTED status
+        const shortlistedApplications = data
+          .filter((app) => app.status === "INTERVIEWED")
+          .map((app) => ({
+            ...app,
+            job: {
+              ...app.job,
+              additional_info: app.job.additional_info || "",
+            },
+            user: {
+              ...app.user,
+              project_screenshots: Array.isArray(app.user.project_screenshots)
+                ? app.user.project_screenshots
+                : app.user.project_screenshots
+                ? [app.user.project_screenshots]
+                : null,
+            },
+          }));
+        setApplications(shortlistedApplications);
+        setAnchorEl(Array(shortlistedApplications.length).fill(null));
+      } catch (err) {
+        setError("Failed to load applications");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchApplications();
+  }, []);
 
   const handleChangePage = (
     event: React.MouseEvent<HTMLButtonElement> | null,
@@ -140,6 +167,20 @@ const ShortlistedTalents = () => {
 
   const toggleFilter = () => setOpenFilter(!openFilter);
 
+  // Pagination logic
+  const paginatedApplications = applications.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
+  if (loading) {
+    return <Typography>Loading...</Typography>;
+  }
+
+  if (error) {
+    return <Typography color="error">{error}</Typography>;
+  }
+
   return (
     <Card
       sx={{
@@ -150,7 +191,7 @@ const ShortlistedTalents = () => {
       }}
     >
       <CardContent sx={{ p: (theme) => theme.spacing(3) }}>
-        {!smallScreen && <Typography variant="h6">Shortlisted</Typography>}
+        {!smallScreen && <Typography variant="h6">Shortlisted Talents</Typography>}
 
         <Collapse
           easing={"ease-in-out"}
@@ -159,12 +200,7 @@ const ShortlistedTalents = () => {
           unmountOnExit
           sx={{ mb: 3, boxShadow: 4 }}
         >
-          <Paper
-            sx={{
-              px: 3,
-              py: 3,
-            }}
-          >
+          <Paper sx={{ px: 3, py: 3 }}>
             <Typography
               sx={{
                 mb: 3,
@@ -185,10 +221,11 @@ const ShortlistedTalents = () => {
                   label="Status"
                 >
                   <MenuItem value="0">Select Status</MenuItem>
-                  <MenuItem value="1">Shortlisted</MenuItem>
-                  <MenuItem value="2">Reviewed</MenuItem>
-                  <MenuItem value="3">Interviewed</MenuItem>
-                  <MenuItem value="4">Hired</MenuItem>
+                  <MenuItem value="PENDING">Pending</MenuItem>
+                  <MenuItem value="SHORTLISTED">Shortlisted</MenuItem>
+                  <MenuItem value="REVIEWED">Reviewed</MenuItem>
+                  <MenuItem value="INTERVIEWED">Interviewed</MenuItem>
+                  <MenuItem value="HIRED">Hired</MenuItem>
                 </CustomTextField>
               </Grid>
               <Grid item xs={6} sm={3}>
@@ -202,10 +239,10 @@ const ShortlistedTalents = () => {
                   label="Level of Experience"
                 >
                   <MenuItem value="0">Select Level</MenuItem>
-                  <MenuItem value="1">Entry Level</MenuItem>
-                  <MenuItem value="2">Intermediate</MenuItem>
-                  <MenuItem value="3">Mid-Level</MenuItem>
-                  <MenuItem value="4">Senior</MenuItem>
+                  <MenuItem value="ENTRY">Entry Level</MenuItem>
+                  <MenuItem value="INTERMEDIATE">Intermediate</MenuItem>
+                  <MenuItem value="MID">Mid-Level</MenuItem>
+                  <MenuItem value="SENIOR">Senior</MenuItem>
                 </CustomTextField>
               </Grid>
               <Grid item xs={6} sm={3}>
@@ -236,29 +273,11 @@ const ShortlistedTalents = () => {
                   label="Date Applied"
                 >
                   <MenuItem value="0">Date of Application</MenuItem>
-                  <MenuItem value="1">11, July 2023</MenuItem>
-                  <MenuItem value="2">11, Aug 2024</MenuItem>
-                  <MenuItem value="3">11, Sept 2021</MenuItem>
-                  <MenuItem value="4">11, Jan 2022</MenuItem>
+                  <MenuItem value="1">May 2025</MenuItem>
+                  <MenuItem value="2">April 2025</MenuItem>
+                  <MenuItem value="3">March 2025</MenuItem>
                 </CustomTextField>
               </Grid>
-              {/* <Grid item xs={6} sm={2}>
-                <CustomTextField
-                  select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  size="small"
-                  placeholder="Senior, mid-level, entry..."
-                  fullWidth
-                  label="Comment"
-                >
-                  <MenuItem value="0">Good</MenuItem>
-                  <MenuItem value="1">Satifactory</MenuItem>
-                  <MenuItem value="2">11, Aug 2024</MenuItem>
-                  <MenuItem value="3">11, Sept 2021</MenuItem>
-                  <MenuItem value="4">11, Jan 2022</MenuItem>
-                </CustomTextField>
-              </Grid> */}
             </Grid>
           </Paper>
         </Collapse>
@@ -272,15 +291,8 @@ const ShortlistedTalents = () => {
             justifyContent: { xs: "flex-end", md: "space-between" },
           }}
         >
-          {smallScreen && <Typography variant="h6">Shortlisted</Typography>}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              minWidth: 400,
-            }}
-          >
+          {smallScreen && <Typography variant="h6">Interviewed</Typography>}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, minWidth: 400 }}>
             <CustomTextField
               value={value}
               onChange={(e) => setValue(e.target.value)}
@@ -291,16 +303,13 @@ const ShortlistedTalents = () => {
                 startAdornment: (
                   <InputAdornment
                     position="start"
-                    sx={{
-                      color: (theme) => theme.palette.primary.main,
-                    }}
+                    sx={{ color: (theme) => theme.palette.primary.main }}
                   >
                     <Icon icon="lets-icons:search-duotone" />
                   </InputAdornment>
                 ),
               }}
             />
-
             <Button
               onClick={toggleFilter}
               variant={openFilter ? "contained" : "outlined"}
@@ -322,25 +331,11 @@ const ShortlistedTalents = () => {
         <TableContainer component={Paper}>
           <Table stickyHeader>
             <TableHead>
-              <TableRow
-                sx={{ background: (theme) => theme.palette.secondary.dark }}
-              >
+              <TableRow sx={{ background: (theme) => theme.palette.secondary.dark }}>
                 <TableCellStyled align="left" sx={{ minWidth: 50 }}>
-                  <Checkbox
-                    size="small"
-                    // name={"all-checked"}
-                    // onChange={() => {
-                    //   if (allChecked) {
-                    //     setAllChecked(false)
-                    //     setChecked([])
-                    //   } else {
-                    //     setAllChecked(true)
-                    //     setChecked(PayrollData?.map(p => p?.id))
-                    //   }
-                    // }}
-                  />
+                  <Checkbox size="small" />
                 </TableCellStyled>
-                <TableCellStyled align={"left"}>User ID</TableCellStyled>
+                <TableCellStyled align="left">User ID</TableCellStyled>
                 <TableCellStyled align="left" sx={{ minWidth: 150 }}>
                   Name
                 </TableCellStyled>
@@ -352,103 +347,64 @@ const ShortlistedTalents = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {data.map((item, i) => {
-                return (
-                  <TableRow key={i}>
-                    <TableCell align="left">
-                      <Checkbox
-                        size="small"
-                        // name={`${payroll?.id}-checked`}
-                        // checked={checked.includes(payroll?.id)}
-                        // onChange={() => {
-                        //   if (checked.includes(payroll.id)) {
-                        //     const restChecked = checked.filter(c => c !== payroll?.id)
-                        //     setChecked(restChecked)
-                        //     setAllChecked(false)
-                        //   } else {
-                        //     if (checked.length + 1 === payroll?.length) {
-                        //       setAllChecked(true)
-                        //     }
-                        //     setChecked([...checked, payroll?.id])
-                        //   }
-                        // }}
-                      />
-                    </TableCell>
-                    <TableCell>{item.id}</TableCell>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell>{item.email}</TableCell>
-                    <TableCell align="center">{item.experience}</TableCell>
-                    <TableCell>{item.dateApplied}</TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{
-                        textTransform: "capitalize",
-                        fontWeight: "semibold",
-                      }}
-                    >
-                      {item.status === true && (
-                        <CustomChip
+              {paginatedApplications.map((item, i) => (
+                <TableRow key={item.id}>
+                  <TableCell align="left">
+                    <Checkbox size="small" />
+                  </TableCell>
+                  <TableCell>{item.user_id}</TableCell>
+                  <TableCell>{item.user.name}</TableCell>
+                  <TableCell>{item.user.email}</TableCell>
+                  <TableCell align="center">{item.job.title}</TableCell>
+                  <TableCell>
+                    {new Date(item.created_at).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell align="center" sx={{ textTransform: "capitalize" }}>
+                    <CustomChip
+                      size="small"
+                      skin="light"
+                      label="Interviewed"
+                       color="info"
+                      sx={{ width: "100%", borderRadius: "5px" }}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ alignSelf: "end" }}>
+                      <Avatar sx={{ background: "transparent" }}>
+                        <IconButton
                           size="small"
-                          skin="light"
-                          label="Shortlisted"
-                          color="warning"
-                          sx={{ width: "100%", borderRadius: "5px" }}
-                        />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ alignSelf: "end" }}>
-                        <Avatar sx={{ background: "transparent" }}>
-                          <IconButton
-                            size="small"
-                            onClick={(event) => handleRowOptionsClick(event, i)}
-                          >
-                            <Icon icon="tabler:dots-vertical" />
-                          </IconButton>
-                          <Menu
-                            keepMounted
-                            disableScrollLock
-                            anchorEl={anchorEl[i]}
-                            open={Boolean(anchorEl[i])}
-                            onBlur={() => handleRowOptionsClose(i)}
-                            anchorOrigin={{
-                              vertical: "bottom",
-                              horizontal: "right",
-                            }}
-                            transformOrigin={{
-                              vertical: "top",
-                              horizontal: "right",
-                            }}
-                            PaperProps={{ style: { minWidth: "8rem" } }}
-                          >
-                            <MenuItem
-                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                            >
-                              <Icon icon="tabler:edit" fontSize={20} />
-                              Edit
-                            </MenuItem>
-                            <MenuItem
-                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                            >
-                              <Icon icon="tabler:eye" fontSize={20} />
-                              View
-                            </MenuItem>
-                            <MenuItem
-                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                            >
-                              <Icon
-                                icon="fluent:delete-24-regular"
-                                fontSize={20}
-                              />
-                              Delete
-                            </MenuItem>
-                          </Menu>
-                        </Avatar>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+                          onClick={(event) => handleRowOptionsClick(event, i)}
+                        >
+                          <Icon icon="tabler:dots-vertical" />
+                        </IconButton>
+                        <Menu
+                          keepMounted
+                          disableScrollLock
+                          anchorEl={anchorEl[i]}
+                          open={Boolean(anchorEl[i])}
+                          onBlur={() => handleRowOptionsClose(i)}
+                          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                          transformOrigin={{ vertical: "top", horizontal: "right" }}
+                          PaperProps={{ style: { minWidth: "8rem" } }}
+                        >
+                          <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
+                            <Icon icon="tabler:edit" fontSize={20} />
+                            Edit
+                          </MenuItem>
+                          <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
+                            <Icon icon="tabler:eye" fontSize={20} />
+                            View
+                          </MenuItem>
+                          <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
+                            <Icon icon="fluent:delete-24-regular" fontSize={20} />
+                            Delete
+                          </MenuItem>
+                        </Menu>
+                      </Avatar>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </TableContainer>
@@ -456,7 +412,7 @@ const ShortlistedTalents = () => {
 
       <TablePagination
         component="div"
-        count={100}
+        count={applications.length}
         page={page}
         onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}

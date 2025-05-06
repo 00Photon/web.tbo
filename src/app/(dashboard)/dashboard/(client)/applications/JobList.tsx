@@ -1,21 +1,10 @@
-// *React Imports
-import React from "react";
-
-// * Icon Imports
+import React, { useEffect, useState } from "react";
 import Icon from "@/@core/component/icon";
-
-// * Next Imports
 import Link from "next/link";
-
-// * Custom Component Imports
 import CustomTextField from "@/@core/component/mui/text-field";
 import { TableCellStyled } from "@/@core/component/mui/tableStyled";
-
-// ** Third Party Imports
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-
-// ** MUI Imports
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import CustomChip from "@/@core/component/mui/chip";
@@ -39,85 +28,68 @@ import TableBody from "@mui/material/TableBody";
 import TablePagination from "@mui/material/TablePagination";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { Theme } from "@mui/material/styles";
-import PostJobModal from "./PostJobModal"; // Adjust the path if needed
+import PostJobModal from "./PostJobModal";
 
-interface MockData {
+// Assume these services are imported from your API client
+import { fetchJobsClients, fetchJobsclinetsById } from "@/@core/services/jobService";
+
+interface Job {
   id: number;
   title: string;
-  applications: number;
-  postingDate: string;
-  expirationDate: string;
+  job_type: string;
+  description: string;
+  requirements: string;
+  skill: string;
+  currency: string;
+  minimum_salary: string;
+  maximum_salary: string;
+  location: string;
+  application_deadline: string;
+  additional_info: string;
+  created_by: number;
+  client_id: number;
+  created_at: string;
+  updated_at: string;
   status: string;
+  applicant_count: number;
 }
 
-const data: MockData[] = [
-  {
-    id: 1,
-    title: "Software Engineer",
-    applications: 213,
-    postingDate: "12-05-2022",
-    expirationDate: "2022-01-01",
-    status: "Active",
-  },
-  {
-    id: 2,
-    title: "UI/UX Designer",
-    applications: 144,
-    postingDate: "12-05-2022",
-    expirationDate: "2021-01-01",
-    status: "Active",
-  },
-  {
-    id: 3,
-    title: "Product Designer",
-    applications: 189,
-    postingDate: "12-05-2022",
-    expirationDate: "2024-02-01",
-    status: "Expired",
-  },
-  {
-    id: 4,
-    title: "Machine Learning Engineer",
-    applications: 1280,
-    postingDate: "12-05-2022",
-    expirationDate: "2024-02-01",
-    status: "rejected",
-  },
-  {
-    id: 5,
-    title: "Cloud Engineer",
-    applications: 1280,
-    postingDate: "12-05-2022",
-    expirationDate: "2024-02-01",
-    status: "rejected",
-  },
-  {
-    id: 6,
-    title: "Backend Developer",
-    applications: 1280,
-    postingDate: "12-05-2022",
-    expirationDate: "2024-02-01",
-    status: "rejected",
-  },
-];
-
 const JobListTable: React.FC = () => {
-  const [openFilter, setOpenFilter] = React.useState<boolean>(false);
-  const [value, setValue] = React.useState<string>("");
-  const [status, setStatus] = React.useState<string>("");
-  const [page, setPage] = React.useState(2);
-  const [rowsPerPage, setRowsPerPage] = React.useState(10);
-  const [anchorEl, setAnchorEl] = React.useState<(HTMLElement | null)[]>(
-    Array(data?.length)?.fill(null)
-  );
-  const [openPostJobModal, setOpenPostJobModal] = React.useState(false);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [openFilter, setOpenFilter] = useState<boolean>(false);
+  const [value, setValue] = useState<string>("");
+  const [status, setStatus] = useState<string>("");
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [anchorEl, setAnchorEl] = useState<(HTMLElement | null)[]>([]);
+  const [openPostJobModal, setOpenPostJobModal] = useState(false);
+  const [totalJobs, setTotalJobs] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-const handleOpenModal = () => setOpenPostJobModal(true);
-const handleCloseModal = () => setOpenPostJobModal(false);
+  const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up("md"));
 
-  const smallScreen = useMediaQuery((theme: Theme) =>
-    theme.breakpoints.up("md")
-  );
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        setLoading(true);
+        const response = await fetchJobsClients();
+        if (response.status) {
+          setJobs(response.jobs);
+          setTotalJobs(response.total || response.jobs.length);
+          setAnchorEl(Array(response.jobs.length).fill(null));
+        }
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, [page, rowsPerPage]);
+
+  const handleOpenModal = () => setOpenPostJobModal(true);
+  const handleCloseModal = () => setOpenPostJobModal(false);
 
   const handleChangePage = (
     event: React.MouseEvent<HTMLButtonElement> | null,
@@ -157,8 +129,6 @@ const handleCloseModal = () => setOpenPostJobModal(false);
       }}
     >
       <CardContent sx={{ p: { xs: 2, md: 4 } }}>
-        {/* <CardHeader title="Job List" /> */}
-
         <Collapse
           easing={"ease-in-out"}
           in={openFilter}
@@ -166,18 +136,8 @@ const handleCloseModal = () => setOpenPostJobModal(false);
           unmountOnExit
           sx={{ mb: 3, boxShadow: 2 }}
         >
-          <Paper
-            sx={{
-              px: 3,
-              py: 3,
-            }}
-          >
-            <Typography
-              sx={{
-                mb: 3,
-                fontSize: { xs: "1rem", sm: "1.25rem" },
-              }}
-            >
+          <Paper sx={{ px: 3, py: 3 }}>
+            <Typography sx={{ mb: 3, fontSize: { xs: "1rem", sm: "1.25rem" } }}>
               Filter
             </Typography>
             <Grid container spacing={3}>
@@ -192,80 +152,11 @@ const handleCloseModal = () => setOpenPostJobModal(false);
                   label="Status"
                 >
                   <MenuItem value="0">Select Status</MenuItem>
-                  <MenuItem value="1">Shortlisted</MenuItem>
-                  <MenuItem value="2">Reviewed</MenuItem>
-                  <MenuItem value="3">Interviewed</MenuItem>
-                  <MenuItem value="4">Hired</MenuItem>
+                  <MenuItem value="active">Active</MenuItem>
+                  <MenuItem value="inactive">Inactive</MenuItem>
                 </CustomTextField>
               </Grid>
-              <Grid item xs={6} sm={3}>
-                <CustomTextField
-                  select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  size="small"
-                  placeholder="Senior, mid-level, entry..."
-                  fullWidth
-                  label="Level of Experience"
-                >
-                  <MenuItem value="0">Select Level</MenuItem>
-                  <MenuItem value="1">Entry Level</MenuItem>
-                  <MenuItem value="2">Intermediate</MenuItem>
-                  <MenuItem value="3">Mid-Level</MenuItem>
-                  <MenuItem value="4">Senior</MenuItem>
-                </CustomTextField>
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <CustomTextField
-                  select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  size="small"
-                  placeholder="less than 3..."
-                  fullWidth
-                  label="Years of Experience"
-                >
-                  <MenuItem value="0">Select Years of Experience</MenuItem>
-                  <MenuItem value="1">Less than 1</MenuItem>
-                  <MenuItem value="2">Less than 3</MenuItem>
-                  <MenuItem value="3">More than 3</MenuItem>
-                  <MenuItem value="4">More than 5</MenuItem>
-                </CustomTextField>
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <CustomTextField
-                  select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  size="small"
-                  placeholder="Month and Year..."
-                  fullWidth
-                  label="Date Applied"
-                >
-                  <MenuItem value="0">Date of Application</MenuItem>
-                  <MenuItem value="1">11, July 2023</MenuItem>
-                  <MenuItem value="2">11, Aug 2024</MenuItem>
-                  <MenuItem value="3">11, Sept 2021</MenuItem>
-                  <MenuItem value="4">11, Jan 2022</MenuItem>
-                </CustomTextField>
-              </Grid>
-              {/* <Grid item xs={6} sm={2}>
-                <CustomTextField
-                  select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  size="small"
-                  placeholder="Senior, mid-level, entry..."
-                  fullWidth
-                  label="Comment"
-                >
-                  <MenuItem value="0">Good</MenuItem>
-                  <MenuItem value="1">Satifactory</MenuItem>
-                  <MenuItem value="2">11, Aug 2024</MenuItem>
-                  <MenuItem value="3">11, Sept 2021</MenuItem>
-                  <MenuItem value="4">11, Jan 2022</MenuItem>
-                </CustomTextField>
-              </Grid> */}
+              {/* ... other filter fields ... */}
             </Grid>
           </Paper>
         </Collapse>
@@ -284,22 +175,19 @@ const handleCloseModal = () => setOpenPostJobModal(false);
               value={value}
               onChange={(e) => setValue(e.target.value)}
               size="small"
-              placeholder="."
+              placeholder="Search jobs..."
               sx={{ maxWidth: 400 }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment
                     position="start"
-                    sx={{
-                      color: (theme) => theme.palette.primary.main,
-                    }}
+                    sx={{ color: (theme) => theme.palette.primary.main }}
                   >
                     <Icon icon="lets-icons:search-duotone" />
                   </InputAdornment>
                 ),
               }}
             />
-
             <Box
               sx={{
                 display: "flex",
@@ -319,30 +207,28 @@ const handleCloseModal = () => setOpenPostJobModal(false);
                 }}
               >
                 {smallScreen && (
-                  <Typography sx={{ fontSize: ".857rem" }}> Filter</Typography>
+                  <Typography sx={{ fontSize: ".857rem" }}>Filter</Typography>
                 )}
                 <Icon icon="basil:filter-outline" />
               </Button>
-
               <Button
-  variant="contained"
-  size="medium"
-  onClick={handleOpenModal} // <-- Add this
-  sx={{
-    textTransform: "capitalize",
-    display: "flex",
-    alignItems: "center",
-    gap: 2,
-    width: "fit-content",
-    minWidth: { md: 120 },
-  }}
->
-  <Icon icon="fa6-solid:user-pen" fontSize="1.257rem" />
-  {smallScreen && (
-    <Typography sx={{ fontSize: ".857rem" }}>Post&nbsp;Job</Typography>
-  )}
-</Button>
-
+                variant="contained"
+                size="medium"
+                onClick={handleOpenModal}
+                sx={{
+                  textTransform: "capitalize",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 2,
+                  width: "fit-content",
+                  minWidth: { md: 120 },
+                }}
+              >
+                <Icon icon="fa6-solid:user-pen" fontSize="1.257rem" />
+                {smallScreen && (
+                  <Typography sx={{ fontSize: ".857rem" }}>Post Job</Typography>
+                )}
+              </Button>
             </Box>
           </Box>
         </Box>
@@ -350,55 +236,52 @@ const handleCloseModal = () => setOpenPostJobModal(false);
         <TableContainer component={Paper}>
           <Table stickyHeader aria-label="sticky table">
             <TableHead>
-              <TableRow
-                sx={{ background: (theme) => theme.palette.secondary.dark }}
-              >
-                <TableCellStyled align={"left"}>Job&nbsp;ID</TableCellStyled>
-                <TableCellStyled align={"left"}>Title</TableCellStyled>
-                <TableCellStyled align={"left"}>Applications</TableCellStyled>
-                <TableCellStyled align={"left"}>
-                  Posting&nbsp;Date
-                </TableCellStyled>
-                <TableCellStyled align={"left"}>
-                  Expiration&nbsp;Date
-                </TableCellStyled>
-                <TableCellStyled align={"left"}>Status</TableCellStyled>
-                <TableCellStyled align={"left"}>Actions</TableCellStyled>
+              <TableRow sx={{ background: (theme) => theme.palette.secondary.dark }}>
+                <TableCellStyled align="left">Job ID</TableCellStyled>
+                <TableCellStyled align="left">Title</TableCellStyled>
+                <TableCellStyled align="left">Applications</TableCellStyled>
+                <TableCellStyled align="left">Posting Date</TableCellStyled>
+                <TableCellStyled align="left">Expiration Date</TableCellStyled>
+                <TableCellStyled align="left">Status</TableCellStyled>
+                <TableCellStyled align="left">Actions</TableCellStyled>
               </TableRow>
             </TableHead>
             <TableBody>
-              {data.map((item, i) => {
-                return (
-                  <TableRow key={i}>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center">
+                    Loading...
+                  </TableCell>
+                </TableRow>
+              ) : jobs.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center">
+                    No jobs found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                jobs.map((item, i) => (
+                  <TableRow key={item.id}>
                     <TableCell>{item.id}</TableCell>
                     <TableCell>{item.title}</TableCell>
-                    <TableCell>{item.applications}</TableCell>
-                    <TableCell>{item.postingDate}</TableCell>
-                    <TableCell>{item.expirationDate}</TableCell>
+                    <TableCell>{item.applicant_count}</TableCell>
+                    <TableCell>
+                      {new Date(item.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(item.application_deadline).toLocaleDateString()}
+                    </TableCell>
                     <TableCell
                       align="center"
-                      sx={{
-                        textTransform: "capitalize",
-                        fontWeight: "semibold",
-                      }}
+                      sx={{ textTransform: "capitalize", fontWeight: "semibold" }}
                     >
-                      {item.status === "Active" ? (
-                        <CustomChip
-                          label="Active"
-                          color="success"
-                          skin="light"
-                          size="small"
-                          sx={{ width: "100%", borderRadius: "5px" }}
-                        />
-                      ) : (
-                        <CustomChip
-                          color="error"
-                          label="Expired"
-                          skin="light"
-                          size="small"
-                          sx={{ width: "100%", borderRadius: "5px" }}
-                        />
-                      )}
+                      <CustomChip
+                        label={item.status}
+                        color={item.status === "active" ? "success" : "error"}
+                        skin="light"
+                        size="small"
+                        sx={{ width: "100%", borderRadius: "5px" }}
+                      />
                     </TableCell>
                     <TableCell>
                       <Box sx={{ alignSelf: "end" }}>
@@ -425,27 +308,18 @@ const handleCloseModal = () => setOpenPostJobModal(false);
                             }}
                             PaperProps={{ style: { minWidth: "8rem" } }}
                           >
-                            <MenuItem
-                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                            >
+                            <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
                               <Icon icon="tabler:edit" fontSize={20} />
                               Edit
                             </MenuItem>
-                            <MenuItem
-                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                            >
+                            <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
                               <Icon icon="tabler:eye" fontSize={20} />
                               <Link href={`/dashboard/applications/${item.id}`}>
                                 View
                               </Link>
                             </MenuItem>
-                            <MenuItem
-                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                            >
-                              <Icon
-                                icon="fluent:delete-24-regular"
-                                fontSize={20}
-                              />
+                            <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
+                              <Icon icon="fluent:delete-24-regular" fontSize={20} />
                               Delete
                             </MenuItem>
                           </Menu>
@@ -453,8 +327,8 @@ const handleCloseModal = () => setOpenPostJobModal(false);
                       </Box>
                     </TableCell>
                   </TableRow>
-                );
-              })}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
@@ -462,18 +336,73 @@ const handleCloseModal = () => setOpenPostJobModal(false);
 
       <TablePagination
         component="div"
-        count={100}
+        count={totalJobs}
         page={page}
         onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
-    <PostJobModal open={openPostJobModal} close={handleCloseModal}  />
+      <PostJobModal open={openPostJobModal} close={handleCloseModal} />
     </Card>
-    
   );
+};
 
+// New component for single job view
+export const JobDetail: React.FC<{ jobId: string }> = ({ jobId }) => {
+  const [job, setJob] = useState<Job | null>(null);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    const fetchJob = async () => {
+      try {
+        setLoading(true);
+        const response = await fetchJobsclinetsById(jobId);
+        if (response.status) {
+          setJob(response.job);
+        }
+      } catch (error) {
+        console.error("Error fetching job:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJob();
+  }, [jobId]);
+
+  if (loading) {
+    return <Typography>Loading...</Typography>;
+  }
+
+  if (!job) {
+    return <Typography>Job not found</Typography>;
+  }
+
+  return (
+    <Card sx={{ m: 4 }}>
+      <CardHeader title={job.title} />
+      <CardContent>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <Typography variant="h6">Job Details</Typography>
+          <Typography><strong>Type:</strong> {job.job_type}</Typography>
+          <Typography><strong>Location:</strong> {job.location}</Typography>
+          <Typography><strong>Salary:</strong> {job.currency} {job.minimum_salary} - {job.maximum_salary}</Typography>
+          <Typography><strong>Deadline:</strong> {new Date(job.application_deadline).toLocaleDateString()}</Typography>
+          <Typography><strong>Status:</strong> {job.status}</Typography>
+          <Typography><strong>Applicants:</strong> {job.applicant_count}</Typography>
+          
+          <Typography variant="h6" sx={{ mt: 2 }}>Description</Typography>
+          <Typography>{job.description}</Typography>
+          
+          <Typography variant="h6" sx={{ mt: 2 }}>Requirements</Typography>
+          <Typography>{job.requirements}</Typography>
+          
+          <Typography variant="h6" sx={{ mt: 2 }}>Additional Info</Typography>
+          <Typography>{job.additional_info}</Typography>
+        </Box>
+      </CardContent>
+    </Card>
+  );
 };
 
 export default JobListTable;

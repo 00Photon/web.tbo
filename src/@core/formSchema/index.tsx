@@ -22,25 +22,26 @@ export const supportSchema = yup.object().shape({
 });
 
 export const companySchema = yup.object().shape({
-  name: yup.string().required("Please enter your company name"),
-  email: yup
+  company_name: yup.string().required("Please enter your company name"),
+  company_email_address: yup
     .string()
     .email("Please enter a valid email")
     .required("Please enter your email"),
-  employees: yup.number().required("Please enter your number of employees"),
-  typeOfEmployer: yup.string().required("Please enter your type of employer"),
-  address: yup.string().required("Please enter your company address"),
-  country: yup.string().required("Please enter your country code"),
-  countryCode: yup.string().required("Please enter your country code"),
+  number_of_employees: yup.string().required("Please enter your number of employees"), // Changed to string to match "50-100" format
+  type_of_employer: yup.string().required("Please enter your type of employer"), // Note: "employer" is misspelled as "employer" in backend
+  company_address: yup.string().required("Please enter your company address"),
+  country: yup.string().required("Please enter your country"),
+  company_phone_number: yup.string().required("Please enter your company phone number"),
   industry: yup.string().required("Please enter your industry"),
-  website: yup.string().required("Please enter your website"),
-  contactPerson: yup.string().required("Please enter Representative name"),
-  workEmail: yup
+  company_website: yup.string().required("Please enter your website"),
+  contact_person: yup.string().required("Please enter Representative name"), // Note: "person" is misspelled as "persion" in backend
+  work_email: yup
     .string()
     .email("Please enter a valid email")
     .required("Work email address required"),
-  position: yup.string().required("Please enter representative position"),
-  repCountryCode: yup.string().required("Please enter country code"),
+  position_in_company: yup.string().required("Please enter representative position"),
+  company_logo: yup.string().required("Please Add Company Logo "),
+  // company_logo is not included in the form as it appears to be auto-generated
 });
 
 
@@ -92,23 +93,28 @@ export const newJobSchemaClone = yup.object().shape({
 });
 
 export const interviewSchema = yup.object().shape({
-  fullName: yup.string().required("full name is required"),
-  positionApplied: yup.string().required("position applied for is required"),
-  candidateEmail: yup.string().required("candidate email is required"),
-  candidatePhone: yup.string().required("candidate phone number is required"),
-  interviewerName: yup
+  applicationId: yup
+    .number()
+    .min(1, "Please select an application")
+    .required("Application selection is required"),
+  userId: yup
+    .number()
+    .required("User ID is required"), // Or mark as optional if injected internally
+  interviewerName: yup.string().required("Interviewer name is required"),
+  interviewerDepartment: yup.string().required("Department is required"),
+  interviewerEmail: yup
     .string()
-    .required("at least one interviewer name is required"),
-  interviewerDepartment: yup.string().required("department/role is required"),
-  interviewerEmail: yup.string().required("interviewer email is required"),
-  interviewerPhone: yup.string().required("interviewer phone is required"),
-  interviewDate: yup.string().required("interview date is required"),
-  interviewTime: yup.string().required("interview time is required"),
-  duration: yup.string().required("interview duration is required"),
-  format: yup.string().required("interview format is required"),
-  information: yup.string(),
-  reminder: yup.string(),
+    .email("Invalid email format")
+    .required("Interviewer email is required"),
+  interviewerPhone: yup.string().required("Interviewer phone number is required"),
+  interviewDate: yup.string().required("Interview date is required"),
+  interviewTime: yup.string().required("Interview time is required"),
+  duration: yup.string().required("Interview duration is required"),
+  format: yup.string().required("Interview format is required"),
+  information: yup.string().optional(),
+  reminder: yup.string().optional(),
 });
+
 
 export const newAdminSchema = yup.object().shape({
   fullName: yup.string().required("Full Name is required"),
