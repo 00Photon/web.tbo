@@ -8,7 +8,7 @@ import Icon from "@/@core/component/icon";
 import CustomTextField from "@/@core/component/mui/text-field";
 
 // *Utility Imports
-import { newJobSchema } from "@/@core/formSchema";
+import { newJobSchema2 } from "@/@core/formSchema";
 
 // *Third Party Imports
 import { Controller, useForm, SubmitHandler } from "react-hook-form";
@@ -29,7 +29,7 @@ import Chip from "@mui/material/Chip";
 import { Autocomplete, IconButton, TextFieldProps } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
 
-import { createJob }  from "@/@core/services/jobService"
+import { createJobclient }  from "@/@core/services/jobService"
 
 interface Props {
   open: boolean;
@@ -48,7 +48,7 @@ interface IFormInput {
   maxSalary: string;
   application_deadline: string;
   information: string;
-  client_id: string;
+ 
 }
 
 const defaultValues = {
@@ -90,7 +90,7 @@ const NewJob = ({ open, close }: Props) => {
   } = useForm<IFormInput>({
     defaultValues: defaultValues,
     mode: "onChange",
-    resolver: yupResolver(newJobSchema),
+    resolver: yupResolver(newJobSchema2),
   });
 
   const submitForm: SubmitHandler<IFormInput> = (values) => {
@@ -108,7 +108,7 @@ const NewJob = ({ open, close }: Props) => {
       additional_info: values.information,
     };
   
-    createJob(jobData)
+    createJobclient(jobData)
       .then((response) => {
         console.log("Job created:", response);
         reset();

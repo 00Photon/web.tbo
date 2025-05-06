@@ -78,6 +78,20 @@ export const newJobSchema = yup.object().shape({
   information: yup.string().required("Job information is required"),
   client_id: yup.string().required(" Please select Company"),
 });
+export const newJobSchema2 = yup.object().shape({
+  title: yup.string().required("Job title is required"),
+  type: yup.string().required("Job type is required"),
+  description: yup.string().required("Job description is required"),
+  requirement: yup.string().required("Job requirement is required"),
+  skill: yup.array().required("Please add at least one skill"),
+  location: yup.string().required("Job location is required"),
+  currency: yup.string().required("Job currency is required"),
+  minSalary: yup.string().required("Minimum salary is required"),
+  maxSalary: yup.string().required("Maximum salary is required"),
+  application_deadline: yup.string().required("Job deadline is required"),
+  information: yup.string().required("Job information is required"),
+
+});
 
 export const newJobSchemaClone = yup.object().shape({
   title: yup.string().required("Job title is required"),
