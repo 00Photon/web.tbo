@@ -12,6 +12,7 @@ interface InterviewData {
   interviewer_role: string;
   interviewer_email: string;
   interviewer_phone: string;
+  status: string;
 }
 
 export const scheduleInterview = async (data: InterviewData) => {
@@ -37,7 +38,7 @@ export const fetchInterviews = async () => {
 export const updateInterviewStatus = async (interviewId: number, status: string) => {
   try {
     const response = await axios.put(`${API_BASE_URL}/admin/interviews/${interviewId}/update`, {
-    
+      status,
     });
     return response.data;
   } catch (error) {

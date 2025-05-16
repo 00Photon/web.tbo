@@ -45,21 +45,10 @@ const JobApplicationsTable: React.FC<{
     'Action',
   ];
 
-  const companyNameField = (image: string, name: string) => (
+  const companyNameField = (name: string) => (
     <TableCell>
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-        <Box sx={{ marginRight: '12px' }}>
-          <Box
-            sx={{
-              backgroundImage: `url(${image})`,
-              backgroundSize: '100% 100%',
-              borderRadius: '20%',
-              width: '30px',
-              height: '30px',
-              backgroundColor: '#E7E7E7',
-            }}
-          />
-        </Box>
+      
         <Typography sx={{ fontWeight: '600', color: '#101828', fontSize: '14px' }}>
           {name}
         </Typography>
@@ -118,7 +107,7 @@ const JobApplicationsTable: React.FC<{
         <TableBody>
           {appliedJobs.map((job) => (
             <TableRow key={job.id}>
-              {companyNameField('/icons/default-company.png', job.job.location)}
+              {companyNameField(job.job.client.company_name ?? "Unknown")}
               {textOnlyField(job.job.title)}
               {textOnlyField(formatDate(job.created_at))}
               {applicationStatusField(job.status)}

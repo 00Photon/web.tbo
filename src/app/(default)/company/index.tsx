@@ -14,7 +14,15 @@ const Clients: React.FC = () => {
       <ClientHero />
       {/* <ClientOffers /> */}
       {/* <Banner /> */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "20px",
+        }}>
       <Talents />
+      </div>
     </>
   );
 };

@@ -114,7 +114,7 @@ export const ApplicationUserChart = () => {
   return (
     <Paper sx={{ p: 3, width: "100%", my: 4 }}>
       <Typography sx={{ fontWeight: 600, color: "primary.main" }}>
-        Total Users <SubText>vs</SubText> <SupText>Applications</SupText>
+        Companies <SubText>vs</SubText> <SupText>Applications</SupText>
       </Typography>
       <Line options={options} data={data} />
     </Paper>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { getCurrentUser, updateUser } from "@/@core/services/user";
+import { getCurrentUser, updateUser, uploadFile } from '@/@core/services/user';
 import {
   Avatar,
   Box,
@@ -23,10 +23,8 @@ const MyProfileTab = () => {
     profile_image: '',
     account_type: 'TALENT' as const
   });
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [tempImageUrl, setTempImageUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isSavingImage, setIsSavingImage] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -61,11 +59,10 @@ const MyProfileTab = () => {
     }));
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setImageFile(file);
-      
+
       // Create a preview URL
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -74,56 +71,37 @@ const MyProfileTab = () => {
         }
       };
       reader.readAsDataURL(file);
-    }
-  };
 
-  const uploadImageToServer = async (file: File): Promise<string> => {
-    // Implement your actual image upload logic here
-    // This should return the URL of the uploaded image
-    // For now, we'll mock this with a placeholder
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(`https://example.com/uploads/${file.name}`);
-      }, 1000);
-    });
-  };
+      const formData = new FormData();
+      formData.append('file', file);
 
-  const saveImage = async () => {
-    if (!userId || !imageFile) return;
-    
-    try {
-      setIsSavingImage(true);
-      // First upload the image to get a URL
-      const imageUrl = await uploadImageToServer(imageFile);
-      
-      // Create payload with only the profile image
-      const payload = {
-        profile_image: imageUrl
-      };
-      
-      // Save to backend
-      await updateUser(userId, formData);
-      
-      // Update state
-      setFormData(prev => ({
-        ...prev,
-        profile_image: imageUrl
-      }));
-      setTempImageUrl(null);
-      setImageFile(null);
-      setSuccess("Profile image updated successfully!");
-    } catch (error) {
-      console.error("Failed to save image:", error);
-      setError("Failed to upload image. Please try again.");
-    } finally {
-      setIsSavingImage(false);
+      try {
+        const uploaded = await uploadFile(formData);
+        if (uploaded?.url) {
+          setFormData(prev => ({
+            ...prev,
+            profile_image: uploaded.url,
+          }));
+          setTempImageUrl(null); // Clear preview since we have the final URL
+          setSuccess('Profile image uploaded successfully!');
+
+          // Update the user with the new profile image
+          if (userId) {
+            await updateUser(userId, { profile_image: uploaded.url });
+          }
+        } else {
+          throw new Error('Invalid upload response');
+        }
+      } catch (err) {
+        console.error('Profile image upload failed:', err);
+        setError('Failed to upload profile image.');
+      }
     }
   };
 
   const savePersonalInfo = async () => {
     if (!userId) return;
     try {
-      // Create payload with only personal info (excluding profile image)
       const { profile_image, ...personalInfo } = formData;
       await updateUser(userId, personalInfo);
       setEditable(false);
@@ -138,9 +116,21 @@ const MyProfileTab = () => {
     fileInputRef.current?.click();
   };
 
-  const removeImage = () => {
-    setImageFile(null);
-    setTempImageUrl(null);
+  const removeImage = async () => {
+    try {
+      setTempImageUrl(null);
+      setFormData(prev => ({
+        ...prev,
+        profile_image: ''
+      }));
+      if (userId) {
+        await updateUser(userId, { profile_image: '' });
+      }
+      setSuccess('Profile image removed successfully!');
+    } catch (error) {
+      console.error("Failed to remove image:", error);
+      setError("Failed to remove profile image.");
+    }
   };
 
   const handleCloseError = () => {
@@ -151,7 +141,6 @@ const MyProfileTab = () => {
     setSuccess(null);
   };
 
-  // Split name for display purposes
   const nameParts = formData.name.split(' ');
   const firstName = nameParts[0] || '';
   const surname = nameParts.slice(1).join(' ') || '';
@@ -191,32 +180,11 @@ const MyProfileTab = () => {
                 >
                   Upload
                 </Button>
-                {imageFile && (
-                  <Button 
-                    variant="contained" 
-                    sx={{ 
-                      textTransform: 'none',
-                      minWidth: '120px',
-                      height: '40px',
-                      padding: '8px 16px',
-                      fontSize: '14px'
-                    }}
-                    onClick={saveImage}
-                    disabled={!imageFile || isSavingImage}
-                  >
-                    {isSavingImage ? 'Saving...' : 'Save Image'}
-                  </Button>
-                )}
                 <IconButton onClick={removeImage}>
                   <DeleteOutlineOutlined />
                 </IconButton>
               </Box>
             </Box>
-            {imageFile && (
-              <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
-                Selected: {imageFile.name}
-              </Typography>
-            )}
           </Box>
         </Grid>
 

@@ -64,7 +64,7 @@ export interface UpdateUserPayload {
   portfolio_link?: string;
   profile_image?: string;
 
-  company_logo?: string;
+  company_logo?: File | string;
   company_name?: string;
   company_email_address?: string;
   industry?: string;
@@ -81,6 +81,23 @@ export interface UpdateUserPayload {
   role?: string;
   adminPrivileges?: string;
 }
+
+export const uploadFile = async (formData: FormData) => {
+  const session = await getSession();
+  const token = session?.user?.accessToken;
+
+  if (!token) throw new Error("Missing token");
+
+  const response = await axios.post(`${API_BASE_URL}/upload-file`, formData, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+
+  return response.data; // Should include { url: "https://..." }
+};
+
 
 export const updateUser = async (userId: number, data: Partial<UpdateUserPayload>) => {
   try {
@@ -133,5 +150,33 @@ export const getCurrentUser = async (): Promise<any> => {
 
   return data;
 };
+export const getAllUser = async (): Promise<any> => {
+  
+  const res = await fetch(`${API_BASE_URL}/users`, {
+   
+  });
+
+  const data = await res.json();
+  console.log("USER ME response:", data);
+
+  if (!res.ok) throw new Error("Unauthorized");
+
+  return data;
+};
+
+export const getAlljobs = async (): Promise<any> => {
+  
+  const res = await fetch(`${API_BASE_URL}/jobs`, {
+   
+  });
+
+  const data = await res.json();
+  console.log("USER ME response:", data);
+
+  if (!res.ok) throw new Error("Unauthorized");
+
+  return data;
+};
+
 
 

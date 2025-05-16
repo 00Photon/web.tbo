@@ -171,8 +171,8 @@ const ScheduleTable = () => {
                 <TableCellStyled align="left">
                   Interview&nbsp;Date
                 </TableCellStyled>
-                <TableCellStyled align="center">Status</TableCellStyled>
-                <TableCellStyled align="center">Comment</TableCellStyled>
+                {/* <TableCellStyled align="center">Status</TableCellStyled>
+                <TableCellStyled align="center">Comment</TableCellStyled> */}
                 <TableCellStyled align="left">Actions</TableCellStyled>
               </TableRow>
             </TableHead>

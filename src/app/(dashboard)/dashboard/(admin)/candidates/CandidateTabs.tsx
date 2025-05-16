@@ -71,9 +71,7 @@ const TalentsTabs = ({ tab }: TabProps) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
   const hideText = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
-
   const handleChange = (e: SyntheticEvent, value: string) => {
     setActiveTab(value);
   };
@@ -89,22 +87,20 @@ const TalentsTabs = ({ tab }: TabProps) => {
     setError(null);
     setSuccess(null);
   };
-
   const fetchApplications = async () => {
     setLoading(true);
     setError(null);
     try {
-      // Fetch applications using the getAppliedJob service
       const applicationsData = await getAppliedJob();
-
-      // Map and filter the API response to match the Application interface and include only SHORTLISTED applications
+  
       const shortlistedApplications = applicationsData
         .filter((app) => app.status === "INTERVIEWED")
         .map((app) => ({
           id: app.id,
           candidateName: app.user.name,
+          job: app.job, // Include the job object
         }));
-
+  
       setApplications(shortlistedApplications);
     } catch (err: any) {
       setError(err.message || "Failed to fetch applications");
@@ -112,23 +108,36 @@ const TalentsTabs = ({ tab }: TabProps) => {
       setLoading(false);
     }
   };
+  
 
   const handleSendToClient = async () => {
     if (selectedApplications.length === 0) {
       setError("Please select at least one application");
       return;
     }
-
+  
     setLoading(true);
     setError(null);
     setSuccess(null);
-
+  
     try {
+      // Find the first selected application object
+      const selectedAppData = applications.find(app => selectedApplications.includes(app.id));
+  
+      if (!selectedAppData || !('job' in selectedAppData)) {
+        setError("Invalid application selection");
+        setLoading(false);
+        return;
+      }
+  
+      const { id: job_id, client_id } = (selectedAppData as any).job;
+  
       const data = {
-        job_id: 1, // Replace with actual job ID from your data source
-        client_id: 1, // Replace with actual client ID from your data source
+        job_id,
+        client_id,
         applications: selectedApplications,
       };
+  
       await sendApplicationToClient(data);
       setSuccess("Applications sent successfully");
       setSelectedApplications([]);
@@ -139,6 +148,7 @@ const TalentsTabs = ({ tab }: TabProps) => {
       setLoading(false);
     }
   };
+  
 
   useEffect(() => {
     if (tab && tab !== activeTab) {
@@ -225,8 +235,10 @@ const TalentsTabs = ({ tab }: TabProps) => {
                           </Box>
                         }
                       />
+                     
+                     
                       <Tab
-                        value="reviewed"
+                        value="interviewed"
                         label={
                           <Box
                             sx={{
@@ -236,12 +248,12 @@ const TalentsTabs = ({ tab }: TabProps) => {
                               textTransform: "capitalize",
                             }}
                           >
-                            <Icon fontSize="1.575rem" icon="ph:eye" />
-                            {!hideText && "Rejected"}
+                            <Icon fontSize="1.125rem" icon="fluent:mic-28-regular" />
+                            {!hideText && "shortlisted"}
                           </Box>
                         }
                       />
-                      <Tab
+                       <Tab
                         value="shortlisted"
                         label={
                           <Box
@@ -257,8 +269,8 @@ const TalentsTabs = ({ tab }: TabProps) => {
                           </Box>
                         }
                       />
-                      <Tab
-                        value="interviewed"
+                       <Tab
+                        value="reviewed"
                         label={
                           <Box
                             sx={{
@@ -268,8 +280,8 @@ const TalentsTabs = ({ tab }: TabProps) => {
                               textTransform: "capitalize",
                             }}
                           >
-                            <Icon fontSize="1.125rem" icon="fluent:mic-28-regular" />
-                            {!hideText && "shortlisted"}
+                            <Icon fontSize="1.575rem" icon="ph:eye" />
+                            {!hideText && "Rejected"}
                           </Box>
                         }
                       />

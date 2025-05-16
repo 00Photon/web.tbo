@@ -59,7 +59,7 @@ const QuoteIcon = styled(Box)(({ theme }) => ({
 
 const TestimonialCard = styled(Card)(({ theme }) => ({
   padding: theme.spacing(4),
-  height: '100%',
+  height: '400px', // Fixed height for all cards
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'space-between',
@@ -70,6 +70,19 @@ const TestimonialCard = styled(Card)(({ theme }) => ({
     transform: 'translateY(-8px)',
     boxShadow: theme.shadows[8],
   }
+}));
+
+const TestimonyText = styled(Typography)(({ theme }) => ({
+  fontSize: '1rem',
+  mb: 4,
+  lineHeight: 1.8,
+  color: theme.palette.text.secondary,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  display: '-webkit-box',
+  WebkitLineClamp: 6, // Limit to 6 lines
+  WebkitBoxOrient: 'vertical',
+  flexGrow: 1,
 }));
 
 const Testimonial: React.FC = () => {
@@ -171,7 +184,6 @@ const Testimonial: React.FC = () => {
         <Box sx={{ mb: 8, textAlign: "center", marginTop: "40px" }}>
           <Chip 
             label="CLIENT FEEDBACK" 
-           
             sx={{ 
               mb: 2, 
               fontWeight: 500,
@@ -215,68 +227,59 @@ const Testimonial: React.FC = () => {
           }}
         >
           {/* Desktop View */}
-        {/* Desktop View */}
-<Box
-  sx={{
-    display: { xs: "none", md: "flex" },
-    gap: 4,
-    justifyContent: "center",
-    alignItems: "stretch",
-  }}
->
-  {visibleItems.map((item, idx) => (
-    <TestimonialCard
-      key={`${item.index}-${idx}`}
-      sx={{
-        flex: 1,
-        maxWidth: "30%",
-        opacity: 1,
-        transform: "none",
-      }}
-    >
-      <Box>
-        <QuoteIcon>
-          <Icon icon="mdi:format-quote-open" fontSize={30} color={theme.palette.primary.main} />
-        </QuoteIcon>
-        
-        <Typography
-          sx={{
-            fontSize: "1rem",
-            mb: 4,
-            lineHeight: 1.8,
-            color: theme.palette.text.secondary,
-          }}
-        >
-          {item.data.testimony}
-        </Typography>
-      </Box>
-      
-      <Box sx={{ pt: 3, borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}>
-        <Typography
-          sx={{
-            fontWeight: 700,
-            fontSize: "1.1rem",
-            color: theme.palette.text.primary,
-          }}
-        >
-          {item.data.name}
-        </Typography>
-        
-        {item.data.industry && (
-          <Typography
+          <Box
             sx={{
-              fontSize: "0.875rem",
-              color: theme.palette.primary.main,
+              display: { xs: "none", md: "flex" },
+              gap: 4,
+              justifyContent: "center",
+              alignItems: "stretch",
             }}
           >
-            {item.data.industry}
-          </Typography>
-        )}
-      </Box>
-    </TestimonialCard>
-  ))}
-</Box>
-
+            {visibleItems.map((item, idx) => (
+              <TestimonialCard
+                key={`${item.index}-${idx}`}
+                sx={{
+                  flex: 1,
+                  maxWidth: "30%",
+                  opacity: 1,
+                  transform: "none",
+                }}
+              >
+                <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                  <QuoteIcon>
+                    <Icon icon="mdi:format-quote-open" fontSize={30} color={theme.palette.primary.main} />
+                  </QuoteIcon>
+                  
+                  <TestimonyText>
+                    {item.data.testimony}
+                  </TestimonyText>
+                  
+                  <Box sx={{ pt: 3, borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`, mt: 'auto' }}>
+                    <Typography
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: "1.1rem",
+                        color: theme.palette.text.primary,
+                      }}
+                    >
+                      {item.data.name}
+                    </Typography>
+                    
+                    {item.data.industry && (
+                      <Typography
+                        sx={{
+                          fontSize: "0.875rem",
+                          color: theme.palette.primary.main,
+                        }}
+                      >
+                        {item.data.industry}
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+              </TestimonialCard>
+            ))}
+          </Box>
 
           {/* Mobile View */}
           <Box
@@ -286,44 +289,37 @@ const Testimonial: React.FC = () => {
             }}
           >
             <TestimonialCard>
-              <Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                 <QuoteIcon>
                   <Icon icon="mdi:format-quote-open" fontSize={30} color={theme.palette.primary.main} />
                 </QuoteIcon>
                 
-                <Typography
-                  sx={{
-                    fontSize: "1rem",
-                    mb: 4,
-                    lineHeight: 1.8,
-                    color: theme.palette.text.secondary,
-                  }}
-                >
+                <TestimonyText>
                   {data[activeIndex].testimony}
-                </Typography>
-              </Box>
-              
-              <Box sx={{ pt: 3, borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}>
-                <Typography
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: "1.1rem",
-                    color: theme.palette.text.primary,
-                  }}
-                >
-                  {data[activeIndex].name}
-                </Typography>
+                </TestimonyText>
                 
-                {data[activeIndex].industry && (
+                <Box sx={{ pt: 3, borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`, mt: 'auto' }}>
                   <Typography
                     sx={{
-                      fontSize: "0.875rem",
-                      color: theme.palette.primary.main,
+                      fontWeight: 700,
+                      fontSize: "1.1rem",
+                      color: theme.palette.text.primary,
                     }}
                   >
-                    {data[activeIndex].industry}
+                    {data[activeIndex].name}
                   </Typography>
-                )}
+                  
+                  {data[activeIndex].industry && (
+                    <Typography
+                      sx={{
+                        fontSize: "0.875rem",
+                        color: theme.palette.primary.main,
+                      }}
+                    >
+                      {data[activeIndex].industry}
+                    </Typography>
+                  )}
+                </Box>
               </Box>
             </TestimonialCard>
           </Box>
@@ -366,7 +362,6 @@ const Testimonial: React.FC = () => {
                     : alpha(theme.palette.primary.main, 0.3),
                   cursor: "pointer",
                   transition: "all 0.3s ease",
-                 
                 }}
               />
             ))}

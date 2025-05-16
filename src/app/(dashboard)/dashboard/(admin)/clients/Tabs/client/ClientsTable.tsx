@@ -11,9 +11,10 @@ import Link from "next/link";
 import CustomTextField from "@/@core/component/mui/text-field";
 import { TableCellStyled } from "@/@core/component/mui/tableStyled";
 import StyledImage from "@/@core/component/mui/image";
-import { ClientData, getClients } from "@/@core/services/ClientService";
+import { ClientData, getClients, activateClient, deactivateClient, deleteClient } from "@/@core/services/ClientService";
 import ClientModal from '../../../component/ClientModal'; // Import the Modal Component
 import CircularProgress from "@mui/material/CircularProgress";
+
 // ** Third Party Imports
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -43,13 +44,19 @@ import TablePagination from "@mui/material/TablePagination";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { Theme } from "@mui/material/styles";
 import Alert from '@mui/material/Alert';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
 
-import { activateClient, deactivateClient } from "@/@core/services/ClientService";
+
 interface AlertState {
   open: boolean;
   message: string;
   severity: 'success' | 'error' | 'info' | 'warning';
 }
+
 const ClientListTable: React.FC = () => {
   const [openFilter, setOpenFilter] = React.useState<boolean>(false);
   const [value, setValue] = React.useState<string>("");
@@ -62,9 +69,24 @@ const ClientListTable: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<ClientData | null>(null);
   const [processingId, setProcessingId] = React.useState<number | null>(null);
-  const smallScreen = useMediaQuery((theme: Theme) =>
-    theme.breakpoints.up("md")
-  );
+  const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up("md"));
+  // Add state for confirmation dialog
+const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+const [clientToDelete, setClientToDelete] = useState<ClientData | null>(null);
+
+// Open confirmation dialog
+const openDeleteConfirm = (client: ClientData) => {
+  setClientToDelete(client);
+  setDeleteConfirmOpen(true);
+};
+
+// Close confirmation dialog
+const closeDeleteConfirm = () => {
+  setClientToDelete(null);
+  setDeleteConfirmOpen(false);
+};
+
+
   const [alert, setAlert] = useState<AlertState>({
     open: false,
     message: '',
@@ -96,13 +118,14 @@ const ClientListTable: React.FC = () => {
     newAnchorEl[index] = null;
     setAnchorEl(newAnchorEl);
   };
+
   const handleToggleActivation = async (client: ClientData) => {
     try {
       setProcessingId(client.id);
       
       let updatedClient;
       
-      if (client.status) {
+      if (client.status.toLowerCase() === 'active') {
         updatedClient = await deactivateClient(client.id);
         setAlert({
           open: true,
@@ -117,16 +140,16 @@ const ClientListTable: React.FC = () => {
           severity: 'success'
         });
       }
-
+  
       setClients(prevClients => 
         prevClients.map(c => 
           c.id === client.id ? { 
             ...c, 
-            status: client.status === 'active' ? 'inactive' : 'active' 
+            status: updatedClient.status // Use API response status
           } : c
         )
       );
-
+  
       const index = clients.findIndex(c => c.id === client.id);
       handleRowOptionsClose(index);
       
@@ -139,14 +162,39 @@ const ClientListTable: React.FC = () => {
       });
     } finally {
       setProcessingId(null);
-      
-      // Auto-hide alert after 5 seconds
       setTimeout(() => {
         setAlert(prev => ({...prev, open: false}));
       }, 5000);
     }
   };
-
+  const handleDeleteClient = async () => {
+    if (!clientToDelete) return;
+    try {
+      setProcessingId(clientToDelete.id);
+      await deleteClient(clientToDelete.id);
+      setAlert({
+        open: true,
+        message: 'Client deleted successfully',
+        severity: 'success'
+      });
+      setClients(prevClients => prevClients.filter(c => c.id !== clientToDelete.id));
+      const index = clients.findIndex(c => c.id === clientToDelete.id);
+      handleRowOptionsClose(index);
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      setAlert({
+        open: true,
+        message: error instanceof Error ? error.message : 'Failed to delete client',
+        severity: 'error'
+      });
+    } finally {
+      setProcessingId(null);
+      closeDeleteConfirm();
+      setTimeout(() => {
+        setAlert(prev => ({...prev, open: false}));
+      }, 5000);
+    }
+  };
   const toggleFilter = () => setOpenFilter(!openFilter);
 
   const handleViewClient = (client: ClientData) => {
@@ -158,14 +206,19 @@ const ClientListTable: React.FC = () => {
     setModalOpen(false);
     setSelectedClient(null);
   };
+
+  
   React.useEffect(() => {
     const fetchClients = async () => {
       try {
         const apiData: ClientData[] = await getClients();
-        
-        // Set the clients state using the ClientData type directly
-        setClients(apiData as any);
-        setAnchorEl(Array(apiData.length).fill(null));
+        // Normalize status values
+        const normalizedData = apiData.map(client => ({
+          ...client,
+          status: client.status.toLowerCase() === 'active' ? 'active' : 'inactive'
+        }));
+        setClients(normalizedData);
+        setAnchorEl(Array(normalizedData.length).fill(null));
       } catch (error) {
         console.error("Error fetching clients:", error);
       } finally {
@@ -175,10 +228,10 @@ const ClientListTable: React.FC = () => {
   
     fetchClients();
   }, []);
-  
+
   return (
-   <> 
-    {alert.open && (
+    <> 
+      {alert.open && (
         <Alert 
           sx={{ 
             position: 'fixed', 
@@ -193,275 +246,270 @@ const ClientListTable: React.FC = () => {
           {alert.message}
         </Alert>
       )}
-    <Card
-      sx={{
-        borderBottomLeftRadius: 0,
-        borderBottomRightRadius: 0,
-        my: (theme) => theme.spacing(4),
-        background: "#fff",
-      }}
-    >
-      <CardContent sx={{ p: { xs: 2, md: 4 } }}>
-        <Collapse
-          easing={"ease-in-out"}
-          in={openFilter}
-          timeout={500}
-          unmountOnExit
-          sx={{ mb: 3, boxShadow: 2 }}
-        >
-          <Paper
-            sx={{
-              px: 3,
-              py: 3,
-            }}
+      <Card
+        sx={{
+          borderBottomLeftRadius: 0,
+          borderBottomRightRadius: 0,
+          my: (theme) => theme.spacing(4),
+          background: "#fff",
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2, md: 4 } }}>
+          <Collapse
+            easing={"ease-in-out"}
+            in={openFilter}
+            timeout={500}
+            unmountOnExit
+            sx={{ mb: 3, boxShadow: 2 }}
           >
-            <Typography
+            <Paper
               sx={{
-                mb: 3,
-                fontSize: { xs: "1rem", sm: "1.25rem" },
+                px: 3,
+                py: 3,
               }}
             >
-              Filter
-            </Typography>
-            <Grid container spacing={3}>
-              <Grid item xs={6} sm={3}>
-                <CustomTextField
-                  select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  size="small"
-                  placeholder="Active, Inactive"
-                  fullWidth
-                  label="Status"
-                >
-                  <MenuItem value="">Select Status</MenuItem>
-                  <MenuItem value="active">Active</MenuItem>
-                  <MenuItem value="inactive">Inactive</MenuItem>
-                </CustomTextField>
+              <Typography
+                sx={{
+                  mb: 3,
+                  fontSize: { xs: "1rem", sm: "1.25rem" },
+                }}
+              >
+                Filter
+              </Typography>
+              <Grid container spacing={3}>
+                <Grid item xs={6} sm={3}>
+                  <CustomTextField
+                    select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    size="small"
+                    placeholder="Active, Inactive"
+                    fullWidth
+                    label="Status"
+                  >
+                    <MenuItem value="">Select Status</MenuItem>
+                    <MenuItem value="active">Active</MenuItem>
+                    <MenuItem value="inactive">Inactive</MenuItem>
+                  </CustomTextField>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <CustomTextField
+                    select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    size="small"
+                    placeholder="Technology, Healthcare..."
+                    fullWidth
+                    label="Industry"
+                  >
+                    <MenuItem value="">Select Industry</MenuItem>
+                    <MenuItem value="technology">Technology</MenuItem>
+                    <MenuItem value="healthcare">Healthcare</MenuItem>
+                    <MenuItem value="finance">Finance</MenuItem>
+                    <MenuItem value="education">Education</MenuItem>
+                  </CustomTextField>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <CustomTextField
+                    select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    size="small"
+                    placeholder="Company size..."
+                    fullWidth
+                    label="Company Size"
+                  >
+                    <MenuItem value="">Select Company Size</MenuItem>
+                    <MenuItem value="1-10">1-10</MenuItem>
+                    <MenuItem value="11-50">11-50</MenuItem>
+                    <MenuItem value="50-100">50-100</MenuItem>
+                    <MenuItem value="100+">100+</MenuItem>
+                  </CustomTextField>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <CustomTextField
+                    select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    size="small"
+                    placeholder="Month and Year..."
+                    fullWidth
+                    label="Date Registered"
+                  >
+                    <MenuItem value="">Registration Date</MenuItem>
+                    <MenuItem value="2023">2023</MenuItem>
+                    <MenuItem value="2024">2024</MenuItem>
+                    <MenuItem value="2025">2025</MenuItem>
+                  </CustomTextField>
+                </Grid>
               </Grid>
-              <Grid item xs={6} sm={3}>
-                <CustomTextField
-                  select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  size="small"
-                  placeholder="Technology, Healthcare..."
-                  fullWidth
-                  label="Industry"
-                >
-                  <MenuItem value="">Select Industry</MenuItem>
-                  <MenuItem value="technology">Technology</MenuItem>
-                  <MenuItem value="healthcare">Healthcare</MenuItem>
-                  <MenuItem value="finance">Finance</MenuItem>
-                  <MenuItem value="education">Education</MenuItem>
-                </CustomTextField>
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <CustomTextField
-                  select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  size="small"
-                  placeholder="Company size..."
-                  fullWidth
-                  label="Company Size"
-                >
-                  <MenuItem value="">Select Company Size</MenuItem>
-                  <MenuItem value="1-10">1-10</MenuItem>
-                  <MenuItem value="11-50">11-50</MenuItem>
-                  <MenuItem value="50-100">50-100</MenuItem>
-                  <MenuItem value="100+">100+</MenuItem>
-                </CustomTextField>
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <CustomTextField
-                  select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  size="small"
-                  placeholder="Month and Year..."
-                  fullWidth
-                  label="Date Registered"
-                >
-                  <MenuItem value="">Registration Date</MenuItem>
-                  <MenuItem value="2023">2023</MenuItem>
-                  <MenuItem value="2024">2024</MenuItem>
-                  <MenuItem value="2025">2025</MenuItem>
-                </CustomTextField>
-              </Grid>
-            </Grid>
-          </Paper>
-        </Collapse>
-
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            my: 3,
-            mx: 1,
-          }}
-        >
-          <CardHeader title="Client List" sx={{ minWidth: 150 }} />
+            </Paper>
+          </Collapse>
 
           <Box
             sx={{
-              flex: 1,
               display: "flex",
               alignItems: "center",
-              justifyContent: "flex-end",
-              gap: 2,
+              justifyContent: "space-between",
+              my: 3,
+              mx: 1,
             }}
           >
-            <CustomTextField
-              fullWidth
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              size="small"
-              placeholder="Company name, email, industry"
-              sx={{ maxWidth: 400 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment
-                    position="start"
-                    sx={{
-                      color: (theme) => theme.palette.primary.main,
-                    }}
-                  >
-                    <Icon icon="lets-icons:search-duotone" />
-                  </InputAdornment>
-                ),
-              }}
-            />
+            {/* <CardHeader title="Client List" sx={{ minWidth: 150 }} /> */}
 
-            <Button
-              onClick={toggleFilter}
-              variant={openFilter ? "contained" : "outlined"}
-              size="medium"
+            <Box
               sx={{
-                textTransform: "capitalize",
-                width: "fit-content",
-                minWidth: { md: 80 },
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                gap: 2,
               }}
             >
-              {smallScreen && (
-                <Typography sx={{ fontSize: ".857rem" }}> Filter</Typography>
-              )}
-              <Icon icon="basil:filter-outline" />
-            </Button>
-          </Box>
-        </Box>
-
-        <TableContainer component={Paper}>
-          <Table stickyHeader aria-label="sticky table">
-            <TableHead>
-              <TableRow
-                sx={{ background: (theme) => theme.palette.secondary.dark }}
-              >
-                <TableCellStyled>Company</TableCellStyled>
-                {/* <TableCellStyled>ID</TableCellStyled> */}
-                {/* <TableCellStyled>Name</TableCellStyled> */}
-                <TableCellStyled>Email</TableCellStyled>
-                {/* <TableCellStyled>Account Type</TableCellStyled> */}
-                <TableCellStyled>Industry</TableCellStyled>
-                <TableCellStyled>Website</TableCellStyled>
-                <TableCellStyled>Status</TableCellStyled>
-                <TableCellStyled>Actions</TableCellStyled>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={9} align="center">Loading clients...</TableCell>
-                </TableRow>
-              ) : clients.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={9} align="center">No clients found</TableCell>
-                </TableRow>
-              ) : (
-                clients.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((client, i) => (
-                  <TableRow key={client.id}>
-                    <TableCell>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Box sx={{ maxWidth: 25, maxHeight: 25 }}>
-                          <StyledImage
-                            src={client.company_logo || ""}
-                            alt={client.company_name}
-                          />
-                        </Box>
-                        {client.company_name}
-                      </Box>
-                    </TableCell>
-                
-                    <TableCell>{client.email}</TableCell>
-                  
-                    <TableCell>{client.industry}</TableCell>
-                    <TableCell>
-                      {client.company_website ? (
-                        <Link
-                          href={client.company_website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {client.company_website
-                            .replace(/(^\w+:|^)\/\//, '')
-                            .replace(/\/$/, '')}
-                        </Link>
-                      ) : (
-                        '-' // Or any placeholder/fallback
-                      )}
-                    </TableCell>
-
-                    <TableCell
-                      align="center"
+              <CustomTextField
+                fullWidth
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                size="small"
+                placeholder="Company name, email, industry"
+                sx={{ maxWidth: 400 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment
+                      position="start"
                       sx={{
-                        textTransform: "capitalize",
-                        fontWeight: "semibold",
+                        color: (theme) => theme.palette.primary.main,
                       }}
                     >
-                    {client.status.toLowerCase() === 'active' ? (
-                        <CustomChip
-                          label="Active"
-                          color="success"
-                          skin="light"
-                          size="small"
-                          sx={{ width: "100%", borderRadius: "5px" }}
-                        />
-                      ) : (
-                        <CustomChip
-                          color="default"
-                          label="Inactive"
-                          skin="light"
-                          size="small"
-                          sx={{ width: "100%", borderRadius: "5px" }}
-                        />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ alignSelf: "end" }}>
-                        <Avatar sx={{ background: "transparent" }}>
-                          <IconButton
+                      <Icon icon="lets-icons:search-duotone" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
+              <Button
+                onClick={toggleFilter}
+                variant={openFilter ? "contained" : "outlined"}
+                size="medium"
+                sx={{
+                  textTransform: "capitalize",
+                  width: "fit-content",
+                  minWidth: { md: 80 },
+                }}
+              >
+                {smallScreen && (
+                  <Typography sx={{ fontSize: ".857rem" }}> Filter</Typography>
+                )}
+                <Icon icon="basil:filter-outline" />
+              </Button>
+            </Box>
+          </Box>
+
+          <TableContainer component={Paper}>
+            <Table stickyHeader aria-label="sticky table">
+              <TableHead>
+                <TableRow
+                  sx={{ background: (theme) => theme.palette.secondary.dark }}
+                >
+                  <TableCellStyled>Company Name</TableCellStyled>
+                  <TableCellStyled>Company Representative Name</TableCellStyled>
+                  <TableCellStyled>Email</TableCellStyled>
+                  <TableCellStyled>Website</TableCellStyled>
+                  <TableCellStyled>Status</TableCellStyled>
+                  <TableCellStyled>Actions</TableCellStyled>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={9} align="center">Loading clients...</TableCell>
+                  </TableRow>
+                ) : clients.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} align="center">No clients found</TableCell>
+                  </TableRow>
+                ) : (
+                  clients.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((client, i) => (
+                    <TableRow key={client.id}>
+                      <TableCell>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Box sx={{ maxWidth: 25, maxHeight: 25 }}>
+                            <StyledImage
+                              src={client.company_logo || ""}
+                              alt={client.company_name}
+                            />
+                          </Box>
+                          {client.company_name}
+                        </Box>
+                      </TableCell>
+                      <TableCell>{client.name}</TableCell>
+                      <TableCell>{client.email}</TableCell>
+                    
+                      <TableCell>
+                        {client.company_website ? (
+                          <Link
+                            href={client.company_website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {client.company_website
+                              .replace(/(^\w+:|^)\/\//, '')
+                              .replace(/\/$/, '')}
+                          </Link>
+                        ) : (
+                          '-' // Or any placeholder/fallback
+                        )}
+                      </TableCell>
+                      <TableCell
+                        align="center"
+                        sx={{
+                          textTransform: "capitalize",
+                          fontWeight: "semibold",
+                        }}
+                      >
+                        {client.status.toLowerCase() === 'active' ? (
+                          <CustomChip
+                            label="Active"
+                            color="success"
+                            skin="light"
                             size="small"
-                            onClick={(event) => handleRowOptionsClick(event, i)}
-                          >
-                            <Icon icon="tabler:dots-vertical" />
-                          </IconButton>
-                          <Menu
-                            keepMounted
-                            disableScrollLock
-                            anchorEl={anchorEl[i]}
-                            open={Boolean(anchorEl[i])}
-                            onClose={() => handleRowOptionsClose(i)}
-                            anchorOrigin={{
-                              vertical: "bottom",
-                              horizontal: "right",
-                            }}
-                            transformOrigin={{
-                              vertical: "top",
-                              horizontal: "right",
-                            }}
-                            PaperProps={{ style: { minWidth: "8rem" } }}
-                          >
+                            sx={{ width: "100%", borderRadius: "5px" }}
+                          />
+                        ) : (
+                          <CustomChip
+                            color="default"
+                            label="Inactive"
+                            skin="light"
+                            size="small"
+                            sx={{ width: "100%", borderRadius: "5px" }}
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ alignSelf: "end" }}>
+                          <Avatar sx={{ background: "transparent" }}>
+                            <IconButton
+                              size="small"
+                              onClick={(event) => handleRowOptionsClick(event, i)}
+                            >
+                              <Icon icon="tabler:dots-vertical" />
+                            </IconButton>
+                            <Menu
+                              keepMounted
+                              disableScrollLock
+                              anchorEl={anchorEl[i]}
+                              open={Boolean(anchorEl[i])}
+                              onClose={() => handleRowOptionsClose(i)}
+                              anchorOrigin={{
+                                vertical: "bottom",
+                                horizontal: "right",
+                              }}
+                              transformOrigin={{
+                                vertical: "top",
+                                horizontal: "right",
+                              }}
+                              PaperProps={{ style: { minWidth: "8rem" } }}
+                            >
                               <MenuItem
                                 sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
                                 onClick={() => handleViewClient(client)}
@@ -469,8 +517,7 @@ const ClientListTable: React.FC = () => {
                                 <Icon icon="tabler:eye" fontSize={20} />
                                 View
                               </MenuItem>
-
-                             <MenuItem
+                              <MenuItem
                                 sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
                                 onClick={() => handleToggleActivation(client)}
                                 disabled={processingId === client.id}
@@ -478,41 +525,62 @@ const ClientListTable: React.FC = () => {
                                 {processingId === client.id ? (
                                   <CircularProgress size={20} sx={{ mr: 2 }} />
                                 ) : (
-                                  <Icon icon="tabler:eye-off" />
+                                  <Icon icon={client.status.toLowerCase() === 'active' ? "tabler:eye-off" : "tabler:eye"} />
                                 )}
-                                {client.status ? "Deactivate" : "Activate"}
+                                {client.status.toLowerCase() === 'active' ? "Deactivate" : "Activate"}
                               </MenuItem>
-
-                            <MenuItem
+                              <MenuItem
                               sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
+                              onClick={() => openDeleteConfirm(client)}
+                              disabled={processingId === client.id}
                             >
-                              <Icon
-                                icon="fluent:delete-24-regular"
-                                fontSize={20}
-                              />
+                              {processingId === client.id ? (
+                                <CircularProgress size={20} sx={{ mr: 2 }} />
+                              ) : (
+                                <Icon icon="fluent:delete-24-regular" fontSize={20} />
+                              )}
                               Delete
                             </MenuItem>
-                          </Menu>
-                        </Avatar>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </CardContent>
-      <TablePagination
-        component="div"
-        count={clients.length}
-        page={page}
-        onPageChange={handleChangePage}
-        rowsPerPage={rowsPerPage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-      />
-       <ClientModal open={modalOpen} onClose={handleModalClose} client={selectedClient} />
-    </Card>
+                            </Menu>
+                          </Avatar>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </CardContent>
+        <Dialog
+          open={deleteConfirmOpen}
+          onClose={closeDeleteConfirm}
+          aria-labelledby="alert-dialog-title"
+          aria-describedby="alert-dialog-description"
+        >
+          <DialogTitle id="alert-dialog-title">{"Delete Client?"}</DialogTitle>
+          <DialogContent>
+            <DialogContentText id="alert-dialog-description">
+              Are you sure you want to delete {clientToDelete?.company_name}? This action cannot be undone.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeDeleteConfirm}>Cancel</Button>
+            <Button onClick={handleDeleteClient} autoFocus color="error">
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+        <TablePagination
+          component="div"
+          count={clients.length}
+          page={page}
+          onPageChange={handleChangePage}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+        />
+        <ClientModal open={modalOpen} onClose={handleModalClose} client={selectedClient} />
+      </Card>
     </>
   );
 };

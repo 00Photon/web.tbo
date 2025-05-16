@@ -35,6 +35,12 @@ import TableBody from "@mui/material/TableBody";
 import TablePagination from "@mui/material/TablePagination";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { Theme } from "@mui/material/styles";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Link from "@mui/material/Link";
+
 
 // ** Types (based on your service response)
 interface Job {
@@ -98,7 +104,18 @@ const UnderReviewTalents = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
+const [viewDialogOpen, setViewDialogOpen] = useState(false);
 
+const handleOpenViewDialog = (application: Application) => {
+  setSelectedApplication(application);
+  setViewDialogOpen(true);
+};
+
+const handleCloseViewDialog = () => {
+  setSelectedApplication(null);
+  setViewDialogOpen(false);
+};
   const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up("md"));
 
   // Fetch applications on component mount
@@ -392,10 +409,17 @@ const UnderReviewTalents = () => {
                             <Icon icon="tabler:edit" fontSize={20} />
                             Edit
                           </MenuItem>
-                          <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
+                          <MenuItem
+                            sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
+                            onClick={() => {
+                              handleRowOptionsClose(i);
+                              handleOpenViewDialog(item);
+                            }}
+                          >
                             <Icon icon="tabler:eye" fontSize={20} />
                             View
                           </MenuItem>
+
                           <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
                             <Icon icon="fluent:delete-24-regular" fontSize={20} />
                             Delete
@@ -419,6 +443,149 @@ const UnderReviewTalents = () => {
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
+      <Dialog open={viewDialogOpen} onClose={handleCloseViewDialog} maxWidth="md" fullWidth>
+  <DialogTitle>
+    <Typography variant="h6">Application Overview</Typography>
+  </DialogTitle>
+
+  <DialogContent dividers>
+    {selectedApplication && (
+      <Box>
+        {/* APPLICANT INFO */}
+        <Typography variant="subtitle1" gutterBottom fontWeight={600}>
+          Applicant Information
+        </Typography>
+        <Grid container spacing={2} mb={2}>
+          <Grid item xs={6}>
+            <Typography variant="body2"><strong>Name:</strong> {selectedApplication.user.name}</Typography>
+          </Grid>
+          <Grid item xs={6}>
+            <Typography variant="body2"><strong>Email:</strong> {selectedApplication.user.email}</Typography>
+          </Grid>
+          <Grid item xs={6}>
+            <Typography variant="body2"><strong>Phone:</strong> {selectedApplication.user.phone_number || 'N/A'}</Typography>
+          </Grid>
+        </Grid>
+
+        {/* APPLICATION ASSETS */}
+        <Typography variant="subtitle1" gutterBottom fontWeight={600}>
+          Uploaded Documents & Links
+        </Typography>
+        <Grid container spacing={2} mb={2}>
+          <Grid item xs={6}>
+            <Typography variant="body2">
+              <strong>Cover Letter:</strong>{' '}
+              {selectedApplication.user.cover_letter_upload ? (
+                <Link href={selectedApplication.user.cover_letter_upload} target="_blank" rel="noopener">View</Link>
+              ) : 'Not Provided'}
+            </Typography>
+          </Grid>
+          <Grid item xs={6}>
+            <Typography variant="body2">
+              <strong>ID Upload:</strong>{' '}
+              {selectedApplication.user.id_upload ? (
+                <Link href={selectedApplication.user.id_upload} target="_blank" rel="noopener">View</Link>
+              ) : 'Not Provided'}
+            </Typography>
+          </Grid>
+          <Grid item xs={6}>
+            <Typography variant="body2">
+              <strong>Video URL:</strong>{' '}
+              {selectedApplication.user.video_url ? (
+                <Link href={selectedApplication.user.video_url} target="_blank" rel="noopener">Watch</Link>
+              ) : 'Not Provided'}
+            </Typography>
+          </Grid>
+         
+          <Grid item xs={6}>
+            <Typography variant="body2">
+              <strong>Work Sample:</strong>{' '}
+              {selectedApplication.user.work_sample_upload ? (
+                <Link href={selectedApplication.user.work_sample_upload} target="_blank" rel="noopener">View</Link>
+              ) : 'Not Provided'}
+            </Typography>
+          </Grid>
+          <Grid item xs={6}>
+            <Typography variant="body2">
+              <strong>Portfolio:</strong>{' '}
+              {selectedApplication.user.portfolio_link ? (
+                <Link href={selectedApplication.user.portfolio_link} target="_blank" rel="noopener">Visit</Link>
+              ) : 'Not Provided'}
+            </Typography>
+          </Grid>
+          <Grid item xs={12}>
+            <Typography variant="body2">
+              <strong>Profile Image:</strong>{' '}
+              {selectedApplication.user.profile_image ? (
+                <img
+                  src={selectedApplication.user.profile_image}
+                  alt="Profile"
+                  style={{ width: '100px', height: '100px', borderRadius: '8px' }}
+                />
+              ) : 'Not Provided'}
+            </Typography>
+          </Grid>
+        </Grid>
+
+        {/* JOB INFO */}
+        <Typography variant="subtitle1" gutterBottom fontWeight={600}>
+          Job Details
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={6}>
+            <Typography variant="body2"><strong>Title:</strong> {selectedApplication.job.title}</Typography>
+          </Grid>
+          <Grid item xs={6}>
+            <Typography variant="body2"><strong>Job Type:</strong> {selectedApplication.job.job_type}</Typography>
+          </Grid>
+          <Grid item xs={6}>
+            <Typography variant="body2"><strong>Skill:</strong> {selectedApplication.job.skill}</Typography>
+          </Grid>
+          <Grid item xs={6}>
+            <Typography variant="body2">
+              <strong>Salary:</strong> {selectedApplication.job.currency} {selectedApplication.job.minimum_salary} - {selectedApplication.job.maximum_salary}
+            </Typography>
+          </Grid>
+          <Grid item xs={6}>
+            <Typography variant="body2"><strong>Location:</strong> {selectedApplication.job.location}</Typography>
+          </Grid>
+          <Grid item xs={6}>
+            <Typography variant="body2">
+              <strong>Deadline:</strong> {new Date(selectedApplication.job.application_deadline).toLocaleDateString()}
+            </Typography>
+          </Grid>
+          <Grid item xs={12}>
+            <Typography variant="body2" gutterBottom><strong>Description:</strong></Typography>
+            <Typography variant="body2" color="text.secondary">
+              {selectedApplication.job.description}
+            </Typography>
+          </Grid>
+          <Grid item xs={12}>
+            <Typography variant="body2" gutterBottom><strong>Requirements:</strong></Typography>
+            <Typography variant="body2" color="text.secondary">
+              {selectedApplication.job.requirements}
+            </Typography>
+          </Grid>
+          {selectedApplication.job.additional_info && (
+            <Grid item xs={12}>
+              <Typography variant="body2" gutterBottom><strong>Additional Info:</strong></Typography>
+              <Typography variant="body2" color="text.secondary">
+                {selectedApplication.job.additional_info}
+              </Typography>
+            </Grid>
+          )}
+        </Grid>
+      </Box>
+    )}
+  </DialogContent>
+
+  <DialogActions>
+    <Button onClick={handleCloseViewDialog} color="primary" variant="outlined">
+      Close
+    </Button>
+  </DialogActions>
+</Dialog>
+
     </Card>
   );
 };

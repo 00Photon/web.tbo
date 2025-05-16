@@ -3,8 +3,6 @@ import Icon from "@/@core/component/icon";
 import Link from "next/link";
 import CustomTextField from "@/@core/component/mui/text-field";
 import { TableCellStyled } from "@/@core/component/mui/tableStyled";
-import { Controller, useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import CustomChip from "@/@core/component/mui/chip";
@@ -29,9 +27,19 @@ import TablePagination from "@mui/material/TablePagination";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { Theme } from "@mui/material/styles";
 import PostJobModal from "./PostJobModal";
-
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
 // Assume these services are imported from your API client
-import { fetchJobsClients, fetchJobsclinetsById } from "@/@core/services/jobService";
+import {
+  fetchJobsClients,
+  fetchJobsclinetsById,
+  deleteJobById,
+} from "@/@core/services/jobService";
+
 
 interface Job {
   id: number;
@@ -54,6 +62,34 @@ interface Job {
   applicant_count: number;
 }
 
+// Add this above the JobListTable component
+const ConfirmDialog: React.FC<{
+  open: boolean;
+  title?: string;
+  description?: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}> = ({
+  open,
+  title = "Are you sure?",
+  description = "This action cannot be undone.",
+  onCancel,
+  onConfirm,
+}) => (
+  <Dialog open={open} onClose={onCancel}>
+    <DialogTitle>{title}</DialogTitle>
+    <DialogContent>
+      <Typography>{description}</Typography>
+    </DialogContent>
+    <DialogActions>
+      <Button onClick={onCancel}>Cancel</Button>
+      <Button onClick={onConfirm} color="error" variant="contained">
+        Delete
+      </Button>
+    </DialogActions>
+  </Dialog>
+);
+
 const JobListTable: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [openFilter, setOpenFilter] = useState<boolean>(false);
@@ -65,6 +101,38 @@ const JobListTable: React.FC = () => {
   const [openPostJobModal, setOpenPostJobModal] = useState(false);
   const [totalJobs, setTotalJobs] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState<{ id: number; index: number } | null>(null);
+
+  const requestDeleteJob = (id: number, index: number) => {
+    setJobToDelete({ id, index });
+    setConfirmDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!jobToDelete) return;
+    const { id, index } = jobToDelete;
+  
+    try {
+      const response = await deleteJobById(id);
+      if (response.status) {
+        const updatedJobs = [...jobs];
+        updatedJobs.splice(index, 1);
+        setJobs(updatedJobs);
+        handleRowOptionsClose(index);
+      }
+    } catch (error) {
+      console.error("Error deleting job:", error);
+    } finally {
+      setConfirmDialogOpen(false);
+      setJobToDelete(null);
+    }
+  };
+  
+  const handleCancelDelete = () => {
+    setConfirmDialogOpen(false);
+    setJobToDelete(null);
+  };
 
   const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up("md"));
 
@@ -98,6 +166,24 @@ const JobListTable: React.FC = () => {
     setPage(newPage);
   };
 
+  const handleDeleteJob = async (jobId: number, index: number) => {
+    try {
+      // Optional: confirm dialog
+      if (!window.confirm("Are you sure you want to delete this job?")) return;
+  
+      const response = await deleteJobById(jobId); // You must have this API service
+      if (response.status) {
+        const updatedJobs = [...jobs];
+        updatedJobs.splice(index, 1);
+        setJobs(updatedJobs);
+        handleRowOptionsClose(index);
+      }
+    } catch (error) {
+      console.error("Error deleting job:", error);
+    }
+  };
+  
+  
   const handleChangeRowsPerPage = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -241,7 +327,7 @@ const JobListTable: React.FC = () => {
                 <TableCellStyled align="left">Title</TableCellStyled>
                 <TableCellStyled align="left">Applications</TableCellStyled>
                 <TableCellStyled align="left">Posting Date</TableCellStyled>
-                <TableCellStyled align="left">Expiration Date</TableCellStyled>
+                <TableCellStyled align="left">Application Deadline</TableCellStyled>
                 <TableCellStyled align="left">Status</TableCellStyled>
                 <TableCellStyled align="left">Actions</TableCellStyled>
               </TableRow>
@@ -318,10 +404,14 @@ const JobListTable: React.FC = () => {
                                 View
                               </Link>
                             </MenuItem>
-                            <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
-                              <Icon icon="fluent:delete-24-regular" fontSize={20} />
-                              Delete
-                            </MenuItem>
+                            <MenuItem
+                            sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
+                            onClick={() => requestDeleteJob(item.id, i)}
+                          >
+                            <Icon icon="fluent:delete-24-regular" fontSize={20} />
+                            Delete
+                          </MenuItem>
+
                           </Menu>
                         </Avatar>
                       </Box>
@@ -343,6 +433,14 @@ const JobListTable: React.FC = () => {
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
       <PostJobModal open={openPostJobModal} close={handleCloseModal} />
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        title="Delete Job?"
+        description="Are you sure you want to delete this job? This action cannot be undone."
+        onCancel={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+      />
+
     </Card>
   );
 };
@@ -401,7 +499,9 @@ export const JobDetail: React.FC<{ jobId: string }> = ({ jobId }) => {
           <Typography>{job.additional_info}</Typography>
         </Box>
       </CardContent>
+      
     </Card>
+    
   );
 };
 

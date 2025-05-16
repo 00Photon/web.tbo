@@ -3,7 +3,7 @@ import React, { useRef, useEffect } from "react";
 
 // ** Icon Imports
 import Icon from "@/@core/component/icon";
-
+import Link from 'next/link';
 // * anime Import
 import anime from "animejs";
 
@@ -212,6 +212,7 @@ const TalentHero = () => {
               mb: { xs: 2, md: 0 }
             }}
           >
+            <Link href="/sign-up" passHref>
             <ButtonStyled
               variant="contained"
               size="large"
@@ -234,8 +235,9 @@ const TalentHero = () => {
               Get started
               <Icon icon="material-symbols-light:arrow-right-alt-rounded" fontSize={24} />
             </ButtonStyled>
+            </Link>
             
-            <ButtonStyled
+            {/* <ButtonStyled
               variant="outlined"
               size="large"
               sx={{
@@ -253,7 +255,7 @@ const TalentHero = () => {
               }}
             >
               View Latest Jobs
-            </ButtonStyled>
+            </ButtonStyled> */}
           </Box>
         </Box>
 

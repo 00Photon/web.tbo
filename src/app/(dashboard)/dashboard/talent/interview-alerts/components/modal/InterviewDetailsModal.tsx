@@ -78,15 +78,11 @@ const InterviewDetailsModal: React.FC<InterviewDetailsModalProps> = ({ open, onC
         {/* Content */}
         <DialogContent>
           <Box sx={{ textAlign: 'center', mb: 3 }}>
-            <img
-              src={interview.image}
-              alt={interview.name}
-              style={{ width: 80, height: 80, borderRadius: '50%', marginBottom: '10px' }}
-            />
+           
             <Typography variant="h6" fontWeight="bold">
               {interview.name}
             </Typography>
-            <Typography sx={{ color: '#666' }}>{interview.role}</Typography>
+            {/* <Typography sx={{ color: '#666' }}>{interview.role}</Typography> */}
           </Box>
 
           <Box sx={{ mb: '20px', width: '100%', textAlign: 'center' }}>

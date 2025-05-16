@@ -15,7 +15,7 @@ const Clients: React.FC = () => {
       {/* <JobOffers /> */}
      
       <FeaturedJobs />
-      <JobCategories />
+      {/* <JobCategories /> */}
       {/* <Careers /> */}
     </>
   );

@@ -8,9 +8,11 @@ import {
   TableHead,
   TableRow,
   Typography,
+  CircularProgress,
 } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import InterviewDetailsModal from '@/app/(dashboard)/dashboard/talent/interview-alerts/components/modal/InterviewDetailsModal';
+import { getInterviews } from '@/@core/services/jobVanciesService'; // Adjust path as needed
 
 interface Interview {
   image: string;
@@ -25,6 +27,9 @@ interface Interview {
 const InterviewAlertsTable: React.FC = () => {
   const [open, setOpen] = useState<boolean>(false);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
+  const [interviews, setInterviews] = useState<Interview[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   const handleOpen = (interview: Interview) => {
     setSelectedInterview(interview);
@@ -36,7 +41,38 @@ const InterviewAlertsTable: React.FC = () => {
     setSelectedInterview(null);
   };
 
-  const headerFields: string[] = ['Company Name', 'Role Applied', 'Interview Stage', 'Action'];
+  useEffect(() => {
+    const fetchInterviews = async () => {
+      try {
+        const data = await getInterviews();
+
+        const mapped = data.map((item) => ({
+         
+          name: item.interviewer_name || 'Unknown',
+          role: item.interview_location || 'N/A',
+          interviewStage:
+            item.status === 'scheduled'
+              ? 'Upcoming'
+              : item.status === 'ongoing'
+              ? 'In Progress'
+              : 'Completed',
+          date: new Date(item.interview_date).toLocaleDateString(),
+          time: item.interview_time,
+          location: item.interview_location,
+        })) as Interview[];
+
+        setInterviews(mapped);
+        setLoading(false);
+      } catch (err: any) {
+        setError(err.message || 'Failed to fetch interviews');
+        setLoading(false);
+      }
+    };
+
+    fetchInterviews();
+  }, []);
+
+  const headerFields: string[] = ['Company Name', 'Location', 'Interview Stage', 'Action'];
 
   const companyNameField = (image: string, name: string) => (
     <TableCell>
@@ -97,61 +133,40 @@ const InterviewAlertsTable: React.FC = () => {
     </TableCell>
   );
 
-  const rowsData: Interview[] = [
-    {
-      image: '/icons/google.png',
-      name: 'Google',
-      role: 'Software Engineer',
-      interviewStage: 'Upcoming',
-      date: 'March 30, 2025',
-      time: '10:00 AM',
-      location: 'Google HQ, California',
-    },
-    {
-      image: '/icons/microsoft.png',
-      name: 'Microsoft',
-      role: 'Backend Developer',
-      interviewStage: 'In Progress',
-      date: 'April 2, 2025',
-      time: '3:00 PM',
-      location: 'Microsoft Teams (Online)',
-    },
-    {
-      image: '/icons/amazon.png',
-      name: 'Amazon',
-      role: 'Frontend Developer',
-      interviewStage: 'Completed',
-      date: 'March 15, 2025',
-      time: '1:30 PM',
-      location: 'Amazon Office, Seattle',
-    },
-  ];
-
   return (
     <>
       <TableContainer sx={{ backgroundColor: 'white', padding: '20px' }}>
-        <Table sx={{ minWidth: 650 }}>
-          <TableHead>
-            <TableRow sx={{ backgroundColor: '#F9FAFB' }}>
-              {headerFields.map((field, index) => (
-                <TableCell key={index}>{field}</TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {rowsData.map((row, index) => (
-              <TableRow key={index}>
-                {companyNameField(row.image, row.name)}
-                {textOnlyField(row.role)}
-                {interviewStageField(row.interviewStage)}
-                {buttonsField(row)}
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
+            <CircularProgress />
+          </Box>
+        ) : error ? (
+          <Typography color="error" sx={{ padding: '20px' }}>
+            {error}
+          </Typography>
+        ) : (
+          <Table sx={{ minWidth: 650 }}>
+            <TableHead>
+              <TableRow sx={{ backgroundColor: '#F9FAFB' }}>
+                {headerFields.map((field, index) => (
+                  <TableCell key={index}>{field}</TableCell>
+                ))}
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHead>
+            <TableBody>
+              {interviews.map((row, index) => (
+                <TableRow key={index}>
+                  {companyNameField(row.image, row.name)}
+                  {textOnlyField(row.role)}
+                  {interviewStageField(row.interviewStage)}
+                  {buttonsField(row)}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </TableContainer>
 
-      {/* Use the new InterviewDetailsModal component */}
       <InterviewDetailsModal open={open} onClose={handleClose} interview={selectedInterview} />
     </>
   );

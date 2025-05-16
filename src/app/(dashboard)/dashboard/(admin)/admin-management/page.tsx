@@ -77,13 +77,13 @@ export default function ClientProfilePage() {
             </Box>
           ))}
         </Box>
-        <Button
+        {/* <Button
           onClick={toggleAdminModal}
           variant="outlined"
           sx={{ px: { md: 4 }, textTransform: "capitalize" }}
         >
           Add New Admin
-        </Button>
+        </Button> */}
       </Box>
 
       <section>

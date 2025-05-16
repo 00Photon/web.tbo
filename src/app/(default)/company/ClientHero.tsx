@@ -16,7 +16,7 @@ import GroupedImages from "../assets/groupImages.svg";
 import Gears from "../assets/gears.svg";
 import Gem from "../assets/gem.svg";
 import Star from "../assets/star.svg";
-
+import Link from 'next/link';
 // ** Third Party Imports
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -144,6 +144,7 @@ const ClientHero = () => {
               gap: 4,
             }}
           >
+            <Link href="/sign-up" passHref>
             <ButtonStyled
               variant="contained"
               size="medium"
@@ -158,6 +159,7 @@ const ClientHero = () => {
               Explore Jobs
               <Icon icon="material-symbols-light:arrow-right-alt-rounded" />
             </ButtonStyled>
+            </Link>
           </Box>
         </Box>
 

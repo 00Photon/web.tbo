@@ -113,6 +113,56 @@ export const getAppliedJobs = async (): Promise<AppliedJob[]> => {
     throw new Error("An unexpected error occurred");
   }
 };
+
+
+export interface Interview {
+  id: number;
+  application_id: number;
+  user_id: number;
+  interview_date: string;
+  interview_time: string;
+  interview_location: string;
+  interviewer_name: string;
+  interviewer_department: string;
+  interviewer_email: string;
+  interviewer_phone: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  job: any | null; // If job might be populated later, you can refine this type
+}
+
+interface InterviewApiResponse {
+  status: boolean;
+  interviews: Interview[];
+}
+export const getInterviews = async (): Promise<Interview[]> => {
+  try {
+    const session = await getSession();
+    if (!session || !session.user) throw new Error("User is not authenticated");
+
+    const token = session.user.accessToken;
+    const response = await axios.get<InterviewApiResponse>(`${API_BASE_URL}/talent/interviews`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.data.status || !response.data.interviews) {
+      throw new Error("Invalid API response structure");
+    }
+
+    return response.data.interviews;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error("Axios Error:", error.response?.data);
+      throw new Error(error.response?.data?.message || "Failed to fetch interviews");
+    }
+    console.error("Error:", error);
+    throw new Error("An unexpected error occurred");
+  }
+};
 export const fetchApplicationsForJob = async (id: number) => {
   try {
     const session = await getSession();
@@ -250,6 +300,33 @@ interface AppliedJobsApiResponse {
   appliedJobs: AppliedJob[];
 }
 
+export const getAppliedJobtalent = async (): Promise<Application[]> => {
+  try {
+    const session = await getSession();
+    if (!session || !session.user) throw new Error("User is not authenticated");
+
+    const token = session.user.accessToken;
+    const response = await axios.get<AppliedJobsApiResponse>(`${API_BASE_URL}/talent/applications`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.data.status || !response.data.applications) {
+      throw new Error("Invalid API response structure");
+    }
+
+    return response.data.applications;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error("Axios Error:", error.response?.data);
+      throw new Error(error.response?.data?.message || "Failed to fetch applied jobs");
+    }
+    console.error("Error:", error);
+    throw new Error("An unexpected error occurred");
+  }
+};
 export const getAppliedJob = async (): Promise<Application[]> => {
   try {
     const session = await getSession();
@@ -272,6 +349,38 @@ export const getAppliedJob = async (): Promise<Application[]> => {
     if (axios.isAxiosError(error)) {
       console.error("Axios Error:", error.response?.data);
       throw new Error(error.response?.data?.message || "Failed to fetch applied jobs");
+    }
+    console.error("Error:", error);
+    throw new Error("An unexpected error occurred");
+  }
+};
+
+export const getApplicationById = async (id: string): Promise<Application> => {
+  try {
+    const session = await getSession();
+    if (!session || !session.user) throw new Error("User is not authenticated");
+
+    const token = session.user.accessToken;
+
+    const response = await axios.get<{ status: boolean; application: Application }>(
+      `${API_BASE_URL}/admin/applications/${id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.data.status || !response.data.application) {
+      throw new Error("Invalid API response structure");
+    }
+
+    return response.data.application;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error("Axios Error:", error.response?.data);
+      throw new Error(error.response?.data?.message || "Failed to fetch application");
     }
     console.error("Error:", error);
     throw new Error("An unexpected error occurred");

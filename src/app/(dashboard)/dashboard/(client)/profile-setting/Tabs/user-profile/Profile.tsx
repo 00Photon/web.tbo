@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { getCurrentUser, updateUser } from '@/@core/services/user';
+import { getCurrentUser, updateUser, uploadFile } from '@/@core/services/user';
 import {
   Box,
   Typography,
@@ -17,7 +17,7 @@ import { Edit, Save, Cancel, DeleteOutlineOutlined } from '@mui/icons-material';
 import CustomTextField from '@/@core/component/mui/text-field';
 
 interface CompanyFormData {
-  company_logo: string;
+  company_logo?: File | string;
   company_name: string;
   company_email_address: string;
   industry: string;
@@ -97,72 +97,51 @@ const ClientProfile = () => {
     }));
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setTempImageUrl(event.target.result as string);
+  
+      const formData = new FormData();
+      formData.append('file', file); 
+  
+      try {
+        const uploaded = await uploadFile(formData);
+        if (uploaded?.url) {
+          setFormData(prev => ({
+            ...prev,
+            company_logo: uploaded.url,
+          }));
+          setSuccess('Logo uploaded successfully!');
+        } else {
+          throw new Error('Invalid upload response');
         }
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.error('Logo upload failed:', err);
+        setError('Failed to upload logo.');
+      }
     }
   };
+  
+  
+  
 
-  const uploadImageToServer = async (file: File): Promise<string> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(`https://example.com/uploads/${file.name}`);
-      }, 1000);
-    });
-  };
-
-  const saveImage = async () => {
-    if (!userId || !imageFile) return;
-    try {
-      setIsSavingImage(true);
-      const imageUrl = await uploadImageToServer(imageFile);
-      const payload = { company_logo: imageUrl };
-      await updateUser(userId, payload);
-      setFormData((prev) => ({ ...prev, company_logo: imageUrl }));
-      setTempImageUrl(null);
-      setImageFile(null);
-      setSuccess('Company logo updated successfully!');
-    } catch (error) {
-      console.error('Failed to save image:', error);
-      setError('Failed to upload image. Please try again.');
-    } finally {
-      setIsSavingImage(false);
-    }
-  };
 
   const saveCompanyInfo = async () => {
-    if (!userId) {
-      setError('User ID is missing.');
-      return;
-    }
-    if (!isTermsAgreed) {
-      setError('You must agree to the terms and conditions.');
-      return;
-    }
+    if (!userId) return setError('User ID is missing.');
+    if (!isTermsAgreed) return setError('You must agree to the terms and conditions.');
     try {
-      const { company_logo, ...companyInfo } = formData;
-      await updateUser(userId, companyInfo);
+      await updateUser(userId, formData); // includes company_logo now
       setIsEditing(false);
       setIsTermsAgreed(false);
       setSuccess('Company information updated successfully!');
-    } catch (error) {
-      console.error('Failed to update company info:', error);
+    } catch (err) {
+      console.error('Failed to update company info:', err);
       setError('Failed to update profile. Please try again.');
     }
   };
+  
 
-  const removeImage = () => {
-    setImageFile(null);
-    setTempImageUrl(null);
-  };
+
 
   const handleCancelEdit = () => {
     setIsEditing(false);
@@ -197,43 +176,41 @@ const ClientProfile = () => {
             borderRadius: 4,
             p: 4,
           }}>
-            <Avatar
-              src={tempImageUrl || formData.company_logo}
-              sx={{ width: 70, height: 70, mb: 2 }}
+         <Avatar
+          src={formData.company_logo ? String(formData.company_logo) : undefined}
+          sx={{ width: 70, height: 70, mb: 2 }}
+          alt="Company Logo"
+        />
+
+
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <input
+              type="file"
+              ref={fileInputRef}
+              hidden
+              accept="image/jpeg,image/png,image/jpg,image/gif"
+              onChange={handleImageChange}
+              disabled={!isEditing}
             />
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <input
-                type="file"
-                ref={fileInputRef}
-                hidden
-                accept="image/*"
-                onChange={handleImageChange}
-                disabled={!isEditing}
-              />
-              <Button
-                variant="outlined"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isSavingImage || !isEditing}
-                sx={{ textTransform: 'none' }}
-              >
-                Upload
-              </Button>
-              {imageFile && (
-                <Button
-                  variant="contained"
-                  onClick={saveImage}
-                  disabled={isSavingImage || !imageFile}
-                  sx={{ textTransform: 'none' }}
-                >
-                  {isSavingImage ? 'Saving...' : 'Save Logo'}
-                </Button>
+
+            <Button
+              variant="outlined"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={!isEditing}
+              sx={{ textTransform: 'none' }}
+            >
+              Upload
+            </Button>
+
+
+            {imageFile && (
+                <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
+                  Selected: {imageFile.name}
+                </Typography>
               )}
-              {(imageFile || tempImageUrl) && (
-                <IconButton onClick={removeImage} disabled={isSavingImage}>
-                  <DeleteOutlineOutlined />
-                </IconButton>
-              )}
-            </Box>
+
+          </Box>
             {imageFile && (
               <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
                 Selected: {imageFile.name}
@@ -263,7 +240,7 @@ const ClientProfile = () => {
                 <IconButton onClick={handleCancelEdit} color="error" sx={{ mr: 1 }}>
                   <Cancel />
                 </IconButton>
-                <IconButton onClick={saveCompanyInfo} color="primary" disabled={!isTermsAgreed}>
+                <IconButton onClick={saveCompanyInfo} color="primary" >
                   <Save />
                 </IconButton>
               </Box>
@@ -397,14 +374,14 @@ const ClientProfile = () => {
                 Website
               </Typography>
               <CustomTextField
-                fullWidth
-                name="company_website"
-                value={formData.company_website}
-                onChange={handleChange}
-                size="medium"
-                placeholder="www.company.com"
-                disabled={!isEditing}
-              />
+                  fullWidth
+                  name="company_website"
+                  value={formData.company_website}
+                  onChange={handleChange}
+                  size="medium"
+                  placeholder="https://www.company.com" // Updated placeholder
+                  disabled={!isEditing}
+                />
             </Grid>
             <Grid item xs={12} sm={6}>
               <Typography sx={{ fontWeight: 600, fontSize: '14px', mb: 1 }}>

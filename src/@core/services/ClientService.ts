@@ -44,10 +44,10 @@ export const getClients = async (): Promise<ClientData[]> => {
   }
 };
 
-export const activateClient = async (jobId: number) => {
+export const activateClient = async (ClientId: number) => {
   try {
-    const response = await fetch(`/api/jobs/${jobId}/activate`, {
-      method: 'PATCH',
+    const response = await fetch(`${API_BASE_URL}/admin/clients/${ClientId}/activate`, {
+      method: 'PUT',
     });
     
     if (!response.ok) {
@@ -61,14 +61,35 @@ export const activateClient = async (jobId: number) => {
   }
 };
 
-export const deactivateClient = async (jobId: number): Promise<any> => {
+export const deactivateClient = async (ClientId: number): Promise<any> => {
   const session = await getSession(); 
   if (!session || !session.user) throw new Error("User is not authenticated");
 
   const token = session.user.accessToken; 
 
-  const response = await fetch(`${API_BASE_URL}/admin/clients/${jobId}/deactivate`, {
+  const response = await fetch(`${API_BASE_URL}/admin/clients/${ClientId}/deactivate`, {
     method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to deactivate job');
+  }
+
+  const data = await response.json();
+  return data; 
+};
+export const deleteClient = async (ClientId: number): Promise<any> => {
+  const session = await getSession(); 
+  if (!session || !session.user) throw new Error("User is not authenticated");
+
+  const token = session.user.accessToken; 
+
+  const response = await fetch(`${API_BASE_URL}/admin/clients/${ClientId}`, {
+    method: 'DELETE',
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',

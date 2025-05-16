@@ -1,5 +1,5 @@
 // * React Imports
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 // ** Custom Component Imports
 import StyledImage from "@/@core/component/mui/image";
@@ -7,124 +7,32 @@ import StyledImage from "@/@core/component/mui/image";
 // ** Icon Imports
 import Icon from "@/@core/component/icon";
 
-// * Image Import
-import google from "../../../../public/google.png";
-
 // * MUI Imports
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Grid from "@mui/material/Grid";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
-import { alpha, styled } from "@mui/material/styles";
+import { alpha } from "@mui/material/styles";
 import Link from "next/link";
+
+// * API
+import { getAlljobs } from "@/@core/services/user";
+
 interface Jobs {
   name: string;
   logo: string;
   type: string;
   title: string;
   location: string;
-  salary: number;
-  applicant: number;
+  minimum_salary: number;
+  applicant_count: number;
   date: string;
 }
 
 interface JobCardProps {
   job: Jobs;
 }
-
-const job: Jobs[] = [
-  {
-    name: "Google Inc.",
-    logo: google.src,
-    type: "Full-Time",
-    title: "Technical Support Specialist",
-    location: "Dakar, Bangladesh",
-    salary: 1000,
-    applicant: 242,
-    date: "3 day ago",
-  },
-  {
-    name: "Google Inc.",
-    logo: google.src,
-    type: "Full-Time",
-    title: "Technical Support Specialist",
-    location: "Dakar, Bangladesh",
-    salary: 1000,
-    applicant: 242,
-    date: "3 day ago",
-  },
-  {
-    name: "Google Inc.",
-    logo: google.src,
-    type: "Full-Time",
-    title: "Technical Support Specialist",
-    location: "Dakar, Bangladesh",
-    salary: 1000,
-    applicant: 242,
-    date: "3 day ago",
-  },
-  {
-    name: "Google Inc.",
-    logo: google.src,
-    type: "Full-Time",
-    title: "Technical Support Specialist",
-    location: "Dakar, Bangladesh",
-    salary: 1000,
-    applicant: 242,
-    date: "3 day ago",
-  },
-  {
-    name: "Google Inc.",
-    logo: google.src,
-    type: "Full-Time",
-    title: "Technical Support Specialist",
-    location: "Dakar, Bangladesh",
-    salary: 1000,
-    applicant: 242,
-    date: "3 day ago",
-  },
-  {
-    name: "Google Inc.",
-    logo: google.src,
-    type: "Full-Time",
-    title: "Technical Support Specialist",
-    location: "Dakar, Bangladesh",
-    salary: 1000,
-    applicant: 242,
-    date: "3 day ago",
-  },
-  {
-    name: "Google Inc.",
-    logo: google.src,
-    type: "Full-Time",
-    title: "Technical Support Specialist",
-    location: "Dakar, Bangladesh",
-    salary: 1000,
-    applicant: 242,
-    date: "3 day ago",
-  },
-  {
-    name: "Google Inc.",
-    logo: google.src,
-    type: "Full-Time",
-    title: "Technical Support Specialist",
-    location: "Dakar, Bangladesh",
-    salary: 1000,
-    applicant: 242,
-    date: "3 day ago",
-  },
-  {
-    name: "Google Inc.",
-    logo: google.src,
-    type: "Full-Time",
-    title: "Technical Support Specialist",
-    location: "Dakar, Bangladesh",
-    salary: 1000,
-    applicant: 242,
-    date: "3 day ago",
-  },
-];
 
 const JobCard: React.FC<JobCardProps> = ({ job }) => {
   return (
@@ -149,13 +57,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
           justifyContent: "space-between",
         }}
       >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 2,
-          }}
-        >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Box>
             <StyledImage src={job.logo} alt={job.name} width={4} height={4} />
           </Box>
@@ -167,7 +69,8 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
                 textTransform: "capitalize",
                 fontSize: "0.75rem",
                 display: "flex",
-                alignItem: "center",
+                alignItems: "center",
+                gap: 0.5,
               }}
             >
               <Icon icon="carbon:location" fontSize="1rem" />
@@ -182,7 +85,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
             p: 1,
             borderRadius: 1,
             color: (theme) => theme.palette.secondary.dark,
-            textTransform: "Uppercase",
+            textTransform: "uppercase",
           }}
         >
           <Typography
@@ -205,14 +108,15 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
             textTransform: "capitalize",
             fontSize: "0.8rem",
           }}
-        >{`Salary: $${job.salary}`}</Typography>
+        >
+          {`Salary: $${job.minimum_salary}`}
+        </Typography>
       </Box>
 
       <Box sx={{ display: "flex", gap: 4 }}>
         <Typography
           sx={{
             color: (theme) => theme.palette.secondary.dark,
-            textTransform: "capitalize",
             fontSize: "0.8rem",
             display: "flex",
             alignItems: "center",
@@ -220,12 +124,11 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
           }}
         >
           <Icon icon="mdi:accounts" />
-          {job.applicant} Applicants
+          {job.applicant_count} Applicants
         </Typography>
         <Typography
           sx={{
             color: (theme) => theme.palette.secondary.dark,
-            textTransform: "capitalize",
             fontSize: "0.8rem",
             display: "flex",
             alignItems: "center",
@@ -242,15 +145,10 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
           mt: 3,
           display: "flex",
           justifyContent: "flex-end",
-          alignItems: "center",
           gap: 2,
         }}
       >
-        <Button
-          variant="text"
-          size="small"
-          sx={{ textTransform: "capitalize" }}
-        >
+        <Button variant="text" size="small" sx={{ textTransform: "capitalize" }}>
           View
         </Button>
 
@@ -267,6 +165,27 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
 };
 
 const FeaturedJobs = () => {
+  const [jobs, setJobs] = useState<Jobs[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const res = await getAlljobs();
+  
+        // If the response is an object with a jobs array inside:
+        setJobs(res?.jobs || []); // adjust based on actual response shape
+      } catch (error) {
+        console.error("Failed to fetch jobs:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchJobs();
+  }, []);
+  
+
   return (
     <Box
       sx={{
@@ -279,13 +198,18 @@ const FeaturedJobs = () => {
       <Typography sx={{ fontWeight: "semibold", fontSize: "1.5rem", mb: 4 }}>
         Featured Jobs
       </Typography>
-      <Grid container spacing={4}>
-        {job.slice(0, 6).map((job, index) => (
-          <Grid item xs={12} md={6} lg={4} key={index}>
-            <JobCard job={job} />
-          </Grid>
-        ))}
-      </Grid>
+
+      {loading ? (
+        <Typography>Loading jobs...</Typography>
+      ) : (
+        <Grid container spacing={4}>
+          {jobs.slice(0, 6).map((job, index) => (
+            <Grid item xs={12} md={6} lg={4} key={index}>
+              <JobCard job={job} />
+            </Grid>
+          ))}
+        </Grid>
+      )}
 
       <Paper
         sx={{
@@ -308,25 +232,25 @@ const FeaturedJobs = () => {
         >
           Join and get access to vacancies that best suit your profile...
         </Typography>
-           <Link href="/company">
-        <Button
-          variant="contained"
-          sx={{
-            display: "flex",
-            gap: 1,
-            background: "#fff",
-            color: (theme) => theme.palette.primary.dark,
-            textTransform: "capitalize",
-            "&:hover": {
-              background: (theme) => theme.palette.primary.main,
-              color: "#fff",
-              transition: "all 0.3s ease-in-out",
-            },
-          }}
-        >
-          Get Started
-          <Icon icon="material-symbols-light:arrow-right-alt-rounded" />
-        </Button>
+        <Link href="/sign-up" passHref>
+          <Button
+            variant="contained"
+            sx={{
+              display: "flex",
+              gap: 1,
+              background: "#fff",
+              color: (theme) => theme.palette.primary.dark,
+              textTransform: "capitalize",
+              "&:hover": {
+                background: (theme) => theme.palette.primary.main,
+                color: "#fff",
+                transition: "all 0.3s ease-in-out",
+              },
+            }}
+          >
+            Get Started
+            <Icon icon="material-symbols-light:arrow-right-alt-rounded" />
+          </Button>
         </Link>
       </Paper>
     </Box>

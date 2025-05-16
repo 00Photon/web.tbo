@@ -1,14 +1,11 @@
 // * React Imports
 import React, { useEffect, useState } from "react";
 
-// * Next.js & Router Imports
-import { useRouter } from "next/router";
-
 // * Custom Component Imports
 import CustomTextField from "@/@core/component/mui/text-field";
 import { TableCellStyled } from "@/@core/component/mui/tableStyled";
 import CustomChip from "@/@core/component/mui/chip";
-import { CandidateData, getCandidates } from "@/@core/services/CandidateService";
+import { CandidateData, getCandidates, activateCandidate, deactivateCandidate, deleteCandidate } from "@/@core/services/CandidateService";
 
 // ** Third Party Imports
 import { useMediaQuery } from "@mui/material";
@@ -17,13 +14,10 @@ import { Theme } from "@mui/material/styles";
 // ** MUI Imports
 import {
   Box,
-  Grid,
-  Paper,
   Card,
   CardContent,
   InputAdornment,
   Checkbox,
-  MenuItem,
   IconButton,
   Typography,
   Button,
@@ -34,55 +28,67 @@ import {
   TableCell,
   TableBody,
   TablePagination,
+  Menu,
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Alert,
+  Paper,
+  Grid,
 } from "@mui/material";
 
 // ** Icon Imports
 import Icon from "@/@core/component/icon";
 
+// Define CandidateData interface
+// interface CandidateData {
+//   id: string | number;
+//   name: string;
+//   email: string;
+//   phone_number: string;
+//   status: string;
+// }
+
 const TalentTable = () => {
   const [openFilter, setOpenFilter] = useState<boolean>(false);
   const [searchValue, setSearchValue] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [experienceFilter, setExperienceFilter] = useState<string>("");
-  const [yearsFilter, setYearsFilter] = useState<string>("");
-  const [dateFilter, setDateFilter] = useState<string>("");
-
   const [page, setPage] = useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
   const [anchorEl, setAnchorEl] = useState<(HTMLElement | null)[]>([]);
-
   const [candidates, setCandidates] = useState<CandidateData[]>([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
+  const [candidateToDelete, setCandidateToDelete] = useState<CandidateData | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState<boolean>(false);
+  const [candidateToView, setCandidateToView] = useState<CandidateData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const smallScreen = useMediaQuery((theme: Theme) =>
-    theme.breakpoints.up("md")
-  );
+  const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up("md"));
 
-  // Fetch candidate data
+  // Fetch candidates
   useEffect(() => {
     const fetchCandidates = async () => {
       try {
         const data = await getCandidates();
         setCandidates(data);
+        setAnchorEl(new Array(data.length).fill(null));
       } catch (error) {
-        console.error("Error fetching candidates:", error);
+        setError("Failed to load candidates.");
       }
     };
     fetchCandidates();
   }, []);
 
-  const handleChangePage = (
-    event: React.MouseEvent<HTMLButtonElement> | null,
-    newPage: number
-  ) => setPage(newPage);
+  const handleChangePage = (_: unknown, newPage: number) => setPage(newPage);
 
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
-  const handleRowOptionsClick = (event: any, index: number) => {
+  const handleRowOptionsClick = (event: React.MouseEvent<HTMLElement>, index: number) => {
     const newAnchorEl = [...anchorEl];
     newAnchorEl[index] = event.currentTarget;
     setAnchorEl(newAnchorEl);
@@ -94,11 +100,73 @@ const TalentTable = () => {
     setAnchorEl(newAnchorEl);
   };
 
+  const handleView = (candidate: CandidateData) => {
+    setCandidateToView(candidate);
+    setViewDialogOpen(true);
+    handleRowOptionsClose(candidates.indexOf(candidate));
+  };
+
+  const handleToggleActivation = async (candidate: CandidateData) => {
+    try {
+      if (candidate.status.toLowerCase() === "active") {
+        await deactivateCandidate(candidate.id);
+        setCandidates(
+          candidates.map((c) =>
+            c.id === candidate.id ? { ...c, status: "inactive" } : c
+          )
+        );
+      } else {
+        await activateCandidate(candidate.id);
+        setCandidates(
+          candidates.map((c) =>
+            c.id === candidate.id ? { ...c, status: "active" } : c
+          )
+        );
+      }
+    } catch (error) {
+      setError("Failed to update candidate status.");
+    }
+    handleRowOptionsClose(candidates.indexOf(candidate));
+  };
+
+  const handleDelete = (candidate: CandidateData) => {
+    setCandidateToDelete(candidate);
+    setDeleteDialogOpen(true);
+    handleRowOptionsClose(candidates.indexOf(candidate));
+  };
+
+  const confirmDelete = async () => {
+    if (!candidateToDelete) return;
+    try {
+      await deleteCandidate(candidateToDelete.id);
+      setCandidates(candidates.filter((c) => c.id !== candidateToDelete.id));
+      setDeleteDialogOpen(false);
+      setCandidateToDelete(null);
+    } catch (error) {
+      setError("Failed to delete candidate.");
+    }
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setCandidateToDelete(null);
+  };
+
+  const handleCloseViewDialog = () => {
+    setViewDialogOpen(false);
+    setCandidateToView(null);
+  };
+
   const toggleFilter = () => setOpenFilter(!openFilter);
 
   return (
     <Card sx={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0, my: 4, background: "#fff" }}>
       <CardContent sx={{ p: 3 }}>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
         {!smallScreen && <Typography variant="h6">Talents</Typography>}
 
         {/* Search and Filter Section */}
@@ -143,28 +211,50 @@ const TalentTable = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {candidates.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((item, index) => (
-                <TableRow key={index}>
-                  <TableCell>
-                    <Checkbox size="small" />
-                  </TableCell>
-                  <TableCell>{item.id}</TableCell>
-                  <TableCell>{item.name}</TableCell>
-                  <TableCell>{item.email}</TableCell>
-                  <TableCell align="center">{item.phone_number}</TableCell>
-                  <TableCell align="center">
-                    <CustomChip
-                      label={item.status}
-                      color={item.status === "active" ? "success" : "error"}
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    <IconButton onClick={(e) => handleRowOptionsClick(e, index)}>
-                      <Icon icon="mdi:dots-vertical" />
-                    </IconButton>
+              {candidates.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center">
+                    No candidates found.
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                candidates.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((item, index) => (
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      <Checkbox size="small" />
+                    </TableCell>
+                    <TableCell>{item.id}</TableCell>
+                    <TableCell>{item.name}</TableCell>
+                    <TableCell>{item.email}</TableCell>
+                    <TableCell align="center">{item.phone_number}</TableCell>
+                    <TableCell align="center">
+                      <CustomChip
+                        label={item.status}
+                        color={item.status.toLowerCase() === "active" ? "success" : "error"}
+                      />
+                    </TableCell>
+                    <TableCell align="center">
+                      <IconButton
+                        aria-label={`Actions for ${item.name}`}
+                        onClick={(e) => handleRowOptionsClick(e, index)}
+                      >
+                        <Icon icon="mdi:dots-vertical" />
+                      </IconButton>
+                      <Menu
+                        anchorEl={anchorEl[index]}
+                        open={Boolean(anchorEl[index])}
+                        onClose={() => handleRowOptionsClose(index)}
+                      >
+                        <MenuItem onClick={() => handleView(item)}>View</MenuItem>
+                        <MenuItem onClick={() => handleToggleActivation(item)}>
+                          {item.status.toLowerCase() === "active" ? "Deactivate" : "Activate"}
+                        </MenuItem>
+                        <MenuItem onClick={() => handleDelete(item)}>Delete</MenuItem>
+                      </Menu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
@@ -179,6 +269,69 @@ const TalentTable = () => {
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={handleCloseDeleteDialog}
+          aria-labelledby="delete-dialog-title"
+        >
+          <DialogTitle id="delete-dialog-title">Confirm Deletion</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to delete {candidateToDelete?.name}? This action cannot be undone.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDeleteDialog}>Cancel</Button>
+            <Button onClick={confirmDelete} color="error" variant="contained">
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* View Candidate Dialog */}
+        <Dialog
+          open={viewDialogOpen}
+          onClose={handleCloseViewDialog}
+          aria-labelledby="view-dialog-title"
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle id="view-dialog-title">Candidate Details</DialogTitle>
+          <DialogContent>
+            {candidateToView && (
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <Typography variant="subtitle1">User ID</Typography>
+                  <Typography variant="body2" color="text.secondary">{candidateToView.id}</Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="subtitle1">Name</Typography>
+                  <Typography variant="body2" color="text.secondary">{candidateToView.name}</Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="subtitle1">Email</Typography>
+                  <Typography variant="body2" color="text.secondary">{candidateToView.email}</Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="subtitle1">Phone</Typography>
+                  <Typography variant="body2" color="text.secondary">{candidateToView.phone_number}</Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="subtitle1">Status</Typography>
+                  <CustomChip
+                    label={candidateToView.status}
+                    color={candidateToView.status.toLowerCase() === "active" ? "success" : "error"}
+                  />
+                </Grid>
+              </Grid>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseViewDialog} variant="contained">Close</Button>
+          </DialogActions>
+        </Dialog>
       </CardContent>
     </Card>
   );

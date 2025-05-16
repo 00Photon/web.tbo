@@ -223,9 +223,10 @@ const NewInterview = ({ open, close }: Props) => {
         interview_location: values.format === "In-Person" ? "Company Headquarters, Meeting Room 3" : "Virtual",
         interviewer_department: values.interviewerDepartment,
         interviewer_name: values.interviewerName,
-        interviewer_role: "Senior Manager", // Can be made dynamic if needed
+        interviewer_role: values.interviewerName, // Can be made dynamic if needed
         interviewer_email: values.interviewerEmail,
         interviewer_phone: values.interviewerPhone,
+        status: "Scheduled", // Add the required status property
       };
 
       const response = await scheduleInterview(formattedData);

@@ -64,56 +64,7 @@ export type AdminData = {
   status: boolean;
 };
 
-const data: MockData[] = [
-  {
-    id: 1289,
-    name: "John Doe",
-    email: "DqkR8@example.com",
-    level: "Senior",
-    role: "Human Resource",
-    status: true,
-  },
-  {
-    id: 2412,
-    name: "Sarah Doe",
-    email: "sara@example.com",
-    level: "Mid-Level",
-    role: "Lead Dev",
-    status: true,
-  },
-  {
-    id: 2129,
-    name: "Rizzy Elesius",
-    email: "sara@example.com",
-    level: "Mid-Level",
-    role: "System Admin",
-    status: false,
-  },
-  {
-    id: 2129,
-    name: "Rizzy Elesius",
-    email: "sara@example.com",
-    level: "Junior",
-    role: "System Admin",
-    status: true,
-  },
-  {
-    id: 2129,
-    name: "Rizzy Elesius",
-    email: "sara@example.com",
-    level: "Mid-Level",
-    role: "System Admin",
-    status: false,
-  },
-  {
-    id: 2129,
-    name: "Rizzy Elesius",
-    email: "sara@example.com",
-    level: "Junior",
-    role: "Manager",
-    status: false,
-  },
-];
+
 
 const AdminsTable = () => {
   const [openFilter, setOpenFilter] = useState<boolean>(false);
@@ -124,7 +75,7 @@ const AdminsTable = () => {
   const [admins, setAdmins] = useState<AdminData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [anchorEl, setAnchorEl] = useState<(HTMLElement | null)[]>(
-    Array(data?.length)?.fill(null)
+    Array(admins.length).fill(null)
   );
   const [editAdminModal, setEditAdminModal] = useState<boolean>(false);
   const [viewAdminDrawer, setViewAdminDrawer] = useState<boolean>(false);
@@ -352,7 +303,7 @@ const AdminsTable = () => {
               }}
             />
 
-            <Button
+            {/* <Button
               onClick={toggleFilter}
               variant={openFilter ? "contained" : "outlined"}
               size="medium"
@@ -366,7 +317,7 @@ const AdminsTable = () => {
                 <Typography sx={{ fontSize: ".857rem" }}> Filter</Typography>
               )}
               <Icon icon="basil:filter-outline" />
-            </Button>
+            </Button> */}
           </Box>
         </Box>
 
@@ -396,7 +347,7 @@ const AdminsTable = () => {
                   Name
                 </TableCellStyled>
                 <TableCellStyled align="left">Email</TableCellStyled>
-                <TableCellStyled align="center">Account Type</TableCellStyled>
+                {/* <TableCellStyled align="center">Account Type</TableCellStyled> */}
                 <TableCellStyled align="left">Role</TableCellStyled>
                 <TableCellStyled align="center">Status</TableCellStyled>
                 {/* <TableCellStyled align="left">Actions</TableCellStyled> */}
@@ -429,8 +380,8 @@ const AdminsTable = () => {
                     <TableCell>{item.id}</TableCell>
                     <TableCell>{item.name}</TableCell>
                     <TableCell>{item.email}</TableCell>
-                    <TableCell align="center">{item.account_type}</TableCell>
-                    <TableCell>{item.status}</TableCell>
+                    <TableCell>SUPER {item.account_type}</TableCell>
+                    {/* <TableCell>{item.status}</TableCell> */}
                     {/* <TableCell>{item.id}</TableCell>
                     <TableCell>{item.name}</TableCell>
                     <TableCell>{item.email}</TableCell>

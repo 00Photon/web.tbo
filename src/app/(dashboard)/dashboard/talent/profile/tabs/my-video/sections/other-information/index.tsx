@@ -5,7 +5,7 @@ const OtherInformationTab = () => {
   const documents = [
     'CV/Resume Upload',
     'Cover Letter Upload',
-    'ID Card Upload',
+    'ID Card ',
   ];
 
   return (

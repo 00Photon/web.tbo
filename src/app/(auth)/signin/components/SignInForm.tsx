@@ -19,6 +19,7 @@ import { getSession, signIn, useSession } from 'next-auth/react';
 import React, { FC, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import Image from 'next/image';
+import { useEffect } from 'react';
 
 const SigninForm: FC = () => {
   const router = useRouter();
@@ -37,37 +38,37 @@ const SigninForm: FC = () => {
 
   const { data: session } = useSession();
 
+  useEffect(() => {
+    if (session?.user?.accountType && isLoginSuccess) {
+      router.push(`/dashboard/${session.user.accountType.toLowerCase()}`);
+    }
+  }, [session, isLoginSuccess, router]);
 
-
-const login = async (data: any) => {
-  setIsLoading(true);
-  const res = await signIn('credentials', { redirect: false, ...data });
-
-  if (res?.ok) {
-    setIsLoginSuccess(true);
-
-    // Wait for session update
-    setTimeout(() => {
-      if (session?.user?.accountType) {
-        router.push(`/dashboard/${session.user.accountType.toLowerCase()}`);
-      } else {
-        console.error("Session not found after login");
-      }
-    }, 500);
-  } else {
-    console.error("Error during sign in:", res);
-    setShowError(true);
-  }
+  const login = async (data: any) => {
+    setIsLoading(true);
+    setShowError(false);
+    
+    const res = await signIn('credentials', { 
+      redirect: false, 
+      ...data 
+    });
   
-  setIsLoading(false);
-};
-
+    if (res?.ok) {
+      setIsLoginSuccess(true);
+    } else {
+      setShowError(true);
+    }
+    
+    setIsLoading(false);
+  };
 
   return (
     <Box
       sx={{
         display: 'flex',
         justifyContent: 'center',
+    
+           
       }}
     >
       <Container component="main" maxWidth="xs">
@@ -76,22 +77,26 @@ const login = async (data: any) => {
             Invalid login credentials!
           </Alert>
         )}
-        <Box
-          sx={{
-            position: 'relative',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            pt: 14,
-            borderRadius: 3,
-            px: 4,
-            py: 4,
-            transition: 'box-shadow',
-            boxShadow: 4,
-            backgroundColor: 'background.paper',
-            justifyContent: 'center'
-          }}
-        >
+       <Box
+        sx={{
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          pt: 14,
+          borderRadius: 3,
+          px: 4,
+          py: 4,
+          transition: 'box-shadow',
+          boxShadow: 4,
+          backgroundColor: 'background.paper',
+          justifyContent: 'center',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
+
         <Link href="/">
           <Image 
             src={'/TBO.svg'}

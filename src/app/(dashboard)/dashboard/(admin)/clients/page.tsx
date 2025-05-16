@@ -99,9 +99,9 @@ export default function ClientProfilePage() {
         <Box
           sx={{ backgroundColor: "#FFFFFF", padding: "20px", width: "100%" }}
         >
-          {activeTab == 0 && <Clients />}
-          {activeTab == 1 && <Jobs />}
-          {activeTab == 2 && <ClientsTable />}
+          {/* {activeTab == 0 && <Clients />}
+          {activeTab == 1 && <Jobs />} */}
+          {activeTab == 0 && <ClientsTable />}
         </Box>
       </section>
     </Box>
