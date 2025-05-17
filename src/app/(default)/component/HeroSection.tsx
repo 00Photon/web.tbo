@@ -182,44 +182,68 @@ const HeroSection = () => {
           </Typography>
 
           <Box
-            sx={{
-              mt: (theme) => theme.spacing(4),
-              display: "flex",
-              justifyContent: "center",
-              gap: { xs: 2, sm: 4 },
-            }}
-          >
-            <Link href="/sign-up">
-            <ButtonStyled
-              variant="contained"
-              size="medium"
-              sx={{
-                background: "#A20514",
-                p: {
-                  xs: "0.5rem 1rem",
-                  md: "0.75rem 1.5rem",
-                },
-              }}
-            >
-              Find Jobs <Icon icon="hugeicons:job-search" />
-            </ButtonStyled>
-            </Link>
-            <Link href="/sign-up">
-            <ButtonStyled
-              variant="contained"
-              sx={{
-                color: (theme) => theme.palette.primary.dark,
-                background: (theme) => theme.palette.primary.light,
-                "&:hover": {
-                  background: (theme) => theme.palette.primary.main,
-                  color: (theme) => theme.palette.primary.light,
-                },
-              }}
-            >
-              Post Jobs <Icon icon="hugeicons:job-share" />
-            </ButtonStyled>
-            </Link>
-          </Box>
+  sx={{
+    mt: (theme) => theme.spacing(4),
+    display: "flex",
+    justifyContent: "center",
+    gap: { xs: 2, sm: 4 },
+  }}
+>
+  <Link href="/sign-up">
+    <ButtonStyled
+      variant="contained"
+      size="medium"
+      sx={{
+        background: "#A20514",
+        color: "#fff",
+        p: {
+          xs: "0.5rem 1.5rem",
+          md: "0.75rem 2rem",
+        },
+        fontSize: {
+          xs: "0.875rem",
+          md: "1rem",
+        },
+        minHeight: "44px",
+        transition: "transform 0.2s ease",
+        "&:hover": {
+          transform: "scale(1.15)",
+          background: "#8a0411",
+        },
+      }}
+    >
+      Find Jobs <Icon icon="hugeicons:job-search" />
+    </ButtonStyled>
+  </Link>
+
+  <Link href="/sign-up">
+    <ButtonStyled
+      variant="contained"
+      sx={{
+        color: (theme) => theme.palette.primary.dark,
+        background: (theme) => theme.palette.primary.light,
+        p: {
+          xs: "0.5rem 1.5rem",
+          md: "0.75rem 2rem",
+        },
+        fontSize: {
+          xs: "0.875rem",
+          md: "1rem",
+        },
+        minHeight: "44px",
+        transition: "transform 0.2s ease",
+        "&:hover": {
+          transform: "scale(1.15)",
+          background: "#A20514",
+          color: (theme) => theme.palette.primary.light,
+        },
+      }}
+    >
+      Post Jobs <Icon icon="hugeicons:job-share" />
+    </ButtonStyled>
+  </Link>
+</Box>
+
         </Box>
 
         {/* Here */}
