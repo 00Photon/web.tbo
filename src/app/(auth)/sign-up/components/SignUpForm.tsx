@@ -62,6 +62,13 @@ const SignUpForm: React.FC = () => {
     window.location.href = authUrl;
 };
   
+const isCompanyEmail = (email: string) => {
+  // Basic check for company emails (disallows common domains)
+  const commonDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com'];
+  const domain = email.split('@')[1]?.toLowerCase();
+  return domain && !commonDomains.includes(domain);
+};
+
   
 
   const activeStyle = {
@@ -101,7 +108,7 @@ const SignUpForm: React.FC = () => {
       icon: <ApartmentOutlined />,
     },
     {
-      label: 'Prefered Email Address',
+      label: activeAccountType === 'CLIENT' ? 'Company Domain Email' : 'Preferred Email Address',
       name: 'email',
       placeholder: 'Enter Email Address',
       icon: <MailOutline />,
@@ -112,7 +119,6 @@ const SignUpForm: React.FC = () => {
       placeholder: 'Enter Password',
     },
   ];
-
   const fieldErrorMessageStyle = {
     fontSize: '11px',
     marginTop: '5px',
@@ -286,9 +292,17 @@ const SignUpForm: React.FC = () => {
                   {field.label}
                 </Box>
                 <TextField
-                  {...register(field.name, {
-                    required: `${field.label} is required`,
-                  })}
+                {...register(field.name, {
+                  required: `${field.label} is required`,
+                  ...(field.name === 'email' && {
+                    validate: (value: string) =>
+                      activeAccountType === 'CLIENT'
+                        ? isCompanyEmail(value) || 'Please use a company domain email (e.g. not gmail.com)'
+                        : true,
+                  }),
+                })}
+                
+                
                   placeholder={field.placeholder}
                   sx={{ width: '100%' }}
                   inputProps={{ style: { fontSize: '12px' } }}
