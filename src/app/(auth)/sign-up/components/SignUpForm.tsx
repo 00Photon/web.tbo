@@ -56,7 +56,7 @@ const SignUpForm: React.FC = () => {
   const router = useRouter();
 
   const googleLogin = () => {
-    const redirectUri = encodeURIComponent(`${window.location.origin}/post-auth`);
+    const redirectUri = encodeURIComponent(`${window.location.origin}/post`);
     const authUrl = `${API_BASE_URL}/auth/google?redirect_uri=${redirectUri}`;
     console.log('Initiating Google SSO:', authUrl); // Debug
     window.location.href = authUrl;
