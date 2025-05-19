@@ -51,7 +51,7 @@ const PostJobModal: React.FC<PostJobModalProps> = ({ open, onClose, talentName }
     <Button
       variant="contained"
       onClick={() => {
-        window.location.href = "/post-job";
+        window.location.href = "/dashboard/applications";
       }}
       sx={{ textTransform: "none" }}
     >

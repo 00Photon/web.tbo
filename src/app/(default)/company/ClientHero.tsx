@@ -144,7 +144,7 @@ const ClientHero = () => {
               gap: 4,
             }}
           >
-            <Link href="/sign-up" passHref>
+            {/* <Link href="/sign-up" passHref>
             <ButtonStyled
               variant="contained"
               size="medium"
@@ -159,7 +159,7 @@ const ClientHero = () => {
               Explore Jobs
               <Icon icon="material-symbols-light:arrow-right-alt-rounded" />
             </ButtonStyled>
-            </Link>
+            </Link> */}
           </Box>
         </Box>
 

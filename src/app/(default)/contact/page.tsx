@@ -119,8 +119,8 @@ const Contact: React.FC = () => {
               <Typography sx={{ fontWeight: "bold", mb: 2 }}>
                 Call Us
               </Typography>
-              <Typography>+234-802-555-0178</Typography>
-              <Typography>+234-802-555-0178</Typography>
+              <Typography>+234-803-391-8955</Typography>
+              {/* <Typography>+234-802-555-0178</Typography> */}
             </Stack>
           </Box>
         </Grid>
@@ -143,8 +143,8 @@ const Contact: React.FC = () => {
               <Typography sx={{ fontWeight: "bold", mb: 2 }}>
                 Email Us
               </Typography>
-              <Typography>support@TBO.ng</Typography>
-              <Typography>contact@TBO.ng</Typography>
+              <Typography>Hr@tboisl.com</Typography>
+              {/* <Typography>contact@TBO.ng</Typography> */}
             </Stack>
           </Box>
         </Grid>
@@ -170,9 +170,10 @@ const Contact: React.FC = () => {
                 Visit Us
               </Typography>
               <Typography>
-                23 Ademola
-                <br /> Adetukumbo Street, <br />
-                Wuse 2, Abuja Nigeria
+              3rd Floor, Propertygate center, 
+                <br />2 The
+                Rock Drive, Lekki Phase 1,<br />
+                Lagos State.
               </Typography>
             </Stack>
           </Box>
@@ -341,7 +342,9 @@ const Contact: React.FC = () => {
                 Didn't find what you're looking for?
               </Typography>
               <Typography 
-                variant="body1" 
+                variant="body1"
+                component="a"
+                href="mailto:support@tboisl.com" 
                 sx={{ 
                   color: "primary.main", 
                   fontWeight: 600, 

@@ -62,10 +62,10 @@ const Footer: React.FC = () => {
               <Stack>
              
                 <Typography sx={{ fontSize: { xs: ".75rem", sm: ".875rem" } }}>
-                +234 803 391 8955
+                +234-803-391-8955
                 </Typography>
                 <Typography sx={{ fontSize: { xs: ".75rem", sm: ".875rem" } }}>
-                02016348889
+               
                 </Typography>
               </Stack>
             </Box>
@@ -75,7 +75,8 @@ const Footer: React.FC = () => {
               </IconButton>
               <Typography sx={{ fontSize: { xs: ".75rem", sm: ".875rem" } }}>
           
-              Propertygate Center, 2 Rock Drive, <br />Lekki Phase 1, Lagos.
+              3rd Floor, Propertygate center, <br />2 The
+              Rock Drive, Lekki Phase 1,Lagos State.
               </Typography>
             </Box>
             <Box sx={{ mb: 2, display: "flex", gap: 2, alignItems: "center" }}>
@@ -84,11 +85,11 @@ const Footer: React.FC = () => {
               </IconButton>
               <Stack>
                 <Typography sx={{ fontSize: { xs: ".75rem", sm: ".875rem" } }}>
-                sales@tboisl.com
+                Hr@tboisl.co
                 </Typography>
-                <Typography sx={{ fontSize: { xs: ".75rem", sm: ".875rem" } }}>
+                {/* <Typography sx={{ fontSize: { xs: ".75rem", sm: ".875rem" } }}>
                   contact@TBO.ng
-                </Typography>
+                </Typography> */}
               </Stack>
             </Box>
           </Box>
@@ -98,7 +99,7 @@ const Footer: React.FC = () => {
               <Typography sx={{ color: "#fff", mb: { xs: 2, md: 4 } }}>
                 Quick Links
               </Typography>
-              <Link href="#/about" passHref>
+              <Link href="/" passHref>
                 <TypographyStyled
                   sx={{ my: 2, fontSize: { xs: ".75rem", sm: ".875rem" } }}
                 >
@@ -112,13 +113,13 @@ const Footer: React.FC = () => {
                   Contact
                 </TypographyStyled>
               </Link>
-              <Link href="#/pricing" passHref>
+              {/* <Link href="#/pricing" passHref>
                 <TypographyStyled
                   sx={{ my: 2, fontSize: { xs: ".75rem", sm: ".875rem" } }}
                 >
                   Pricing
                 </TypographyStyled>
-              </Link>
+              </Link> */}
             </Grid>
 
             <Grid item xs={12} sm={6} lg={3}>
@@ -132,14 +133,14 @@ const Footer: React.FC = () => {
                   Browse jobs
                 </TypographyStyled>
               </Link>
-              <Link href="#/browse-employers" passHref>
+              <Link href="/dashboard/talent/job-vacancies" passHref>
                 <TypographyStyled
                   sx={{ my: 2, fontSize: { xs: ".75rem", sm: ".875rem" } }}
                 >
                   Browse Employers
                 </TypographyStyled>
               </Link>
-              <Link href="#/talent-dashboard" passHref>
+              <Link href="/dashboard/talent" passHref>
                 <TypographyStyled
                   sx={{ my: 2, fontSize: { xs: ".75rem", sm: ".875rem" } }}
                 >
@@ -152,21 +153,21 @@ const Footer: React.FC = () => {
               <Typography sx={{ color: "#fff", mb: { xs: 2, md: 4 } }}>
                 Client
               </Typography>
-              <Link href="/clients" passHref>
+              <Link href="/dashboard/applications" passHref>
                 <TypographyStyled
                   sx={{ my: 2, fontSize: { xs: ".75rem", sm: ".875rem" } }}
                 >
                   Post a job
                 </TypographyStyled>
               </Link>
-              <Link href="#/browse-talent" passHref>
+              <Link href="/company" passHref>
                 <TypographyStyled
                   sx={{ my: 2, fontSize: { xs: ".75rem", sm: ".875rem" } }}
                 >
                   Browse Talent
                 </TypographyStyled>
               </Link>
-              <Link href="#/client-dashboard" passHref>
+              <Link href="/dashboard/client" passHref>
                 <TypographyStyled
                   sx={{ my: 2, fontSize: { xs: ".75rem", sm: ".875rem" } }}
                 >
@@ -179,14 +180,14 @@ const Footer: React.FC = () => {
               <Typography sx={{ color: "#fff", mb: { xs: 2, md: 4 } }}>
                 Support
               </Typography>
-              <Link href="#/faqs" passHref>
+              <Link href="/contact" passHref>
                 <TypographyStyled
                   sx={{ my: 2, fontSize: { xs: ".75rem", sm: ".875rem" } }}
                 >
                   FAQs
                 </TypographyStyled>
               </Link>
-              <Link href="#/privacy" passHref>
+              {/* <Link href="#/privacy" passHref>
                 <TypographyStyled
                   sx={{ my: 2, fontSize: { xs: ".75rem", sm: ".875rem" } }}
                 >
@@ -199,7 +200,7 @@ const Footer: React.FC = () => {
                 >
                   Terms and Conditions
                 </TypographyStyled>
-              </Link>
+              </Link> */}
             </Grid>
           </Grid>
         </Box>

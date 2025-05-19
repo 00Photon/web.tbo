@@ -222,7 +222,7 @@ const NewJob = ({ open, close }: Props) => {
                       >
                         <MenuItem value="FULLTIME">Full Time</MenuItem>
                         <MenuItem value="PARTTIME">Part Time</MenuItem>
-                        <MenuItem value="CONTRACT">Contract</MenuItem>
+                        {/* <MenuItem value="CONTRACT">Contract</MenuItem> */}
                         <MenuItem value="INTERNSHIP">Internship</MenuItem>
                         <MenuItem value="FREELANCE">Freelance</MenuItem>
                       </CustomTextField>

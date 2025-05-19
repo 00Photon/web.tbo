@@ -232,7 +232,7 @@ const FeaturedJobs = () => {
         >
           Join and get access to vacancies that best suit your profile...
         </Typography>
-        <Link href="/sign-up" passHref>
+        <Link href="/dashboard/talent/job-vacancies" passHref>
           <Button
             variant="contained"
             sx={{

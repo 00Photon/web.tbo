@@ -6,6 +6,7 @@ import Icon from "@/@core/component/icon";
 
 // * Utility Imports
 import StyledImage from "@/@core/component/mui/image";
+import Link from "next/link";
 import { formatNumber } from "@/@core/utils/format";
 
 //* Image Imports
@@ -161,8 +162,8 @@ const InfoHeader: React.FC = () => {
             <Typography variant="body1" sx={{ mb: 3, opacity: 0.9, lineHeight: 1.6 }}>
               Your hiring just got easier—we're the extra boost your hiring team needs!
             </Typography>
-            
-            {/* <Button 
+            <Link href="/dashboard/applications" passHref>
+            <Button 
               variant="contained" 
               startIcon={<Icon icon="mdi:plus-circle" />}
               sx={{ 
@@ -176,13 +177,15 @@ const InfoHeader: React.FC = () => {
               }}
             >
               Post New Job
-            </Button> */}
+            </Button>
+            </Link>
           </Grid>
         </Grid>
       </Card>
       
       {/* Post a job button for mobile - visible after the banner */}
       <Box sx={{ display: { xs: "flex", md: "none" }, justifyContent: "center", mb: 4 }}>
+      <Link href="/dashboard/applications" passHref>
         <Button 
           variant="contained" 
           fullWidth
@@ -199,6 +202,7 @@ const InfoHeader: React.FC = () => {
         >
           Post New Job
         </Button>
+        </Link>
       </Box>
       
       {/* Space for additional Grid content */}

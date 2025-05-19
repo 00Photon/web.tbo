@@ -132,6 +132,7 @@ const Testimonial: React.FC = () => {
         position: "relative",
         background: `linear-gradient(145deg, ${theme.palette.primary.light}, ${alpha(theme.palette.background.paper, 0.9)})`,
         py: 8,
+        paddingBottom: { xs: 4, md: 8 },
         overflow: "hidden",
       }}
     >
@@ -327,56 +328,51 @@ const Testimonial: React.FC = () => {
           {/* Navigation controls */}
           <Box
             sx={{
+              position: "absolute",
+              top: "50%",
+              left: 0,
+              right: 0,
+              transform: "translateY(-50%)",
               display: "flex",
-              justifyContent: "center",
-              gap: 2,
-              mt: 6,
-              marginTop: "30px",
-              marginBottom: "30px",
-              padding: "100px",
+              justifyContent: "space-between",
+              px: { xs: 2, md: 4 },
+              pointerEvents: "none",
             }}
           >
-            <IconButton 
+            <IconButton
               onClick={handlePrev}
               sx={{
                 background: theme.palette.background.paper,
                 boxShadow: theme.shadows[2],
-                '&:hover': { 
-                  background: theme.palette.primary.light 
-                }
+                pointerEvents: "auto",
+                width: { xs: 40, md: 48 },
+                height: { xs: 40, md: 48 },
+                left: { xs: -40, md: -60 },
+                position: "relative",
+                "&:hover": {
+                  background: theme.palette.primary.light,
+                },
               }}
             >
-              <Icon icon="mdi:chevron-left" />
+              <Icon icon="mdi:chevron-left" fontSize={24} />
             </IconButton>
-            
-            {data.map((_, idx) => (
-              <Box
-                key={idx}
-                onClick={() => setActiveIndex(idx)}
-                sx={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: "50%",
-                  background: activeIndex === idx 
-                    ? theme.palette.primary.main 
-                    : alpha(theme.palette.primary.main, 0.3),
-                  cursor: "pointer",
-                  transition: "all 0.3s ease",
-                }}
-              />
-            ))}
-            
-            <IconButton 
+
+            <IconButton
               onClick={handleNext}
               sx={{
                 background: theme.palette.background.paper,
                 boxShadow: theme.shadows[2],
-                '&:hover': { 
-                  background: theme.palette.primary.light 
-                }
+                pointerEvents: "auto",
+                width: { xs: 40, md: 48 },
+                height: { xs: 40, md: 48 },
+                right: { xs: -40, md: -60 },
+                position: "relative",
+                "&:hover": {
+                  background: theme.palette.primary.light,
+                },
               }}
             >
-              <Icon icon="mdi:chevron-right" />
+              <Icon icon="mdi:chevron-right" fontSize={24} />
             </IconButton>
           </Box>
         </Box>

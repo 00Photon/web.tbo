@@ -189,7 +189,7 @@ const HeroSection = () => {
     gap: { xs: 2, sm: 4 },
   }}
 >
-  <Link href="/sign-up">
+  <Link href="/dashboard/talent/job-vacancies">
     <ButtonStyled
       variant="contained"
       size="medium"
@@ -216,7 +216,7 @@ const HeroSection = () => {
     </ButtonStyled>
   </Link>
 
-  <Link href="/sign-up">
+  <Link href="/dashboard/applications">
     <ButtonStyled
       variant="contained"
       sx={{
@@ -313,7 +313,7 @@ const HeroSection = () => {
     px: 2
   }}
 >
-  {[ImageOne, ImageTwo, ImageThree].map((image, index) => (
+  {[ ImageThree, ImageOne, ImageTwo].map((image, index) => (
     <React.Fragment key={`process-${index}`}>
       <Box
         sx={{
