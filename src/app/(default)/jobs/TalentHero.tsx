@@ -212,7 +212,7 @@ const TalentHero = () => {
               mb: { xs: 2, md: 0 }
             }}
           >
-            <Link href="/sign-up" passHref>
+            {/* <Link href="/sign-up" passHref>
             <ButtonStyled
               variant="contained"
               size="large"
@@ -235,7 +235,7 @@ const TalentHero = () => {
               Get started
               <Icon icon="material-symbols-light:arrow-right-alt-rounded" fontSize={24} />
             </ButtonStyled>
-            </Link>
+            </Link> */}
             
             {/* <ButtonStyled
               variant="outlined"

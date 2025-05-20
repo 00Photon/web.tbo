@@ -138,7 +138,7 @@ interface Application {
 
 interface IFormInput {
   applicationId: number;
-  userId: number; // Fetched internally, not displayed
+  userId: number;
   interviewerName: string;
   interviewerDepartment: string;
   interviewerEmail: string;
@@ -149,6 +149,9 @@ interface IFormInput {
   format: string;
   information?: string;
   reminder?: string;
+  tboRepName: string;
+  tboRepEmail: string;
+  tboRepPhone: string;
 }
 
 const defaultValues: IFormInput = {
@@ -164,6 +167,9 @@ const defaultValues: IFormInput = {
   format: "",
   information: "",
   reminder: "",
+  tboRepName: "",
+  tboRepEmail: "",
+  tboRepPhone: "",
 };
 
 const NewInterview = ({ open, close }: Props) => {
@@ -226,9 +232,11 @@ const NewInterview = ({ open, close }: Props) => {
         interviewer_role: values.interviewerName, // Can be made dynamic if needed
         interviewer_email: values.interviewerEmail,
         interviewer_phone: values.interviewerPhone,
-        status: "Scheduled", // Add the required status property
+        tbo_rep_name: values.tboRepName,
+        tbo_rep_email: values.tboRepEmail,
+        tbo_rep_phone: values.tboRepPhone,
+        status: "Scheduled",
       };
-
       const response = await scheduleInterview(formattedData);
       console.log("Interview scheduled successfully:", response);
       alert("Interview scheduled successfully!");
@@ -507,7 +515,75 @@ const NewInterview = ({ open, close }: Props) => {
                   )}
                 />
               </Grid>
-              <Grid item xs={12}>
+           
+            </Grid>
+            <Typography sx={{ mt: 4, mb: 2, fontWeight: 600 }}>TBO Representative Information</Typography>
+<Grid container spacing={4}>
+  <Grid item xs={12} md={6}>
+    <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
+      TBO Representative Name
+    </Typography>
+    <Controller
+      name="tboRepName"
+      control={control}
+      rules={{ required: true }}
+      render={({ field: { value, onChange } }) => (
+        <CustomTextField
+          fullWidth
+          value={value}
+          onChange={onChange}
+          size="medium"
+          placeholder="Jane Smith"
+          error={Boolean(errors.tboRepName)}
+          helperText={errors.tboRepName?.message}
+        />
+      )}
+    />
+  </Grid>
+  <Grid item xs={12} md={6}>
+    <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
+      TBO Email Address
+    </Typography>
+    <Controller
+      name="tboRepEmail"
+      control={control}
+      rules={{ required: true }}
+      render={({ field: { value, onChange } }) => (
+        <CustomTextField
+          fullWidth
+          value={value}
+          onChange={onChange}
+          size="medium"
+          placeholder="janesmith@example.com"
+          error={Boolean(errors.tboRepEmail)}
+          helperText={errors.tboRepEmail?.message}
+        />
+      )}
+    />
+  </Grid>
+  <Grid item xs={12} md={6}>
+    <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
+      TBO Phone Number
+    </Typography>
+    <Controller
+      name="tboRepPhone"
+      control={control}
+      rules={{ required: true }}
+      render={({ field: { value, onChange } }) => (
+        <CustomTextField
+          fullWidth
+          value={value}
+          onChange={onChange}
+          size="medium"
+          placeholder="+1234567890"
+          error={Boolean(errors.tboRepPhone)}
+          helperText={errors.tboRepPhone?.message}
+        />
+      )}
+    />
+  </Grid>
+
+  <Grid item xs={12}>
                 <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
                   Additional Information (Optional)
                 </Typography>
@@ -527,7 +603,9 @@ const NewInterview = ({ open, close }: Props) => {
                   )}
                 />
               </Grid>
-            </Grid>
+
+
+</Grid>
           </Box>
         </DialogContent>
 

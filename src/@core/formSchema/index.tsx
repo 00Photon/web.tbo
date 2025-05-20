@@ -106,27 +106,24 @@ export const newJobSchemaClone = yup.object().shape({
   information: yup.string().required("Job information is required"),
 });
 
+
+
 export const interviewSchema = yup.object().shape({
-  applicationId: yup
-    .number()
-    .min(1, "Please select an application")
-    .required("Application selection is required"),
-  userId: yup
-    .number()
-    .required("User ID is required"), // Or mark as optional if injected internally
+  applicationId: yup.number().min(1, "Please select an application").required("Application is required"),
+  userId: yup.number().min(1, "User ID is required").required("User ID is required"),
   interviewerName: yup.string().required("Interviewer name is required"),
   interviewerDepartment: yup.string().required("Department is required"),
-  interviewerEmail: yup
-    .string()
-    .email("Invalid email format")
-    .required("Interviewer email is required"),
-  interviewerPhone: yup.string().required("Interviewer phone number is required"),
+  interviewerEmail: yup.string().email("Invalid email format").required("Email is required"),
+  interviewerPhone: yup.string().matches(/^\+?[1-9]\d{1,14}$/, "Invalid phone number").required("Phone number is required"),
   interviewDate: yup.string().required("Interview date is required"),
   interviewTime: yup.string().required("Interview time is required"),
-  duration: yup.string().required("Interview duration is required"),
+  duration: yup.string().required("Duration is required"),
   format: yup.string().required("Interview format is required"),
   information: yup.string().optional(),
   reminder: yup.string().optional(),
+  tboRepName: yup.string().required("TBO representative name is required"),
+  tboRepEmail: yup.string().email("Invalid email format").required("TBO email is required"),
+  tboRepPhone: yup.string().matches(/^\+?[1-9]\d{1,14}$/, "Invalid phone number").required("TBO phone number is required"),
 });
 
 

@@ -21,7 +21,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { API_BASE_URL } from '@/@core/utils/constants';
+import { useEffect } from 'react';
 
+import { useSession } from 'next-auth/react';
 interface RegistrationData {
   account_type: 'CLIENT' | 'TALENT';
   name: string;
@@ -52,8 +54,21 @@ const SignUpForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [formEmail, setFormEmail] = useState('');
-
+  const { data: session, status } = useSession();
   const router = useRouter();
+
+  useEffect(() => {
+    if (status === 'loading') {
+      return; // Prevent initial flicker while loading session
+    }
+    if (session?.user) {
+      router.replace('/'); // redirect if logged in
+    }
+  }, [session, status, router]);
+
+  if (status === 'loading' || session?.user) {
+    return null; // or loading spinner while checking session/redirecting
+  }
 
   const googleLogin = () => {
     const redirectUri = encodeURIComponent(`${window.location.origin}/post`);

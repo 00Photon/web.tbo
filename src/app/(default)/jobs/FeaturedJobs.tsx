@@ -151,7 +151,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
         <Button variant="text" size="small" sx={{ textTransform: "capitalize" }}>
           View
         </Button>
-
+        <Link href="/dashboard/talent/job-vacancies" passHref>
         <Button
           variant="contained"
           size="small"
@@ -159,6 +159,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
         >
           Apply
         </Button>
+        </Link>
       </Box>
     </Paper>
   );
