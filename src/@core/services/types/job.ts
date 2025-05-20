@@ -112,6 +112,14 @@ export interface JobsApiResponse {
   status: boolean;
   jobs: Job[];
 }
+export interface SavedJob {
+  id: number;
+  job_id: number;
+  user_id: number;
+  created_at: string;
+  updated_at: string;
+  job: Job;
+}
 
 export interface AppliedJobsApiResponse {
   status: boolean;

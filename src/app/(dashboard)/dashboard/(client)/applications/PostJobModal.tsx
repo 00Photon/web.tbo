@@ -15,6 +15,8 @@ import { Controller, useForm, SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
+import { toast, ToastContainer } from "react-toastify"; // Import react-toastify
+import "react-toastify/dist/ReactToastify.css"; // Import react-toastify CSS
 
 // *MUI Imports
 import Box from "@mui/material/Box";
@@ -29,7 +31,7 @@ import Chip from "@mui/material/Chip";
 import { Autocomplete, IconButton, TextFieldProps } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
 
-import { createJobclient }  from "@/@core/services/jobService"
+import { createJobclient } from "@/@core/services/jobService";
 
 interface Props {
   open: boolean;
@@ -48,7 +50,6 @@ interface IFormInput {
   maxSalary: string;
   application_deadline: string;
   information: string;
- 
 }
 
 const defaultValues = {
@@ -71,7 +72,6 @@ const availableSkills = [
   "MARKETER",
   "MANAGER",
   "WRITER",
-
 ];
 
 const NewJob = ({ open, close }: Props) => {
@@ -107,21 +107,38 @@ const NewJob = ({ open, close }: Props) => {
       application_deadline: dayjs(selectedDate).format("YYYY-MM-DD"), // Convert the selected date to the required format
       additional_info: values.information,
     };
-  
+
     createJobclient(jobData)
       .then((response) => {
         console.log("Job created:", response);
+        toast.success("Job created successfully!", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
         reset();
         close();
       })
       .catch((error) => {
         console.error("Error creating job:", error);
+        toast.error("Failed to create job. Please try again.", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
       });
   };
-  
 
   return (
     <div>
+      {/* Add ToastContainer to display toasts */}
+      <ToastContainer />
       <Dialog
         disableScrollLock
         open={open}
@@ -158,7 +175,6 @@ const NewJob = ({ open, close }: Props) => {
               pb: (theme) => `${theme.spacing(4)} !important`,
               px: (theme) => [`${theme.spacing(4)} !important`],
               m: (theme) => theme.spacing(3),
-              //   background: (theme) => theme.palette.secondary.main,
               borderRadius: "10px",
               overflowY: "scroll",
               scrollbarWidth: "none",
@@ -222,11 +238,9 @@ const NewJob = ({ open, close }: Props) => {
                       >
                         <MenuItem value="FULLTIME">Full Time</MenuItem>
                         <MenuItem value="PARTTIME">Part Time</MenuItem>
-                        {/* <MenuItem value="CONTRACT">Contract</MenuItem> */}
                         <MenuItem value="INTERNSHIP">Internship</MenuItem>
                         <MenuItem value="FREELANCE">Freelance</MenuItem>
                       </CustomTextField>
-                           
                     )}
                   />
                 </Grid>
@@ -322,6 +336,7 @@ const NewJob = ({ open, close }: Props) => {
                         value={value}
                         onChange={(event, newValue) => {
                           onChange(newValue);
+                          setSelectedSkills(newValue); // Sync selected skills
                         }}
                         renderTags={(value: string[], getTagProps) =>
                           value.map((option, index) => {
@@ -367,7 +382,7 @@ const NewJob = ({ open, close }: Props) => {
                   >
                     {selectedSkills.map((skill) => (
                       <Chip
-                        key={skill} // Ensure the key is unique
+                        key={skill}
                         label={skill}
                         onDelete={() => handleRemoveSkill(skill)}
                         deleteIcon={
@@ -403,9 +418,9 @@ const NewJob = ({ open, close }: Props) => {
                         helperText={errors.currency?.message}
                       >
                         <MenuItem value="NGN">₦</MenuItem>
-                        <MenuItem value="EUR">£</MenuItem>
+                        <MenuItem value="EUR">€</MenuItem>
                         <MenuItem value="USD">$</MenuItem>
-                        <MenuItem value="GBP">¥</MenuItem>
+                        <MenuItem value="GBP">£</MenuItem>
                       </CustomTextField>
                     )}
                   />
@@ -499,13 +514,13 @@ const NewJob = ({ open, close }: Props) => {
                     render={({ field: { value, onChange } }) => (
                       <DatePicker
                         disablePast
-                        value={value ? dayjs(value) : null} // Use the value from the controller
+                        value={value ? dayjs(value) : null}
                         onChange={(newDate) => {
                           const formattedDate = newDate
                             ? newDate.format("YYYY-MM-DD")
                             : null;
-                          onChange(formattedDate); // Call onChange with the formatted date
-                          setSelectedDate(formattedDate); // Also update selectedDate
+                          onChange(formattedDate);
+                          setSelectedDate(formattedDate);
                         }}
                       />
                     )}

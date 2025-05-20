@@ -8,6 +8,7 @@ import { useEffect, useState, useMemo } from "react";
 import { Job } from "@/@core/services/types/job";
 import { getJobs, saveJob } from "@/@core/services/jobVanciesService";
 import ApplicationFormModal from "./components/modals/application-form";
+import SavedJobsTab from "./components/saved-jobs"; // adjust path accordingly
 
 export default function TalentJobVacanciesPage() {
   const [activeTab, setActiveTab] = useState(0);
@@ -156,68 +157,81 @@ export default function TalentJobVacanciesPage() {
           </Box>
         </Box>
       </Box>
-      <JobFind sx={{ mb: "20px" }} />
-      <Grid columnSpacing={3} container>
-        <Grid
-          sm={4}
-          md={4}
-          lg={3}
-          item
-          sx={{ display: { xs: "none", sm: "block" } }}
-        >
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-            <JobFilter
-              title={"Job Type"}
-              options={[
-                { label: "Full Time", checkState: false },
-                { label: "Part Time", checkState: false },
-                { label: "Contract", checkState: false },
-                { label: "Internship", checkState: false },
-                { label: "Freelance", checkState: false },
-              ]}
-              onFilterChange={(selected) => handleFilterChange("jobType", selected)}
-            />
-            <JobFilter
-              title={"Experience"}
-              options={[
-                { label: "0-1year", checkState: false },
-                { label: "2-5 Years", checkState: false },
-                { label: "5years and above", checkState: false },
-              ]}
-              onFilterChange={(selected) => handleFilterChange("experience", selected)}
-            />
-          </Box>
-        </Grid>
-        <Grid sm={8} md={8} lg={9} item>
-          <Grid rowSpacing={3} columnSpacing={3} container>
-            {filteredJobs.length > 0 ? (
-              filteredJobs.map((job) => (
-                <Grid key={job.id} xs={12} lg={6} item>
-                  <JobCard
-                    id={job.id}
-                    setOpenApplicationFormModal={() => setOpenApplicationFormModal(true)}
-                    logo={job.client?.company_logo ?? "/icons/default-logo.png"}
-                    name={job.client?.company_name ?? "Unknown Company"}
-                    location={job.location}
-                    title={job.title}
-                    commitment={job.job_type}
-                    salary={`${job.currency} ${job.minimum_salary} - ${job.maximum_salary}`}
-                    description={job.description}
-                    noOfApplied={job.applicant_count.toString()}
-                    postedAt={new Date(job.created_at).toLocaleDateString()}
-                    daysLeft={Math.ceil(
-                      (new Date(job.application_deadline).getTime() - new Date().getTime()) /
-                        (1000 * 60 * 60 * 24)
-                    ).toString()}
-                  />
-                </Grid>
-              ))
-            ) : (
-              <Typography>No jobs match the selected filters.</Typography>
-            )}
+  
+      {activeTab === 0 ? (
+        <>
+          <JobFind sx={{ mb: "20px" }} />
+          <Grid columnSpacing={3} container>
+            <Grid
+              sm={4}
+              md={4}
+              lg={3}
+              item
+              sx={{ display: { xs: "none", sm: "block" } }}
+            >
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <JobFilter
+                  title={"Job Type"}
+                  options={[
+                    { label: "Full Time", checkState: false },
+                    { label: "Part Time", checkState: false },
+                    { label: "Contract", checkState: false },
+                    { label: "Internship", checkState: false },
+                    { label: "Freelance", checkState: false },
+                  ]}
+                  onFilterChange={(selected) => handleFilterChange("jobType", selected)}
+                />
+                <JobFilter
+                  title={"Experience"}
+                  options={[
+                    { label: "0-1year", checkState: false },
+                    { label: "2-5 Years", checkState: false },
+                    { label: "5years and above", checkState: false },
+                  ]}
+                  onFilterChange={(selected) => handleFilterChange("experience", selected)}
+                />
+              </Box>
+            </Grid>
+            <Grid sm={8} md={8} lg={9} item>
+              <Grid rowSpacing={3} columnSpacing={3} container>
+                {filteredJobs.length > 0 ? (
+                  filteredJobs.map((job) => (
+                    <Grid key={job.id} xs={12} lg={6} item>
+                      <JobCard
+                        id={job.id}
+                        setOpenApplicationFormModal={() =>
+                          setOpenApplicationFormModal(true)
+                        }
+                        logo={
+                          job.client?.company_logo ?? "/icons/default-logo.png"
+                        }
+                        name={job.client?.company_name ?? "Unknown Company"}
+                        location={job.location}
+                        title={job.title}
+                        commitment={job.job_type}
+                        salary={`${job.currency} ${job.minimum_salary} - ${job.maximum_salary}`}
+                        description={job.description}
+                        noOfApplied={job.applicant_count.toString()}
+                        postedAt={new Date(job.created_at).toLocaleDateString()}
+                        daysLeft={Math.ceil(
+                          (new Date(job.application_deadline).getTime() -
+                            new Date().getTime()) /
+                            (1000 * 60 * 60 * 24)
+                        ).toString()}
+                      />
+                    </Grid>
+                  ))
+                ) : (
+                  <Typography>No jobs match the selected filters.</Typography>
+                )}
+              </Grid>
+            </Grid>
           </Grid>
-        </Grid>
-      </Grid>
+        </>
+      ) : (
+        <SavedJobsTab />
+      )}
+  
       <ApplicationFormModal
         open={openApplicationFormModal}
         onClose={() => setOpenApplicationFormModal(false)}
@@ -225,4 +239,5 @@ export default function TalentJobVacanciesPage() {
       />
     </main>
   );
+  
 }

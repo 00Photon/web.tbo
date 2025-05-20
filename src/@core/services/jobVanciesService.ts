@@ -8,6 +8,25 @@ import {
 
 } from "./types/job"; // Adjust path based on your structure
 
+
+
+
+
+interface SavedJob {
+  id: number;
+  job_id: number;
+  user_id: number;
+  created_at: string;
+  updated_at: string;
+  job: Job;
+}
+
+interface SavedJobsApiResponse {
+  status: boolean;
+  savedJobs: SavedJob[];
+}
+
+
 export const getJobs = async (): Promise<Job[]> => {
   try {
     const session = await getSession();
@@ -29,6 +48,30 @@ export const getJobs = async (): Promise<Job[]> => {
       console.error("Unexpected Error:", error);
     }
     throw error;
+  }
+};
+
+export const getSavedJobs = async (): Promise<SavedJob[]> => {
+  try {
+    const session = await getSession();
+    if (!session?.user) throw new Error("Not authenticated");
+
+    const token = session.user.accessToken;
+    const response = await axios.get<SavedJobsApiResponse>(`${API_BASE_URL}/talent/saved-jobs`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.data.status || !response.data.savedJobs) {
+      throw new Error("Invalid saved jobs response");
+    }
+
+    return response.data.savedJobs; // 👈 RETURN THE ARRAY ONLY
+  } catch (error) {
+    console.error("getSavedJobs error:", error);
+    throw new Error("Failed to fetch saved jobs");
   }
 };
 
