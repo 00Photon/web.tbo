@@ -90,7 +90,7 @@ export default function ClientProfilePage() {
           sx={{ backgroundColor: "#FFFFFF", padding: "20px", width: "100%" }}
         >
           {activeTab == 0 && <Interview />}
-          {activeTab == 1 && <Calendar />}
+          {/* {activeTab == 1 && <Calendar />} */}
 
           <NewInterview open={interview} close={toggleInterviewModal} />
         </Box>

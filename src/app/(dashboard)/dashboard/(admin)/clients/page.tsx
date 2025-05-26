@@ -29,7 +29,6 @@ export default function ClientProfilePage() {
     color: "#E61C31",
   };
 
-  const toggleInterviewModal = () => setNewInterview(!interview);
 
   return (
     <Box>
@@ -76,23 +75,7 @@ export default function ClientProfilePage() {
             </Box>
           ))}
         </Box>
-        {/* {activeTab == 0 ? (
-          <Button
-            onClick={toggleInterviewModal}
-            variant="contained"
-            sx={{ px: { md: 4 }, textTransform: "capitalize" }}
-          >
-            Add New Client
-          </Button>
-        ) : activeTab == 1 ? (
-          <Button
-            onClick={toggleInterviewModal}
-            variant="contained"
-            sx={{ px: { md: 4 }, textTransform: "capitalize" }}
-          >
-            Post New Job
-          </Button>
-        ) : null} */}
+       
       </Box>
 
       <section>

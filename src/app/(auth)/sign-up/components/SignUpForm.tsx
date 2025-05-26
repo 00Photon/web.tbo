@@ -22,6 +22,8 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { API_BASE_URL } from '@/@core/utils/constants';
 import { useEffect } from 'react';
+import { GoogleAuthService } from '@/@core/services/user';
+import { useSearchParams } from 'next/navigation';
 
 import { useSession } from 'next-auth/react';
 interface RegistrationData {
@@ -64,8 +66,37 @@ const SignUpForm: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [formEmail, setFormEmail] = useState('');
   const { data: session, status } = useSession();
+  const searchParams = useSearchParams();
+  const authError = searchParams.get('error');
+
   const router = useRouter();
 
+
+   useEffect(() => {
+    const code = searchParams.get('code');
+    if (code) {
+      handleGoogleCallback(code);
+    }
+  }, [searchParams]);
+
+    const handleGoogleCallback = async (code: string) => {
+    try {
+      const { token, user } = await GoogleAuthService.handleCallback(code);
+      localStorage.setItem('authToken', token);
+      
+      const returnTo = sessionStorage.getItem('preAuthRoute') || '/dashboard';
+      router.replace(returnTo);
+    } catch (error) {
+      console.error('Google authentication failed:', error);
+      router.replace('/signup?error=google_auth_failed');
+    } finally {
+      sessionStorage.removeItem('preAuthRoute');
+      sessionStorage.removeItem('accountType');
+    }
+  };
+   const googleLogin = () => {
+    GoogleAuthService.initiateGoogleLogin(activeAccountType);
+  };
   useEffect(() => {
     if (status === 'loading') {
       return; // Prevent initial flicker while loading session
@@ -86,14 +117,7 @@ useEffect(() => {
     }
   }, [router]);
 
-  const googleLogin = () => {
-    const returnTo = '/dashboard';
-    sessionStorage.setItem('preAuthRoute', returnTo);
-    sessionStorage.setItem('accountType', activeAccountType);
-    const url = `${API_BASE_URL}/auth/google?redirect_uri=${encodeURIComponent('http://localhost:3003/callback')}&account_type=${activeAccountType}`;
-    console.log('Redirecting to:', url);
-    window.location.href = url;
-  };
+ 
   
 const isCompanyEmail = (email: string) => {
   // Basic check for company emails (disallows common domains)
@@ -174,8 +198,19 @@ const isCompanyEmail = (email: string) => {
       console.error('Registration failed:', error);
     },
   });
+  
+   {authError && (
+    <Alert
+      sx={{ position: 'fixed', right: 20, top: 10, zIndex: 1000 }}
+      variant="filled"
+      severity="error"
+    >
+      Google authentication failed. Please try again.
+    </Alert>
+  )}
 
   return (
+    
     <Box
       sx={{
         width: { xs: '100%', md: '50%' },

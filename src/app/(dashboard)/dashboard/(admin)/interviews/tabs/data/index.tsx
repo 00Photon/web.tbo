@@ -5,8 +5,8 @@ export const interviewTabs = [
     icon: <Person />,
     name: "Interview List",
   },
-  {
-    icon: <CalendarMonthTwoTone />,
-    name: "Calendar",
-  },
+  // {
+  //   icon: <CalendarMonthTwoTone />,
+  //   name: "Calendar",
+  // },
 ];

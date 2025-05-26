@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { TextField, Button, Typography, Box, Alert, CircularProgress, Card, CardContent } from '@mui/material';
-import { requestPasswordReset } from '@/@core/services/user';
+import { requestPasswordReset, resendOtp } from '@/@core/services/user';
 import { useRouter } from 'next/navigation';
 
 export default function ForgetPasswordPage() {
@@ -12,32 +12,42 @@ export default function ForgetPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) {
-      setError('Email is required');
-      return;
-    }
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!email) {
+    setError('Email is required');
+    return;
+  }
 
-    try {
-      setIsLoading(true);
-      setError('');
-      const res = await requestPasswordReset(email);
+  try {
+    setIsLoading(true);
+    setError('');
+    console.log('Requesting password reset for:', email);
+    
+    const res = await requestPasswordReset(email);
+    console.log('Reset response:', res);
+    
+    if (res.status) {
+      setMessage(res.message || 'OTP sent to your email');
       
-      if (res.status) {
-        setMessage(res.message || 'OTP sent to your email');
-        sessionStorage.setItem('resetEmail', email);
-        setTimeout(() => router.push(`/verify-otp-form?email=${encodeURIComponent(email)}`), 1500);
-      } else {
-        setError(res.message || 'Failed to send OTP');
-      }
-    } catch (err: any) {
-      setError(err.message || 'Error requesting password reset');
-    } finally {
-      setIsLoading(false);
+      // Store both email AND token in sessionStorage
+      sessionStorage.setItem('resetEmail', email);
+      sessionStorage.setItem('resetToken', res.reset_token);
+      
+      console.log('Stored reset token:', res.reset_token);
+      
+      // Pass both email and token to verify page
+      router.push(`/verify-otp-form?email=${encodeURIComponent(email)}&token=${encodeURIComponent(res.reset_token)}`);
+    } else {
+      setError(res.message || 'Failed to send OTP');
     }
-  };
-
+  } catch (err: any) {
+    console.error('Password reset error:', err);
+    setError(err.message || 'Error requesting password reset');
+  } finally {
+    setIsLoading(false);
+  }
+};
   return (
     <Box
       sx={{

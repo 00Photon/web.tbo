@@ -1,24 +1,18 @@
-// * React Imports
 import { useState } from "react";
-
-// ** Third Party Imports
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { passwordSchema } from "@/@core/formSchema";
 
-// * MUI Imports
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
-import { InputAdornment, IconButton } from "@mui/material";
-import Divider from "@mui/material/Divider";
+import { InputAdornment, IconButton, Divider, Snackbar, Alert } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { ListItem } from "@mui/material";
 
-// * Custom Component Imports
 import CustomTextField from "@/@core/component/mui/text-field";
-import DeactivateAccount from "../../../../components/delete-account";
+import { changePassword } from "@/@core/services/user";
 
 const defaultValues = {
   password: "",
@@ -27,18 +21,12 @@ const defaultValues = {
 };
 
 const Password = () => {
-  const [password, setPassword] = useState<string>("");
-  const [newPassword, setNewPassword] = useState<string>("");
   const [focusNewPassword, setFocusNewPassword] = useState<boolean>(false);
-  const [confirmPassword, setConfirmPassword] = useState<string>("");
-
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
-
-  const handleMouseDownPassword = (
-    event: React.MouseEvent<HTMLButtonElement>
-  ) => {
+  const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
   };
 
@@ -48,44 +36,44 @@ const Password = () => {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm({
-    defaultValues: defaultValues,
+    defaultValues,
     mode: "onChange",
     resolver: yupResolver(passwordSchema),
   });
 
+  const onSubmit = async (data: typeof defaultValues) => {
+    try {
+      await changePassword({
+        current_password: data.password,
+        password: data.newPassword,
+        password_confirmation: data.confirmPassword,
+      });
+      setSnackbar({ open: true, message: "Password changed successfully", severity: "success" });
+      reset();
+    } catch (error: any) {
+      setSnackbar({ open: true, message: error.message || "Failed to change password", severity: "error" });
+    }
+  };
+
   return (
     <main>
       <Box sx={{ mt: 4 }}>
-        <Typography
-          sx={{
-            fontWeight: 600,
-            color: "#39353D",
-            fontSize: { xs: "1rem", sm: "1.2rem" },
-          }}
-        >
+        <Typography sx={{ fontWeight: 600, color: "#39353D", fontSize: { xs: "1rem", sm: "1.2rem" } }}>
           Password Management
         </Typography>
-        <Typography sx={{ fontSize: "13px", mb: "10px" }}>
-          Make changes to your password
-        </Typography>
+        <Typography sx={{ fontSize: "13px", mb: "10px" }}>Make changes to your password</Typography>
       </Box>
 
       <Divider variant="middle" />
 
       <Box sx={{ my: 4 }}>
-        <form>
+        <form onSubmit={handleSubmit(onSubmit)}>
           <Stack sx={{ width: { xs: "100%", sm: "50%" } }}>
             <Box sx={{ my: 3 }}>
-              <Typography
-                sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-              >
-                Password
-              </Typography>
-
+              <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>Password</Typography>
               <Controller
                 name="password"
                 control={control}
-                rules={{ required: true }}
                 render={({ field: { value, onChange } }) => (
                   <CustomTextField
                     fullWidth
@@ -96,12 +84,7 @@ const Password = () => {
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
-                          <IconButton
-                            aria-label="toggle password visibility"
-                            onClick={handleClickShowPassword}
-                            onMouseDown={handleMouseDownPassword}
-                            edge="end"
-                          >
+                          <IconButton onClick={handleClickShowPassword} onMouseDown={handleMouseDownPassword}>
                             {showPassword ? <VisibilityOff /> : <Visibility />}
                           </IconButton>
                         </InputAdornment>
@@ -115,16 +98,10 @@ const Password = () => {
             </Box>
 
             <Box sx={{ my: 3 }}>
-              <Typography
-                sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-              >
-                New password
-              </Typography>
-
+              <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>New password</Typography>
               <Controller
                 name="newPassword"
                 control={control}
-                rules={{ required: true }}
                 render={({ field: { value, onChange } }) => (
                   <CustomTextField
                     fullWidth
@@ -137,12 +114,7 @@ const Password = () => {
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
-                          <IconButton
-                            aria-label="toggle password visibility"
-                            onClick={handleClickShowPassword}
-                            onMouseDown={handleMouseDownPassword}
-                            edge="end"
-                          >
+                          <IconButton onClick={handleClickShowPassword} onMouseDown={handleMouseDownPassword}>
                             {showPassword ? <VisibilityOff /> : <Visibility />}
                           </IconButton>
                         </InputAdornment>
@@ -153,22 +125,14 @@ const Password = () => {
                   />
                 )}
               />
+              {focusNewPassword && <ListItem>{errors?.newPassword?.message}</ListItem>}
             </Box>
-            {focusNewPassword && (
-              <ListItem>{errors?.newPassword?.message}</ListItem>
-            )}
 
             <Box sx={{ my: 3 }}>
-              <Typography
-                sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-              >
-                Confirm password
-              </Typography>
-
+              <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>Confirm password</Typography>
               <Controller
                 name="confirmPassword"
                 control={control}
-                rules={{ required: true }}
                 render={({ field: { value, onChange } }) => (
                   <CustomTextField
                     fullWidth
@@ -179,12 +143,7 @@ const Password = () => {
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
-                          <IconButton
-                            aria-label="toggle password visibility"
-                            onClick={handleClickShowPassword}
-                            onMouseDown={handleMouseDownPassword}
-                            edge="end"
-                          >
+                          <IconButton onClick={handleClickShowPassword} onMouseDown={handleMouseDownPassword}>
                             {showPassword ? <VisibilityOff /> : <Visibility />}
                           </IconButton>
                         </InputAdornment>
@@ -199,27 +158,30 @@ const Password = () => {
           </Stack>
 
           <Divider variant="middle" />
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              my: 4,
-            }}
-          >
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", my: 4 }}>
             <Button
+              type="submit"
               variant="contained"
               size="large"
-              sx={{
-                width: { xs: "fit-content", md: "30%" },
-                textTransform: "capitalize",
-              }}
+              disabled={isSubmitting}
+              sx={{ width: { xs: "fit-content", md: "30%" }, textTransform: "capitalize" }}
             >
-              Save&nbsp;Changes
+              {isSubmitting ? "Saving..." : "Save Changes"}
             </Button>
           </Box>
         </form>
       </Box>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert severity={snackbar.severity as any} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </main>
   );
 };

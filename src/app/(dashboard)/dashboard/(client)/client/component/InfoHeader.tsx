@@ -14,6 +14,7 @@ interface StatsData {
   client_statistics?: {
     total_jobs_listed: number;
     total_job_views: number;
+    total_applications: number;
     top_performing_jobs: Array<{
       id: number;
       title: string;
@@ -81,6 +82,7 @@ interface ClientStats {
     }>;
     hired_candidates: number;
     average_time_to_hire_days: number;
+    total_applications: number;
     application_rate: number;
     last_3_applications: Array<{
       id: number;
@@ -159,12 +161,13 @@ const StatsOverview: React.FC = () => {
         const data = await getClientStats();
         const transformedData: ClientStats = {
           ...data,
-          client_statistics: (data as StatsData).client_statistics || {
+          client_statistics: ((data as unknown) as StatsData).client_statistics || {
             total_jobs_listed: 0,
             total_job_views: 0,
             top_performing_jobs: [],
             hired_candidates: 0,
             average_time_to_hire_days: 0,
+            total_applications: 0,
             application_rate: 0,
             last_3_applications: [],
             application_status_counts: {
@@ -249,8 +252,8 @@ const StatsOverview: React.FC = () => {
       bg: "#F5F5F5",
       color: "#444444",
       icon: "mdi:chart-timeline-variant",
-      title: "Application Rate",
-      value: `${Math.round(client_statistics.application_rate * 100)}%`,
+      title: "Total number of applications",
+      value: `${Math.round(client_statistics.total_applications)}`,
     },
   ];
 

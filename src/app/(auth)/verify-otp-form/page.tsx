@@ -14,53 +14,51 @@ export default function VerifyOtpForm() {
   const searchParams = useSearchParams();
   const email = searchParams.get('email') || '';
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!otp) {
-      setError('OTP is required');
-      return;
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!otp) {
+    setError('OTP is required');
+    return;
+  }
+
+  try {
+    setIsLoading(true);
+    setError('');
+    
+    // Get token from either URL params or sessionStorage
+    const urlToken = searchParams.get('token');
+    const storedToken = sessionStorage.getItem('resetToken') || '';
+    const reset_token = urlToken || storedToken;
+    
+    console.log('Verifying OTP with token:', reset_token);
+    
+    const res = await verifyResetOtp({ 
+      email, 
+      otp,
+      reset_token 
+    });
+
+    console.log('Verification response:', res);
+
+    if (res.status) {
+      setMessage(res.message || 'OTP verified successfully');
+      
+      // Update token if a new one was returned
+      const finalToken = res.reset_token || reset_token;
+      sessionStorage.setItem('resetToken', finalToken);
+      
+      // Proceed to password reset
+      router.push(`/reset-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(finalToken)}`);
+    } else {
+      setError(res.message || 'Invalid OTP');
     }
-
-    try {
-      setIsLoading(true);
-      setError('');
-      const res = await verifyResetOtp({ 
-        email, 
-        otp,
-        reset_token: ''
-      });
-
-      // Debug: Log the API response to check its structure
-      console.log('verifyResetOtp response:', res);
-
-      if (res.status && res.reset_token) {
-        setMessage(res.message || 'OTP verified successfully');
-        
-        sessionStorage.setItem('resetToken', res.reset_token);
-        sessionStorage.setItem('resetEmail', email);
-        
-        try {
-          // Debug: Log before attempting router.push
-          console.log('Attempting router.push to /reset-password');
-          router.push(`/reset-password?token=${encodeURIComponent(res.reset_token)}&email=${encodeURIComponent(email)}`);
-        } catch (err) {
-          console.error('Router push failed, using window.location:', err);
-          window.location.href = `/reset-password?token=${encodeURIComponent(res.reset_token)}&email=${encodeURIComponent(email)}`;
-        }
-      } else {
-        // Debug: Log when status or reset_token is missing
-        console.log('No status or reset_token in response:', res);
-        setError(res.message || 'Invalid OTP');
-      }
-    } catch (err: any) {
-      // Debug: Log any errors from verifyResetOtp
-      console.error('verifyResetOtp error:', err);
-      setError(err.message || 'OTP verification failed');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  } catch (err: any) {
+    console.error('Verification error:', err);
+    setError(err.message || 'OTP verification failed');
+  } finally {
+    setIsLoading(false);
+  }
+};
   return (
     <Box
       sx={{

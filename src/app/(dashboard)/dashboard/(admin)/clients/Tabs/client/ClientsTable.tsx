@@ -12,12 +12,8 @@ import CustomTextField from "@/@core/component/mui/text-field";
 import { TableCellStyled } from "@/@core/component/mui/tableStyled";
 import StyledImage from "@/@core/component/mui/image";
 import { ClientData, getClients, activateClient, deactivateClient, deleteClient } from "@/@core/services/ClientService";
-import ClientModal from '../../../component/ClientModal'; // Import the Modal Component
+import ClientModal from '../../../component/ClientModal';
 import CircularProgress from "@mui/material/CircularProgress";
-
-// ** Third Party Imports
-import { Controller, useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
 
 // ** MUI Imports
 import Box from "@mui/material/Box";
@@ -26,9 +22,8 @@ import CustomChip from "@/@core/component/mui/chip";
 import Paper from "@mui/material/Paper";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import CardHeader from "@mui/material/CardHeader";
 import InputAdornment from "@mui/material/InputAdornment";
-import { Avatar, Menu } from "@mui/material";
+import { Avatar, Menu, TextField } from "@mui/material";
 import MenuItem from "@mui/material/MenuItem";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
@@ -50,7 +45,6 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 
-
 interface AlertState {
   open: boolean;
   message: string;
@@ -60,32 +54,33 @@ interface AlertState {
 const ClientListTable: React.FC = () => {
   const [openFilter, setOpenFilter] = React.useState<boolean>(false);
   const [value, setValue] = React.useState<string>("");
-  const [status, setStatus] = React.useState<string>("");
+  const [status, setStatus] = React.useState<string>("all");
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [clients, setClients] = React.useState<ClientData[]>([]);
+  const [filteredClients, setFilteredClients] = React.useState<ClientData[]>([]);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [anchorEl, setAnchorEl] = React.useState<(HTMLElement | null)[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<ClientData | null>(null);
   const [processingId, setProcessingId] = React.useState<number | null>(null);
   const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up("md"));
+
   // Add state for confirmation dialog
-const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-const [clientToDelete, setClientToDelete] = useState<ClientData | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<ClientData | null>(null);
 
-// Open confirmation dialog
-const openDeleteConfirm = (client: ClientData) => {
-  setClientToDelete(client);
-  setDeleteConfirmOpen(true);
-};
+  // Open confirmation dialog
+  const openDeleteConfirm = (client: ClientData) => {
+    setClientToDelete(client);
+    setDeleteConfirmOpen(true);
+  };
 
-// Close confirmation dialog
-const closeDeleteConfirm = () => {
-  setClientToDelete(null);
-  setDeleteConfirmOpen(false);
-};
-
+  // Close confirmation dialog
+  const closeDeleteConfirm = () => {
+    setClientToDelete(null);
+    setDeleteConfirmOpen(false);
+  };
 
   const [alert, setAlert] = useState<AlertState>({
     open: false,
@@ -145,12 +140,12 @@ const closeDeleteConfirm = () => {
         prevClients.map(c => 
           c.id === client.id ? { 
             ...c, 
-            status: updatedClient.status // Use API response status
+            status: updatedClient.status
           } : c
         )
       );
   
-      const index = clients.findIndex(c => c.id === client.id);
+      const index = filteredClients.findIndex(c => c.id === client.id);
       handleRowOptionsClose(index);
       
     } catch (error) {
@@ -167,6 +162,7 @@ const closeDeleteConfirm = () => {
       }, 5000);
     }
   };
+
   const handleDeleteClient = async () => {
     if (!clientToDelete) return;
     try {
@@ -178,7 +174,7 @@ const closeDeleteConfirm = () => {
         severity: 'success'
       });
       setClients(prevClients => prevClients.filter(c => c.id !== clientToDelete.id));
-      const index = clients.findIndex(c => c.id === clientToDelete.id);
+      const index = filteredClients.findIndex(c => c.id === clientToDelete.id);
       handleRowOptionsClose(index);
     } catch (error) {
       console.error('Error deleting client:', error);
@@ -195,6 +191,7 @@ const closeDeleteConfirm = () => {
       }, 5000);
     }
   };
+
   const toggleFilter = () => setOpenFilter(!openFilter);
 
   const handleViewClient = (client: ClientData) => {
@@ -207,17 +204,55 @@ const closeDeleteConfirm = () => {
     setSelectedClient(null);
   };
 
-  
+  // Filter clients based on status and search value
+  useEffect(() => {
+    console.log("Status changed to:", status); // Debug log
+    console.log("Clients:", clients); // Debug log
+    let filtered = clients;
+
+    // Apply status filter
+    if (status !== "all") {
+      filtered = clients.filter(client => 
+        client.status.toLowerCase() === status.toLowerCase()
+      );
+    }
+
+    // Apply search filter with null checks
+    if (value) {
+      filtered = filtered.filter(client => {
+        // Log clients with missing data
+        if (!client.company_name || !client.email) {
+          console.warn("Client with missing data:", client);
+        }
+        // Ensure company_name and email are strings before applying toLowerCase
+        const companyName = client.company_name || "";
+        const email = client.email || "";
+        return (
+          companyName.toLowerCase().includes(value.toLowerCase()) ||
+          email.toLowerCase().includes(value.toLowerCase())
+        );
+      });
+    }
+
+    console.log("Filtered clients:", filtered); // Debug log
+    setFilteredClients(filtered);
+    // Update anchorEl to match filteredClients length
+    setAnchorEl(Array(filtered.length).fill(null));
+  }, [clients, status, value]);
+
   React.useEffect(() => {
     const fetchClients = async () => {
       try {
         const apiData: ClientData[] = await getClients();
-        // Normalize status values
+        // Normalize status values and ensure company_name and email are strings
         const normalizedData = apiData.map(client => ({
           ...client,
-          status: client.status.toLowerCase() === 'active' ? 'active' : 'inactive'
+          status: client.status.toLowerCase() === 'active' ? 'active' : 'inactive',
+          company_name: client.company_name || "", // Ensure string
+          email: client.email || "" // Ensure string
         }));
         setClients(normalizedData);
+        setFilteredClients(normalizedData);
         setAnchorEl(Array(normalizedData.length).fill(null));
       } catch (error) {
         console.error("Error fetching clients:", error);
@@ -277,70 +312,22 @@ const closeDeleteConfirm = () => {
                 Filter
               </Typography>
               <Grid container spacing={3}>
-                <Grid item xs={6} sm={3}>
-                  <CustomTextField
+                <Grid item xs={12} sm={6}>
+                  <TextField
                     select
                     value={status}
-                    onChange={(e) => setStatus(e.target.value)}
+                    onChange={(e) => {
+                      console.log("Selected status:", e.target.value); // Debug log
+                      setStatus(e.target.value);
+                    }}
                     size="small"
-                    placeholder="Active, Inactive"
                     fullWidth
                     label="Status"
                   >
-                    <MenuItem value="">Select Status</MenuItem>
+                    <MenuItem value="all">All</MenuItem>
                     <MenuItem value="active">Active</MenuItem>
                     <MenuItem value="inactive">Inactive</MenuItem>
-                  </CustomTextField>
-                </Grid>
-                <Grid item xs={6} sm={3}>
-                  <CustomTextField
-                    select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    size="small"
-                    placeholder="Technology, Healthcare..."
-                    fullWidth
-                    label="Industry"
-                  >
-                    <MenuItem value="">Select Industry</MenuItem>
-                    <MenuItem value="technology">Technology</MenuItem>
-                    <MenuItem value="healthcare">Healthcare</MenuItem>
-                    <MenuItem value="finance">Finance</MenuItem>
-                    <MenuItem value="education">Education</MenuItem>
-                  </CustomTextField>
-                </Grid>
-                <Grid item xs={6} sm={3}>
-                  <CustomTextField
-                    select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    size="small"
-                    placeholder="Company size..."
-                    fullWidth
-                    label="Company Size"
-                  >
-                    <MenuItem value="">Select Company Size</MenuItem>
-                    <MenuItem value="1-10">1-10</MenuItem>
-                    <MenuItem value="11-50">11-50</MenuItem>
-                    <MenuItem value="50-100">50-100</MenuItem>
-                    <MenuItem value="100+">100+</MenuItem>
-                  </CustomTextField>
-                </Grid>
-                <Grid item xs={6} sm={3}>
-                  <CustomTextField
-                    select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    size="small"
-                    placeholder="Month and Year..."
-                    fullWidth
-                    label="Date Registered"
-                  >
-                    <MenuItem value="">Registration Date</MenuItem>
-                    <MenuItem value="2023">2023</MenuItem>
-                    <MenuItem value="2024">2024</MenuItem>
-                    <MenuItem value="2025">2025</MenuItem>
-                  </CustomTextField>
+                  </TextField>
                 </Grid>
               </Grid>
             </Paper>
@@ -355,8 +342,6 @@ const closeDeleteConfirm = () => {
               mx: 1,
             }}
           >
-            {/* <CardHeader title="Client List" sx={{ minWidth: 150 }} /> */}
-
             <Box
               sx={{
                 flex: 1,
@@ -371,7 +356,7 @@ const closeDeleteConfirm = () => {
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 size="small"
-                placeholder="Company name, email, industry"
+                placeholder="Company name, email"
                 sx={{ maxWidth: 400 }}
                 InputProps={{
                   startAdornment: (
@@ -424,27 +409,26 @@ const closeDeleteConfirm = () => {
                   <TableRow>
                     <TableCell colSpan={9} align="center">Loading clients...</TableCell>
                   </TableRow>
-                ) : clients.length === 0 ? (
+                ) : filteredClients.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={9} align="center">No clients found</TableCell>
                   </TableRow>
                 ) : (
-                  clients.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((client, i) => (
+                  filteredClients.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((client, i) => (
                     <TableRow key={client.id}>
                       <TableCell>
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <Box sx={{ maxWidth: 25, maxHeight: 25 }}>
+                          <Box sx={{ maxWidth: 85, maxHeight: 85 }}>
                             <StyledImage
                               src={client.company_logo || ""}
-                              alt={client.company_name}
+                              alt={client.company_name || "Unknown"}
                             />
                           </Box>
-                          {client.company_name}
+                          {client.company_name || "N/A"}
                         </Box>
                       </TableCell>
-                      <TableCell>{client.name}</TableCell>
-                      <TableCell>{client.email}</TableCell>
-                    
+                      <TableCell>{client.name || "N/A"}</TableCell>
+                      <TableCell>{client.email || "N/A"}</TableCell>
                       <TableCell>
                         {client.company_website ? (
                           <Link
@@ -457,7 +441,7 @@ const closeDeleteConfirm = () => {
                               .replace(/\/$/, '')}
                           </Link>
                         ) : (
-                          '-' // Or any placeholder/fallback
+                          '-'
                         )}
                       </TableCell>
                       <TableCell
@@ -530,17 +514,17 @@ const closeDeleteConfirm = () => {
                                 {client.status.toLowerCase() === 'active' ? "Deactivate" : "Activate"}
                               </MenuItem>
                               <MenuItem
-                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                              onClick={() => openDeleteConfirm(client)}
-                              disabled={processingId === client.id}
-                            >
-                              {processingId === client.id ? (
-                                <CircularProgress size={20} sx={{ mr: 2 }} />
-                              ) : (
-                                <Icon icon="fluent:delete-24-regular" fontSize={20} />
-                              )}
-                              Delete
-                            </MenuItem>
+                                sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
+                                onClick={() => openDeleteConfirm(client)}
+                                disabled={processingId === client.id}
+                              >
+                                {processingId === client.id ? (
+                                  <CircularProgress size={20} sx={{ mr: 2 }} />
+                                ) : (
+                                  <Icon icon="fluent:delete-24-regular" fontSize={20} />
+                                )}
+                                Delete
+                              </MenuItem>
                             </Menu>
                           </Avatar>
                         </Box>
@@ -561,7 +545,7 @@ const closeDeleteConfirm = () => {
           <DialogTitle id="alert-dialog-title">{"Delete Client?"}</DialogTitle>
           <DialogContent>
             <DialogContentText id="alert-dialog-description">
-              Are you sure you want to delete {clientToDelete?.company_name}? This action cannot be undone.
+              Are you sure you want to delete {clientToDelete?.company_name || "this client"}? This action cannot be undone.
             </DialogContentText>
           </DialogContent>
           <DialogActions>
@@ -573,7 +557,7 @@ const closeDeleteConfirm = () => {
         </Dialog>
         <TablePagination
           component="div"
-          count={clients.length}
+          count={filteredClients.length}
           page={page}
           onPageChange={handleChangePage}
           rowsPerPage={rowsPerPage}

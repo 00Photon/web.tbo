@@ -30,22 +30,24 @@ interface CurrentUserResponse {
 
 
 
-export const changePassword = async ( data: { current_password: string, password: string, password_confirmation: string }) => {
+export const changePassword = async (data: { current_password: string, password: string, password_confirmation: string }) => {
   try {
     const session = await getSession();
     const token = session?.user?.accessToken;
-  
     if (!token) throw new Error("Missing token");
-  
-    const response = await axios.put(`${API_BASE_URL}/change_password/`,data, {
+    const response = await axios.post(`${API_BASE_URL}/change_password`, data, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    }, );
-    return response.data; 
+    });
+    return response.data;
   } catch (error) {
     console.error("Error changing password:", error);
-    throw new Error("Failed to change password");
+    if (axios.isAxiosError(error) && error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else {
+      throw new Error("Failed to change password");
+    }
   }
 };
 
@@ -160,6 +162,22 @@ export const verifyResetOtp = async (data: {
   }
 };
 
+export const resendOtp = async ({ email }: { email: string }) => {
+  const response = await fetch(`${API_BASE_URL}/resend-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || 'Failed to resend OTP');
+  }
+
+  return data;
+};
+
 export const resetPassword = async (data: ResetPasswordPayload): Promise<ResetPasswordResponse> => {
   try {
     const response = await axios.post<ResetPasswordResponse>(
@@ -259,3 +277,51 @@ export const getAlljobs = async (): Promise<any> => {
 
 
 
+interface GoogleAuthResponse {
+  token: string;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+  };
+}
+
+
+export const authService = {
+  async loginWithGoogle(token: string): Promise<GoogleAuthResponse> {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/auth/google/callback`, {
+        token
+      });
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.error || 'Google login failed');
+      }
+      throw new Error('Google login failed');
+    }
+  },
+} 
+
+
+export const GoogleAuthService = {
+  async initiateGoogleLogin(accountType: 'CLIENT' | 'TALENT'): Promise<void> {
+    const returnTo = '/dashboard';
+    const url = `${API_BASE_URL}/auth/google?redirect_uri=${encodeURIComponent(
+      `${window.location.origin}/auth/callback`
+    )}&account_type=${accountType}`;
+    
+    // Store pre-auth state
+    sessionStorage.setItem('preAuthRoute', returnTo);
+    sessionStorage.setItem('accountType', accountType);
+    
+    window.location.href = url;
+  },
+
+  async handleCallback(code: string): Promise<{ token: string; user: any }> {
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/google/callback`, {
+      params: { code }
+    });
+    return response.data;
+  }
+};

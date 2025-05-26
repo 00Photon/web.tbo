@@ -296,7 +296,7 @@ const NewInterview = ({ open, close }: Props) => {
             <Grid container spacing={4}>
               <Grid item xs={12}>
                 <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
-                  Select Application
+                  Select Candidate
                 </Typography>
                 <Controller
                   name="applicationId"
@@ -318,7 +318,7 @@ const NewInterview = ({ open, close }: Props) => {
                       </MenuItem>
                       {applications.map((app) => (
                         <MenuItem key={app.id} value={app.id}>
-                          {app.job.title} - {app.user.name}
+                          {app.job.title} - {app.user.name} - {app.user.email}
                         </MenuItem>
                       ))}
                     </CustomTextField>

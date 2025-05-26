@@ -85,7 +85,7 @@ const Footer: React.FC = () => {
               </IconButton>
               <Stack>
                 <Typography sx={{ fontSize: { xs: ".75rem", sm: ".875rem" } }}>
-                Hr@tboisl.co
+                Hr@tboisl.com
                 </Typography>
                 {/* <Typography sx={{ fontSize: { xs: ".75rem", sm: ".875rem" } }}>
                   contact@TBO.ng
