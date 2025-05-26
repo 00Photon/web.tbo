@@ -98,6 +98,85 @@ export const uploadFile = async (formData: FormData) => {
   return response.data; // Should include { url: "https://..." }
 };
 
+interface ResetRequestResponse {
+  status: boolean;
+  message: string;
+  reset_token: string;
+}
+
+interface ResetVerifyResponse {
+  status: boolean;
+  message: string;
+  reset_token: string;
+}
+
+interface ResetPasswordResponse {
+  status: boolean;
+  message: string;
+}
+
+interface ResetPasswordPayload {
+  email: string;
+  reset_token: string;
+  password: string;
+  password_confirmation: string;
+}
+
+export const requestPasswordReset = async (email: string): Promise<ResetRequestResponse> => {
+  try {
+    const response = await axios.post<ResetRequestResponse>(
+      `${API_BASE_URL}/password/request-reset`,
+      { email }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error("Error requesting password reset:", error.response?.data);
+      throw new Error(error.response?.data?.message || "Failed to request password reset");
+    }
+    console.error("Unexpected error:", error);
+    throw new Error("An unexpected error occurred");
+  }
+};
+
+export const verifyResetOtp = async (data: {
+  email: string;
+  otp: string;
+  reset_token: string;
+}): Promise<ResetVerifyResponse> => {
+  try {
+    const response = await axios.post<ResetVerifyResponse>(
+      `${API_BASE_URL}/password/verify-otp`,
+      data
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error("Error verifying OTP:", error.response?.data);
+      throw new Error(error.response?.data?.message || "OTP verification failed");
+    }
+    console.error("Unexpected error:", error);
+    throw new Error("An unexpected error occurred");
+  }
+};
+
+export const resetPassword = async (data: ResetPasswordPayload): Promise<ResetPasswordResponse> => {
+  try {
+    const response = await axios.post<ResetPasswordResponse>(
+      `${API_BASE_URL}/password/reset`,
+      data
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error("Error resetting password:", error.response?.data);
+      throw new Error(error.response?.data?.message || "Failed to reset password");
+    }
+    console.error("Unexpected error:", error);
+    throw new Error("An unexpected error occurred");
+  }
+};
+
 
 export const updateUser = async (userId: number, data: Partial<UpdateUserPayload>) => {
   try {

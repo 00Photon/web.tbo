@@ -203,6 +203,7 @@ const SigninForm: FC = () => {
                   </Link>
                 </Grid>
               </Grid> */}
+               <Box sx={{ fontSize: '13px', mt: '20px', textAlign: 'center' }}> <Link style={{ display: 'inline' }} href="/forget-password"><span style={{ color: '#E61C31', fontWeight: 900 }}>Forget Password ?</span></Link></Box>
               <Grid item xs={12}>
                 <Button
                   type="submit"
@@ -217,6 +218,7 @@ const SigninForm: FC = () => {
             </Grid>
           </form>
           <Box sx={{ fontSize: '13px', mt: '20px', textAlign: 'center' }}>Are you new here? <Link style={{ display: 'inline' }} href="/sign-up"><span style={{ color: '#E61C31', fontWeight: 500 }}>Create Account</span></Link></Box>
+          
         </Box>
       </Container>
     </Box>

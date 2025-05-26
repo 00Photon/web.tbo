@@ -8,6 +8,7 @@ import MyVideoTab from "./tabs/my-video";
 import MyportTab from "./tabs/my-portfolio";
 import PasswordManagementTab from "./tabs/password-management";
 import NotificationsTab from "./tabs/notifications";
+import AllProfile from "./tabs/all-profile";
 
 export default function TalentProfilePage() {
   const [activeTab, setActiveTab] = useState(0);
@@ -53,8 +54,9 @@ export default function TalentProfilePage() {
           {activeTab === 1 && <MyVideoTab />}
           {activeTab === 2 && <MyResumeTab />}
           {activeTab === 3 && <MyportTab />}
-          {activeTab === 4 && <PasswordManagementTab />}
-          {activeTab === 5 && <NotificationsTab />}
+          {activeTab === 4 && <AllProfile />}
+          {activeTab === 5 && <PasswordManagementTab />}
+          {activeTab === 6 && <NotificationsTab />}
         </Box>
       </section>
     </main>

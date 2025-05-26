@@ -184,6 +184,7 @@ export const createJob = async (jobDetails: {
   currency: string;
   minimum_salary: number;
   maximum_salary: number;
+  salary_type: string;
   location: string;
   application_deadline: string;
   additional_info?: string;
@@ -236,6 +237,7 @@ export const createJobclient = async (jobDetails: {
   minimum_salary: number;
   maximum_salary: number;
   location: string;
+  salary_type: string;
   application_deadline: string;
   additional_info?: string;
 }) => {

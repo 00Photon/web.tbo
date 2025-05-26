@@ -43,11 +43,20 @@ const registerUser = async (
     body: JSON.stringify(registrationData),
   });
 
+  const responseData = await response.json();
+
   if (!response.ok) {
-    throw new Error('Network response was not ok');
+    // Check if it's a specific error (e.g., email already exists)
+    if (response.status === 422 || responseData.message?.includes('email')) {
+      throw new Error('This email is already registered. Please use another one.');
+    }
+    // Generic error
+    throw new Error(responseData.message || 'Registration failed. Please try again.');
   }
-  return response.json();
+
+  return responseData;
 };
+
 
 const SignUpForm: React.FC = () => {
   const [activeAccountType, setActiveAccountType] = useState<'CLIENT' | 'TALENT'>('CLIENT');
@@ -70,12 +79,21 @@ const SignUpForm: React.FC = () => {
     return null; // or loading spinner while checking session/redirecting
   }
 
+useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      router.replace('/dashboard'); // Redirect if already authenticated
+    }
+  }, [router]);
+
   const googleLogin = () => {
-    const redirectUri = encodeURIComponent(`${window.location.origin}/post`);
-    const authUrl = `${API_BASE_URL}/auth/google?redirect_uri=${redirectUri}`;
-    console.log('Initiating Google SSO:', authUrl); // Debug
-    window.location.href = authUrl;
-};
+    const returnTo = '/dashboard';
+    sessionStorage.setItem('preAuthRoute', returnTo);
+    sessionStorage.setItem('accountType', activeAccountType);
+    const url = `${API_BASE_URL}/auth/google?redirect_uri=${encodeURIComponent('http://localhost:3003/callback')}&account_type=${activeAccountType}`;
+    console.log('Redirecting to:', url);
+    window.location.href = url;
+  };
   
 const isCompanyEmail = (email: string) => {
   // Basic check for company emails (disallows common domains)
@@ -224,62 +242,7 @@ const isCompanyEmail = (email: string) => {
           </Box>
         </Box>
 
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-          {oAuthOptions.map((option, index) => (
-            <Box
-              key={index}
-              onClick={() => {
-                if (option.name === 'Google') {
-                  googleLogin();
-                }
-              }}
-              sx={{
-                display: 'flex',
-                border: '1.5px solid #D0D5DD',
-                borderRadius: '6px',
-                padding: '6px 30px',
-                alignItems: 'center',
-                ...(index === 0
-                  ? { marginRight: '5px' }
-                  : { marginLeft: '5px' }),
-                cursor: 'pointer',
-                '&:hover': { border: '1.5px solid #E61C31' },
-              }}
-            >
-              <Image
-                style={{ marginRight: '8px' }}
-                src={option.icon}
-                width={14.3}
-                height={14.3}
-                alt={`${option.name} Icon`}
-              />
-              <Box sx={{ fontSize: '11.4px', fontWeight: 600 }}>
-                {option.name}
-              </Box>
-            </Box>
-          ))}
-        </Box>
-
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            marginBottom: '8px',
-            marginTop: '20px',
-          }}
-        >
-          <Divider sx={{ width: '45%' }} />
-          <Box
-            sx={{
-              fontSize: '11.2px',
-              textAlign: 'center',
-              marginX: '5px',
-            }}
-          >
-            Or
-          </Box>
-          <Divider sx={{ width: '45%' }} />
-        </Box>
+     
 
         <form
           onSubmit={handleSubmit((data) => {
@@ -400,6 +363,68 @@ const isCompanyEmail = (email: string) => {
           </Link>
         </Box>
 
+  <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            marginBottom: '8px',
+            marginTop: '20px',
+          }}
+        >
+          <Divider sx={{ width: '45%' }} />
+          <Box
+            sx={{
+              fontSize: '11.2px',
+              textAlign: 'center',
+              marginX: '5px',
+            }}
+          >
+            Or
+          </Box>
+          <Divider sx={{ width: '45%' }} />
+        </Box>
+
+
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          {oAuthOptions.map((option, index) => (
+            <Box
+              key={index}
+              onClick={() => {
+                if (option.name === 'Google') {
+                  googleLogin();
+                }
+              }}
+              sx={{
+                display: 'flex',
+                border: '1.5px solid #D0D5DD',
+                borderRadius: '6px',
+                padding: '6px 30px',
+                alignItems: 'center',
+                width: '320px', // <-- Increase the width here
+                height: '50px',
+                justifyContent: 'center', // optional: center content
+                ...(index === 0
+                  ? { marginRight: '5px' }
+                  : { marginLeft: '5px' }),
+                cursor: 'pointer',
+                '&:hover': { border: '1.5px solid #E61C31' },
+              }}
+            >
+              <Image
+                style={{ marginRight: '8px' }}
+                src={option.icon}
+                width={14.3}
+                height={14.3}
+                alt={`${option.name} Icon`}
+              />
+              <Box sx={{ fontSize: '11.4px', fontWeight: 600 }}>
+                {option.name}
+              </Box>
+            </Box>
+          ))}
+        </Box>
+
+      
         {showSuccess && (
           <Alert
             sx={{ position: 'fixed', right: 20, top: 10, zIndex: 1000 }}

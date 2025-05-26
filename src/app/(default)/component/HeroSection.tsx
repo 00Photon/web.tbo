@@ -189,7 +189,7 @@ const HeroSection = () => {
     gap: { xs: 2, sm: 4 },
   }}
 >
-  <Link href="/dashboard/talent/job-vacancies">
+  <Link href="/jobs">
     <ButtonStyled
       variant="contained"
       size="medium"

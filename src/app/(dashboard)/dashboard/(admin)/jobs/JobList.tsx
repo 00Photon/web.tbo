@@ -263,6 +263,22 @@ const JobListTable: React.FC = () => {
                 {smallScreen && <Typography sx={{ fontSize: ".857rem" }}>Filter</Typography>}
                 <Icon icon="basil:filter-outline" />
               </Button>
+              <Button
+              variant="contained"
+              size="medium"
+              sx={{
+                textTransform: "capitalize",
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                width: "fit-content",
+                minWidth: { md: 120 },
+              }}
+              onClick={togglePostJobModal}
+            >
+              <Icon icon="fa6-solid:user-pen" fontSize="1.257rem" />
+              {smallScreen && <Typography sx={{ fontSize: ".857rem" }}>Post&nbsp;Job</Typography>}
+            </Button>
             </Box>
           </Box>
         </Box>

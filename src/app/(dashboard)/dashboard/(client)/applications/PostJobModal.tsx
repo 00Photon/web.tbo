@@ -48,6 +48,7 @@ interface IFormInput {
   currency: string;
   minSalary: string;
   maxSalary: string;
+  salary_type: string;
   application_deadline: string;
   information: string;
 }
@@ -59,6 +60,7 @@ const defaultValues = {
   requirement: "",
   skill: [],
   location: "",
+  salary_type: "", 
   currency: "",
   minSalary: "",
   maxSalary: "",
@@ -101,6 +103,7 @@ const NewJob = ({ open, close }: Props) => {
       requirements: values.requirement,
       skill: values.skill.join(", "), // Join the selected skills as a string
       currency: values.currency,
+      salary_type: values.salary_type, // Ensure salary_type is included
       minimum_salary: parseInt(values.minSalary),
       maximum_salary: parseInt(values.maxSalary),
       location: values.location,
@@ -394,6 +397,36 @@ const NewJob = ({ open, close }: Props) => {
                     ))}
                   </Box>
                 </Grid>
+
+                                <Grid item xs={12} md={12}>
+                                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
+                                    Salary Type
+                                  </Typography>
+                
+                              
+                                  <Controller
+                                    name="salary_type"
+                                    control={control}
+                                    rules={{ required: true }}
+                                    render={({ field: { value, onChange } }) => (
+                                      <CustomTextField
+                                        fullWidth
+                                        select
+                                        value={value}
+                                        onChange={onChange}
+                                        size="medium"
+                                        sx={{ overflow: "hidden" }}
+                                        error={Boolean(errors.salary_type)}
+                                        helperText={errors.salary_type?.message}
+                                      >
+                                        <MenuItem value="MONTHLY">MONTHLY</MenuItem>
+                                        <MenuItem value="ANNUALLY">ANNUALLY</MenuItem>
+                                      
+                                      </CustomTextField>
+                                    )}
+                                  />
+                               
+                                </Grid>
 
                 <Grid item xs={2} md={2}>
                   <Typography

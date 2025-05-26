@@ -59,7 +59,7 @@ const Contact: React.FC = () => {
     {
       question: "Do you have offices in other locations?",
       answer:
-        "Currently, our main office is located in Abuja. However, we have representatives in Lagos and Port Harcourt who can meet by appointment.",
+        "Currently, our main office is located in 3rd Floor, Propertygate center, 2 The Rock Drive, Lekki Phase 1, Lagos State.",
       icon: "mdi:map-marker-multiple"
     }
   ];
@@ -344,7 +344,7 @@ const Contact: React.FC = () => {
               <Typography 
                 variant="body1"
                 component="a"
-                href="mailto:support@tboisl.com" 
+                href="/support" 
                 sx={{ 
                   color: "primary.main", 
                   fontWeight: 600, 

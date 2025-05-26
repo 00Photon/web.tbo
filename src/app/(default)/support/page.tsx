@@ -1,12 +1,9 @@
 "use client";
-
-// ** React Imports
+import { useState } from "react";
+import Alert from "@mui/material/Alert";
+import Snackbar from "@mui/material/Snackbar";
 import React from "react";
-
-// ** Icon Imports
 import Icon from "@/@core/component/icon";
-
-// ** MUI Imports
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Button from "@mui/material/Button";
@@ -14,16 +11,13 @@ import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import { Theme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
-
-//* Custom Components Import
 import CustomTextField from "@/@core/component/mui/text-field";
-
-// ** Third Party Imports
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { supportSchema } from "../../../@core/formSchema";
+import { submitSupportRequest } from "@/@core/services/email";
 
-interface DefaultValue {
+interface FormData {
   name: string;
   email: string;
   phone: string;
@@ -31,7 +25,7 @@ interface DefaultValue {
   message: string;
 }
 
-const defaultValues: DefaultValue = {
+const defaultValues: FormData = {
   name: "",
   email: "",
   phone: "",
@@ -40,9 +34,16 @@ const defaultValues: DefaultValue = {
 };
 
 const Support: React.FC = () => {
-  const smallScreen = useMediaQuery((theme: Theme) =>
-    theme.breakpoints.up("sm")
-  );
+  const [alert, setAlert] = useState({
+    open: false,
+    message: "",
+    severity: "success" as "success" | "error",
+  });
+
+  const handleCloseAlert = () => {
+    setAlert({ ...alert, open: false });
+  };
+  const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up("sm"));
 
   const {
     control,
@@ -50,12 +51,33 @@ const Support: React.FC = () => {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm({
-    defaultValues: defaultValues,
+    defaultValues,
     mode: "onChange",
     resolver: yupResolver(supportSchema),
   });
 
+ const onSubmit = async (data: FormData) => {
+  try {
+    const success = await submitSupportRequest(data);
+    if (success) {
+      reset();
+      setAlert({
+        open: true,
+        message: "Your message has been sent successfully!",
+        severity: "success",
+      });
+    }
+  } catch (error) {
+    setAlert({
+      open: true,
+      message: "Failed to send message. Please try again later.",
+      severity: "error",
+    });
+  }
+};
+
   return (
+ 
     <Box
       sx={{
         p: { xs: 2, md: 4 },
@@ -100,6 +122,7 @@ const Support: React.FC = () => {
           borderRadius: 2,
         }}
       >
+      <form onSubmit={handleSubmit(onSubmit)}>
         <Grid container spacing={4} rowSpacing={4}>
           <Grid item xs={12} sm={6}>
             <Controller
@@ -205,15 +228,33 @@ const Support: React.FC = () => {
         </Grid>
 
         <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 4, mb: 2 }}>
-          <Button
-            variant="contained"
-            size={smallScreen ? "medium" : "small"}
-            sx={{ background: "#A50214", textTransform: "capitalize" }}
-          >
-            Submit
-          </Button>
-        </Box>
+            <Button
+              type="submit"
+              variant="contained"
+              size={smallScreen ? "medium" : "small"}
+              sx={{ background: "#A50214", textTransform: "capitalize" }}
+              disabled={isSubmitting}
+              startIcon={isSubmitting ? <Icon icon="mdi:loading" spin /> : null}
+            >
+              {isSubmitting ? "Sending..." : "Submit"}
+            </Button>
+          </Box>
+          </form>
       </Paper>
+       <Snackbar
+      open={alert.open}
+      autoHideDuration={6000}
+      onClose={handleCloseAlert}
+      anchorOrigin={{ vertical: "top", horizontal: "center" }}
+    >
+      <Alert
+        onClose={handleCloseAlert}
+        severity={alert.severity}
+        sx={{ width: "100%" }}
+      >
+        {alert.message}
+      </Alert>
+    </Snackbar>
     </Box>
   );
 };

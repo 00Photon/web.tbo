@@ -1,4 +1,4 @@
-import { AddCard, Badge, Person,Videocam,WorkspacePremiumSharp } from "@mui/icons-material";
+import { AddCard, Badge, Person,Videocam,WorkspacePremiumSharp,SupervisedUserCircle } from "@mui/icons-material";
 
 export const profileTabs = [
   {
@@ -16,6 +16,10 @@ export const profileTabs = [
   {
     icon: <WorkspacePremiumSharp />,
     name: "Project work / Portfolio",
+  },
+    {
+    icon: <SupervisedUserCircle />,
+    name: "All Profile",
   },
   {
     icon: <Badge />,
