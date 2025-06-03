@@ -19,7 +19,7 @@ export const profileTabs = [
   },
     {
     icon: <SupervisedUserCircle />,
-    name: "All Profile",
+    name: "Profile Display",
   },
   {
     icon: <Badge />,

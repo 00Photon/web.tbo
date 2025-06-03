@@ -129,6 +129,29 @@ export const applyJob = async (jobId: number): Promise<void> => {
   }
 };
 
+export const withdrawJob = async (jobId: number): Promise<void> => {
+  try {
+    const session = await getSession();
+    if (!session || !session.user) throw new Error("User is not authenticated");
+
+    const token = session.user.accessToken;
+
+    await axios.delete(`${API_BASE_URL}/jobs/${jobId}/withdraw`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error("Axios Error (withdrawJob):", error.response?.data);
+    } else {
+      console.error("Unexpected Error (withdrawJob):", error);
+    }
+    throw error;
+  }
+};
+
 export const getAppliedJobs = async (): Promise<AppliedJob[]> => {
   try {
     const session = await getSession();

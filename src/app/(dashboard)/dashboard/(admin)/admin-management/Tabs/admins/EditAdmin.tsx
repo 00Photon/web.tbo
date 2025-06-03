@@ -7,7 +7,7 @@ import Icon from "@/@core/component/icon";
 // ** Third Party Imports
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { newAdminSchema } from "@/@core/formSchema";
+import * as yup from "yup";
 
 // *Custom Component Imports
 import ProfileImage from "../../../component/ProfileImage";
@@ -40,6 +40,19 @@ const defaultValues = {
   level: "",
   status: "",
 };
+
+const newAdminSchema = yup.object().shape({
+  fullName: yup.string().required("Full Name is required"),
+  role: yup.string().required("Role is required"),
+  email: yup.string().email("Invalid email").required("Email is required"),
+  password: yup.string().required("Password is required"),
+  confirmPassword: yup
+    .string()
+    .oneOf([yup.ref("password")], "Passwords must match")
+    .required("Confirm Password is required"),
+  level: yup.string().required("Level is required"),
+  status: yup.string().required("Status is required"),
+});
 
 const NewAdmin = ({ open, close, activeAdmin }: Props) => {
   const [password, setPassword] = useState<string>("");

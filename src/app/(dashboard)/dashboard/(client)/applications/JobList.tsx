@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import Icon from "@/@core/component/icon";
 import Link from "next/link";
 import CustomTextField from "@/@core/component/mui/text-field";
@@ -32,14 +32,19 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  TextField,
+  Select,
+  MenuItem as SelectMenuItem,
+  FormControl,
+  InputLabel,
+  SelectChangeEvent,
 } from "@mui/material";
-// Assume these services are imported from your API client
 import {
   fetchJobsClients,
   fetchJobsclinetsById,
   deleteJobById,
+  editJobClient,
 } from "@/@core/services/jobService";
-
 
 interface Job {
   id: number;
@@ -51,6 +56,7 @@ interface Job {
   currency: string;
   minimum_salary: string;
   maximum_salary: string;
+  salary_type?: string;
   location: string;
   application_deadline: string;
   additional_info: string;
@@ -62,7 +68,6 @@ interface Job {
   applicant_count: number;
 }
 
-// Add this above the JobListTable component
 const ConfirmDialog: React.FC<{
   open: boolean;
   title?: string;
@@ -90,49 +95,235 @@ const ConfirmDialog: React.FC<{
   </Dialog>
 );
 
+const EditJobModal: React.FC<{
+  open: boolean;
+  job: Job | null;
+  close: () => void;
+  onJobUpdated: (updatedJob: Job) => void;
+}> = ({ open, job, close, onJobUpdated }) => {
+  const [formData, setFormData] = useState({
+    title: "",
+    job_type: "",
+    description: "",
+    requirements: "",
+    skill: "",
+    currency: "",
+    minimum_salary: 0,
+    maximum_salary: 0,
+    salary_type: "",
+    location: "",
+    application_deadline: "",
+    additional_info: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (job) {
+      setFormData({
+        title: job.title,
+        job_type: job.job_type,
+        description: job.description,
+        requirements: job.requirements,
+        skill: job.skill,
+        currency: job.currency,
+        minimum_salary: parseFloat(job.minimum_salary),
+        maximum_salary: parseFloat(job.maximum_salary),
+        salary_type: job.salary_type || "annual",
+        location: job.location,
+        application_deadline: job.application_deadline.split("T")[0],
+        additional_info: job.additional_info || "",
+      });
+    }
+  }, [job]);
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }> | SelectChangeEvent<string>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name as string]: value }));
+  };
+
+  const handleSubmit = async () => {
+    if (!job) return;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const updatedJob = await editJobClient(job.id, formData);
+      onJobUpdated(updatedJob.job);
+      close();
+    } catch (err: any) {
+      setError(err.message || "Failed to update job");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={close} maxWidth="md" fullWidth>
+      <DialogTitle>Edit Job</DialogTitle>
+      <DialogContent>
+        {error && (
+          <Typography color="error" sx={{ mb: 2 }}>
+            {error}
+          </Typography>
+        )}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3, mt: 2 }}>
+          <TextField
+            label="Job Title"
+            name="title"
+            value={formData.title}
+            onChange={handleChange}
+            fullWidth
+            required
+          />
+          <FormControl fullWidth>
+            <InputLabel>Job Type</InputLabel>
+            <Select
+              name="job_type"
+              value={formData.job_type}
+              onChange={handleChange}
+              required
+            >
+              <SelectMenuItem value="FULLTIME">Full Time</SelectMenuItem>
+              <SelectMenuItem value="PARTTIME">Part Time</SelectMenuItem>
+              <SelectMenuItem value="INTERNSHIP">Internship</SelectMenuItem>
+              <SelectMenuItem value="FREELANCE">Freelance</SelectMenuItem>
+            </Select>
+          </FormControl>
+          <TextField
+            label="Description"
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            multiline
+            rows={4}
+            fullWidth
+            required
+          />
+          <TextField
+            label="Requirements"
+            name="requirements"
+            value={formData.requirements}
+            onChange={handleChange}
+            multiline
+            rows={4}
+            fullWidth
+            required
+          />
+          <TextField
+            label="Skills"
+            name="skill"
+            value={formData.skill}
+            onChange={handleChange}
+            fullWidth
+            required
+          />
+          <FormControl fullWidth>
+            <InputLabel>Currency</InputLabel>
+            <Select
+              name="currency"
+              value={formData.currency}
+              onChange={handleChange}
+              required
+            >
+              <SelectMenuItem value="NGN">NGN</SelectMenuItem>
+              <SelectMenuItem value="USD">USD</SelectMenuItem>
+              <SelectMenuItem value="EUR">EUR</SelectMenuItem>
+              <SelectMenuItem value="GBP">GBP</SelectMenuItem>
+            </Select>
+          </FormControl>
+          <TextField
+            label="Minimum Salary"
+            name="minimum_salary"
+            type="number"
+            value={formData.minimum_salary}
+            onChange={handleChange}
+            fullWidth
+            required
+          />
+          <TextField
+            label="Maximum Salary"
+            name="maximum_salary"
+            type="number"
+            value={formData.maximum_salary}
+            onChange={handleChange}
+            fullWidth
+            required
+          />
+          <FormControl fullWidth>
+            <InputLabel>Salary Type</InputLabel>
+            <Select
+              name="salary_type"
+              value={formData.salary_type}
+              onChange={handleChange}
+              required
+            >
+              <SelectMenuItem value="ANNUALLY">Annual</SelectMenuItem>
+              <SelectMenuItem value="MONTHLY">Monthly</SelectMenuItem>
+            </Select>
+          </FormControl>
+          <TextField
+            label="Location"
+            name="location"
+            value={formData.location}
+            onChange={handleChange}
+            fullWidth
+            required
+          />
+          <TextField
+            label="Application Deadline"
+            name="application_deadline"
+            type="date"
+            value={formData.application_deadline}
+            onChange={handleChange}
+            InputLabelProps={{ shrink: true }}
+            fullWidth
+            required
+          />
+          <TextField
+            label="Additional Information"
+            name="additional_info"
+            value={formData.additional_info}
+            onChange={handleChange}
+            multiline
+            rows={4}
+            fullWidth
+          />
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={close} disabled={loading}>
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          disabled={loading}
+        >
+          {loading ? "Saving..." : "Save"}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 const JobListTable: React.FC = () => {
-  const [jobs, setJobs] = useState<Job[]>([]);
+ const [jobs, setJobs] = useState<Job[]>([]);
   const [openFilter, setOpenFilter] = useState<boolean>(false);
   const [value, setValue] = useState<string>("");
   const [status, setStatus] = useState<string>("");
+  const [jobType, setJobType] = useState<string>(""); // New state for job type filter
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [anchorEl, setAnchorEl] = useState<(HTMLElement | null)[]>([]);
   const [openPostJobModal, setOpenPostJobModal] = useState(false);
+  const [openEditJobModal, setOpenEditJobModal] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [totalJobs, setTotalJobs] = useState(0);
   const [loading, setLoading] = useState(true);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<{ id: number; index: number } | null>(null);
-
-  const requestDeleteJob = (id: number, index: number) => {
-    setJobToDelete({ id, index });
-    setConfirmDialogOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!jobToDelete) return;
-    const { id, index } = jobToDelete;
-  
-    try {
-      const response = await deleteJobById(id);
-      if (response.status) {
-        const updatedJobs = [...jobs];
-        updatedJobs.splice(index, 1);
-        setJobs(updatedJobs);
-        handleRowOptionsClose(index);
-      }
-    } catch (error) {
-      console.error("Error deleting job:", error);
-    } finally {
-      setConfirmDialogOpen(false);
-      setJobToDelete(null);
-    }
-  };
-  
-  const handleCancelDelete = () => {
-    setConfirmDialogOpen(false);
-    setJobToDelete(null);
-  };
 
   const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up("md"));
 
@@ -154,10 +345,95 @@ const JobListTable: React.FC = () => {
     };
 
     fetchJobs();
-  }, [page, rowsPerPage]);
+  }, []);
+
+  const filteredJobs = useMemo(() => {
+    let result = jobs;
+
+    // Filter by status
+    if (status && status !== "0") {
+      result = result.filter((job) => job.status.toLowerCase() === status.toLowerCase());
+    }
+
+    // Filter by job type
+    if (jobType && jobType !== "0") {
+      result = result.filter((job) => job.job_type.toLowerCase() === jobType.toLowerCase());
+    }
+
+    // Search filter
+    if (value) {
+      const searchTerm = value.toLowerCase();
+      result = result.filter(
+        (job) =>
+          job.title.toLowerCase().includes(searchTerm) ||
+          job.job_type.toLowerCase().includes(searchTerm) ||
+          job.location.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    return result;
+  }, [jobs, status, jobType, value]);
+
+ useEffect(() => {
+    setTotalJobs(filteredJobs.length);
+    setPage(0);
+  }, [filteredJobs]);
+
+  const paginatedJobs = useMemo(() => {
+    const start = page * rowsPerPage;
+    return filteredJobs.slice(start, start + rowsPerPage);
+  }, [filteredJobs, page, rowsPerPage]);
+
+  const requestDeleteJob = (id: number, index: number) => {
+    setJobToDelete({ id, index });
+    setConfirmDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!jobToDelete) return;
+    const { id, index } = jobToDelete;
+
+    try {
+      const response = await deleteJobById(id);
+      if (response.status) {
+        const updatedJobs = [...jobs];
+        updatedJobs.splice(jobs.findIndex((job) => job.id === id), 1);
+        setJobs(updatedJobs);
+        setAnchorEl(Array(updatedJobs.length).fill(null));
+        handleRowOptionsClose(index);
+      }
+    } catch (error) {
+      console.error("Error deleting job:", error);
+    } finally {
+      setConfirmDialogOpen(false);
+      setJobToDelete(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setConfirmDialogOpen(false);
+    setJobToDelete(null);
+  };
 
   const handleOpenModal = () => setOpenPostJobModal(true);
   const handleCloseModal = () => setOpenPostJobModal(false);
+
+  const handleOpenEditModal = (job: Job) => {
+    setSelectedJob(job);
+    setOpenEditJobModal(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setOpenEditJobModal(false);
+    setSelectedJob(null);
+  };
+
+  const handleJobUpdated = (updatedJob: Job) => {
+    setJobs((prevJobs) =>
+      prevJobs.map((job) => (job.id === updatedJob.id ? updatedJob : job))
+    );
+    setAnchorEl(Array(jobs.length).fill(null));
+  };
 
   const handleChangePage = (
     event: React.MouseEvent<HTMLButtonElement> | null,
@@ -166,24 +442,6 @@ const JobListTable: React.FC = () => {
     setPage(newPage);
   };
 
-  const handleDeleteJob = async (jobId: number, index: number) => {
-    try {
-      // Optional: confirm dialog
-      if (!window.confirm("Are you sure you want to delete this job?")) return;
-  
-      const response = await deleteJobById(jobId); // You must have this API service
-      if (response.status) {
-        const updatedJobs = [...jobs];
-        updatedJobs.splice(index, 1);
-        setJobs(updatedJobs);
-        handleRowOptionsClose(index);
-      }
-    } catch (error) {
-      console.error("Error deleting job:", error);
-    }
-  };
-  
-  
   const handleChangeRowsPerPage = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -215,7 +473,7 @@ const JobListTable: React.FC = () => {
       }}
     >
       <CardContent sx={{ p: { xs: 2, md: 4 } }}>
-        <Collapse
+      <Collapse
           easing={"ease-in-out"}
           in={openFilter}
           timeout={500}
@@ -233,16 +491,33 @@ const JobListTable: React.FC = () => {
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
                   size="small"
-                  placeholder="Reviewed, Hired, Short..."
+                  placeholder="Select Status"
                   fullWidth
                   label="Status"
                 >
-                  <MenuItem value="0">Select Status</MenuItem>
+                  <MenuItem value="0">All Statuses</MenuItem>
                   <MenuItem value="active">Active</MenuItem>
                   <MenuItem value="inactive">Inactive</MenuItem>
+                  <MenuItem value="rejected">Rejected</MenuItem>
                 </CustomTextField>
               </Grid>
-              {/* ... other filter fields ... */}
+              <Grid item xs={6} sm={3}>
+                <CustomTextField
+                  select
+                  value={jobType}
+                  onChange={(e) => setJobType(e.target.value)}
+                  size="small"
+                  placeholder="Select Job Type"
+                  fullWidth
+                  label="Job Type"
+                >
+                  <MenuItem value="0">All Job Types</MenuItem>
+                  <MenuItem value="FULLTIME">Full Time</MenuItem>
+                  <MenuItem value="PARTTIME">Part Time</MenuItem>
+                  <MenuItem value="INTERNSHIP">Internship</MenuItem>
+                  <MenuItem value="FREELANCE">Freelance</MenuItem>
+                </CustomTextField>
+              </Grid>
             </Grid>
           </Paper>
         </Collapse>
@@ -277,7 +552,7 @@ const JobListTable: React.FC = () => {
             <Box
               sx={{
                 display: "flex",
-                alignItem: "center",
+                alignItems: "center",
                 justifyContent: "flex-end",
                 gap: 2,
               }}
@@ -339,16 +614,16 @@ const JobListTable: React.FC = () => {
                     Loading...
                   </TableCell>
                 </TableRow>
-              ) : jobs.length === 0 ? (
+              ) : paginatedJobs.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} align="center">
                     No jobs found
                   </TableCell>
                 </TableRow>
               ) : (
-                jobs.map((item, i) => (
+                paginatedJobs.map((item, i) => (
                   <TableRow key={item.id}>
-                    <TableCell>{item.id}</TableCell>
+                    <TableCell>{i + 1 + page * rowsPerPage}</TableCell>
                     <TableCell>{item.title}</TableCell>
                     <TableCell>{item.applicant_count}</TableCell>
                     <TableCell>
@@ -383,7 +658,7 @@ const JobListTable: React.FC = () => {
                             disableScrollLock
                             anchorEl={anchorEl[i]}
                             open={Boolean(anchorEl[i])}
-                            onBlur={() => handleRowOptionsClose(i)}
+                            onClose={() => handleRowOptionsClose(i)}
                             anchorOrigin={{
                               vertical: "bottom",
                               horizontal: "right",
@@ -394,7 +669,10 @@ const JobListTable: React.FC = () => {
                             }}
                             PaperProps={{ style: { minWidth: "8rem" } }}
                           >
-                            <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
+                            <MenuItem
+                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
+                              onClick={() => handleOpenEditModal(item)}
+                            >
                               <Icon icon="tabler:edit" fontSize={20} />
                               Edit
                             </MenuItem>
@@ -405,13 +683,12 @@ const JobListTable: React.FC = () => {
                               </Link>
                             </MenuItem>
                             <MenuItem
-                            sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                            onClick={() => requestDeleteJob(item.id, i)}
-                          >
-                            <Icon icon="fluent:delete-24-regular" fontSize={20} />
-                            Delete
-                          </MenuItem>
-
+                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
+                              onClick={() => requestDeleteJob(item.id, i)}
+                            >
+                              <Icon icon="fluent:delete-24-regular" fontSize={20} />
+                              Delete
+                            </MenuItem>
                           </Menu>
                         </Avatar>
                       </Box>
@@ -433,6 +710,12 @@ const JobListTable: React.FC = () => {
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
       <PostJobModal open={openPostJobModal} close={handleCloseModal} />
+      <EditJobModal
+        open={openEditJobModal}
+        job={selectedJob}
+        close={handleCloseEditModal}
+        onJobUpdated={handleJobUpdated}
+      />
       <ConfirmDialog
         open={confirmDialogOpen}
         title="Delete Job?"
@@ -440,12 +723,10 @@ const JobListTable: React.FC = () => {
         onCancel={handleCancelDelete}
         onConfirm={handleConfirmDelete}
       />
-
     </Card>
   );
 };
 
-// New component for single job view
 export const JobDetail: React.FC<{ jobId: string }> = ({ jobId }) => {
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
@@ -499,10 +780,11 @@ export const JobDetail: React.FC<{ jobId: string }> = ({ jobId }) => {
           <Typography>{job.additional_info}</Typography>
         </Box>
       </CardContent>
-      
     </Card>
-    
   );
 };
 
 export default JobListTable;
+// The setLoading function is already implemented as a useState setter in the component above.
+// The placeholder function here is unnecessary and should be removed.
+// No additional implementation is needed.

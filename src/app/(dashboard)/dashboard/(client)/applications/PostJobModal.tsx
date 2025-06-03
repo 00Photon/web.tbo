@@ -1,24 +1,13 @@
-// *React Imports
 import { useState } from "react";
-
-// *Icon Imports
 import Icon from "@/@core/component/icon";
-
-// *Custom Component Imports
 import CustomTextField from "@/@core/component/mui/text-field";
-
-// *Utility Imports
 import { newJobSchema2 } from "@/@core/formSchema";
-
-// *Third Party Imports
-import { Controller, useForm, SubmitHandler } from "react-hook-form";
+import { Controller, useForm, SubmitHandler, useWatch } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
-import { toast, ToastContainer } from "react-toastify"; // Import react-toastify
-import "react-toastify/dist/ReactToastify.css"; // Import react-toastify CSS
-
-// *MUI Imports
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
@@ -28,9 +17,8 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import MenuItem from "@mui/material/MenuItem";
 import Chip from "@mui/material/Chip";
-import { Autocomplete, IconButton, TextFieldProps } from "@mui/material";
+import { Autocomplete, IconButton, InputAdornment } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
-
 import { createJobclient } from "@/@core/services/jobService";
 
 interface Props {
@@ -60,7 +48,7 @@ const defaultValues = {
   requirement: "",
   skill: [],
   location: "",
-  salary_type: "", 
+  salary_type: "",
   currency: "",
   minSalary: "",
   maxSalary: "",
@@ -80,20 +68,23 @@ const NewJob = ({ open, close }: Props) => {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>("");
 
-  const handleRemoveSkill = (skill: string) => {
-    setSelectedSkills((prev) => prev.filter((s) => s !== skill));
-  };
-
   const {
     control,
     reset,
     handleSubmit,
     formState: { errors, isSubmitting },
+    watch,
   } = useForm<IFormInput>({
     defaultValues: defaultValues,
     mode: "onChange",
     resolver: yupResolver(newJobSchema2),
   });
+
+  const selectedCurrency = watch("currency"); // Watch the currency field
+
+  const handleRemoveSkill = (skill: string) => {
+    setSelectedSkills((prev) => prev.filter((s) => s !== skill));
+  };
 
   const submitForm: SubmitHandler<IFormInput> = (values) => {
     const jobData = {
@@ -101,13 +92,13 @@ const NewJob = ({ open, close }: Props) => {
       job_type: values.type,
       description: values.description,
       requirements: values.requirement,
-      skill: values.skill.join(", "), // Join the selected skills as a string
+      skill: values.skill.join(", "),
       currency: values.currency,
-      salary_type: values.salary_type, // Ensure salary_type is included
+      salary_type: values.salary_type,
       minimum_salary: parseInt(values.minSalary),
       maximum_salary: parseInt(values.maxSalary),
       location: values.location,
-      application_deadline: dayjs(selectedDate).format("YYYY-MM-DD"), // Convert the selected date to the required format
+      application_deadline: dayjs(selectedDate).format("YYYY-MM-DD"),
       additional_info: values.information,
     };
 
@@ -138,9 +129,15 @@ const NewJob = ({ open, close }: Props) => {
       });
   };
 
+  const currencyMap = {
+    NGN: "₦",
+    EUR: "€",
+    USD: "$",
+    GBP: "£",
+  };
+
   return (
     <div>
-      {/* Add ToastContainer to display toasts */}
       <ToastContainer />
       <Dialog
         disableScrollLock
@@ -159,7 +156,6 @@ const NewJob = ({ open, close }: Props) => {
             <Button onClick={close} sx={{ color: "#111" }}>
               <Icon icon="basil:caret-left-solid" fontSize={25} />
             </Button>
-
             <Typography
               sx={{
                 flex: 1,
@@ -193,12 +189,9 @@ const NewJob = ({ open, close }: Props) => {
               </Typography>
               <Grid container spacing={4}>
                 <Grid item xs={12} md={6}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Job Title
                   </Typography>
-
                   <Controller
                     name="title"
                     control={control}
@@ -218,12 +211,9 @@ const NewJob = ({ open, close }: Props) => {
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Job Type
                   </Typography>
-
                   <Controller
                     name="type"
                     control={control}
@@ -249,12 +239,9 @@ const NewJob = ({ open, close }: Props) => {
                 </Grid>
 
                 <Grid item xs={12} md={12}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Description
                   </Typography>
-
                   <Controller
                     name="description"
                     control={control}
@@ -271,7 +258,7 @@ const NewJob = ({ open, close }: Props) => {
                           disableUnderline: true,
                           sx: {
                             "& textarea": {
-                              overflow: "hidden",
+                              overflowY: "auto",
                               resize: "none",
                             },
                           },
@@ -285,12 +272,9 @@ const NewJob = ({ open, close }: Props) => {
                 </Grid>
 
                 <Grid item xs={12} md={12}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Requirements
                   </Typography>
-
                   <Controller
                     name="requirement"
                     control={control}
@@ -307,7 +291,7 @@ const NewJob = ({ open, close }: Props) => {
                           disableUnderline: true,
                           sx: {
                             "& textarea": {
-                              overflow: "hidden",
+                              overflowY: "auto",
                               resize: "none",
                             },
                           },
@@ -321,12 +305,9 @@ const NewJob = ({ open, close }: Props) => {
                 </Grid>
 
                 <Grid item xs={12} md={12}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Skills
                   </Typography>
-
                   <Controller
                     name="skill"
                     control={control}
@@ -339,7 +320,7 @@ const NewJob = ({ open, close }: Props) => {
                         value={value}
                         onChange={(event, newValue) => {
                           onChange(newValue);
-                          setSelectedSkills(newValue); // Sync selected skills
+                          setSelectedSkills(newValue);
                         }}
                         renderTags={(value: string[], getTagProps) =>
                           value.map((option, index) => {
@@ -379,10 +360,7 @@ const NewJob = ({ open, close }: Props) => {
                       />
                     )}
                   />
-
-                  <Box
-                    sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 2 }}
-                  >
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 2 }}>
                     {selectedSkills.map((skill) => (
                       <Chip
                         key={skill}
@@ -398,43 +376,35 @@ const NewJob = ({ open, close }: Props) => {
                   </Box>
                 </Grid>
 
-                                <Grid item xs={12} md={12}>
-                                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
-                                    Salary Type
-                                  </Typography>
-                
-                              
-                                  <Controller
-                                    name="salary_type"
-                                    control={control}
-                                    rules={{ required: true }}
-                                    render={({ field: { value, onChange } }) => (
-                                      <CustomTextField
-                                        fullWidth
-                                        select
-                                        value={value}
-                                        onChange={onChange}
-                                        size="medium"
-                                        sx={{ overflow: "hidden" }}
-                                        error={Boolean(errors.salary_type)}
-                                        helperText={errors.salary_type?.message}
-                                      >
-                                        <MenuItem value="MONTHLY">MONTHLY</MenuItem>
-                                        <MenuItem value="ANNUALLY">ANNUALLY</MenuItem>
-                                      
-                                      </CustomTextField>
-                                    )}
-                                  />
-                               
-                                </Grid>
+                <Grid item xs={12} md={12}>
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
+                    Salary Type
+                  </Typography>
+                  <Controller
+                    name="salary_type"
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field: { value, onChange } }) => (
+                      <CustomTextField
+                        fullWidth
+                        select
+                        value={value}
+                        onChange={onChange}
+                        size="medium"
+                        error={Boolean(errors.salary_type)}
+                        helperText={errors.salary_type?.message}
+                      >
+                        <MenuItem value="MONTHLY">MONTHLY</MenuItem>
+                        <MenuItem value="ANNUALLY">ANNUALLY</MenuItem>
+                      </CustomTextField>
+                    )}
+                  />
+                </Grid>
 
                 <Grid item xs={2} md={2}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Currency
                   </Typography>
-
                   <Controller
                     name="currency"
                     control={control}
@@ -446,26 +416,39 @@ const NewJob = ({ open, close }: Props) => {
                         value={value}
                         onChange={onChange}
                         size="medium"
-                        sx={{ overflow: "hidden" }}
                         error={Boolean(errors.currency)}
                         helperText={errors.currency?.message}
+                        SelectProps={{
+                          renderValue: (selected) => currencyMap[String(selected) as keyof typeof currencyMap] || String(selected),
+                          MenuProps: {
+                            PaperProps: {
+                              style: {
+                                maxHeight: 300,
+                              },
+                            },
+                            disableScrollLock: true,
+                          },
+                        }}
                       >
-                        <MenuItem value="NGN">₦</MenuItem>
-                        <MenuItem value="EUR">€</MenuItem>
-                        <MenuItem value="USD">$</MenuItem>
-                        <MenuItem value="GBP">£</MenuItem>
+                        {[
+                          { code: "NGN", symbol: "₦" },
+                          { code: "EUR", symbol: "€" },
+                          { code: "USD", symbol: "$" },
+                          { code: "GBP", symbol: "£" },
+                        ].map(({ code, symbol }) => (
+                          <MenuItem key={code} value={code}>
+                            {symbol} ({code})
+                          </MenuItem>
+                        ))}
                       </CustomTextField>
                     )}
                   />
                 </Grid>
 
                 <Grid item xs={12} md={5}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Minimum
                   </Typography>
-
                   <Controller
                     name="minSalary"
                     control={control}
@@ -476,21 +459,25 @@ const NewJob = ({ open, close }: Props) => {
                         value={value}
                         onChange={onChange}
                         size="medium"
-                        placeholder="$1"
+                        placeholder="1"
                         error={Boolean(errors.minSalary)}
                         helperText={errors.minSalary?.message}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              {currencyMap[selectedCurrency as keyof typeof currencyMap] || ""}
+                            </InputAdornment>
+                          ),
+                        }}
                       />
                     )}
                   />
                 </Grid>
 
                 <Grid item xs={12} md={5}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Maximum
                   </Typography>
-
                   <Controller
                     name="maxSalary"
                     control={control}
@@ -501,21 +488,25 @@ const NewJob = ({ open, close }: Props) => {
                         value={value}
                         onChange={onChange}
                         size="medium"
-                        placeholder="$999999"
+                        placeholder="999999"
                         error={Boolean(errors.maxSalary)}
                         helperText={errors.maxSalary?.message}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              {currencyMap[selectedCurrency as keyof typeof currencyMap] || ""}
+                            </InputAdornment>
+                          ),
+                        }}
                       />
                     )}
                   />
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Location
                   </Typography>
-
                   <Controller
                     name="location"
                     control={control}
@@ -535,9 +526,7 @@ const NewJob = ({ open, close }: Props) => {
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Application Deadline
                   </Typography>
                   <Controller
@@ -561,12 +550,9 @@ const NewJob = ({ open, close }: Props) => {
                 </Grid>
 
                 <Grid item xs={12}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Additional Information
                   </Typography>
-
                   <Controller
                     name="information"
                     control={control}
@@ -583,7 +569,7 @@ const NewJob = ({ open, close }: Props) => {
                           disableUnderline: true,
                           sx: {
                             "& textarea": {
-                              overflow: "hidden",
+                              overflowY: "auto",
                               resize: "none",
                             },
                           },

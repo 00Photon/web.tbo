@@ -1,23 +1,12 @@
-// *React Imports
 import { useState, useEffect } from "react";
-
-// *Icon Imports
 import Icon from "@/@core/component/icon";
 import Loader from '@/@core/utils/loader';
-
-// *Custom Component Imports
 import CustomTextField from "@/@core/component/mui/text-field";
-
-// *Utility Imports
 import { newJobSchema } from "@/@core/formSchema";
-
-// *Third Party Imports
-import { Controller, useForm, SubmitHandler } from "react-hook-form";
+import { Controller, useForm, SubmitHandler, useWatch } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
-
-// *MUI Imports
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
@@ -27,9 +16,8 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import MenuItem from "@mui/material/MenuItem";
 import Chip from "@mui/material/Chip";
-import { Autocomplete, IconButton, TextFieldProps, CircularProgress } from "@mui/material";
+import { Autocomplete, IconButton, CircularProgress, InputAdornment } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
-
 import { createJob } from "@/@core/services/jobService";
 
 interface Props {
@@ -67,7 +55,7 @@ const defaultValues = {
   requirement: "",
   skill: [],
   location: "",
-  salary_type: "", 
+  salary_type: "",
   currency: "",
   minSalary: "",
   maxSalary: "",
@@ -91,9 +79,7 @@ const NewJob = ({ open, close }: Props) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-
   useEffect(() => {
-    // Fetch clients when the dialog opens
     if (open) {
       fetchClients();
     }
@@ -107,7 +93,6 @@ const NewJob = ({ open, close }: Props) => {
         throw new Error("Failed to fetch clients");
       }
       const data = await response.json();
-      // Filter only users with account_type of CLIENT
       const clientUsers = data.filter((user: Client) => user.account_type === "CLIENT");
       setClients(clientUsers);
     } catch (error) {
@@ -126,45 +111,54 @@ const NewJob = ({ open, close }: Props) => {
     reset,
     handleSubmit,
     formState: { errors, isSubmitting },
+    watch,
   } = useForm<IFormInput>({
     defaultValues: defaultValues,
     mode: "onChange",
     resolver: yupResolver(newJobSchema),
   });
 
+  const selectedCurrency = watch("currency"); // Watch the currency field
+
   const submitForm: SubmitHandler<IFormInput> = (values) => {
-    setSubmitting(true); // Show loader when submission starts
-    
+    setSubmitting(true);
     const jobData = {
       title: values.title,
       job_type: values.type,
       description: values.description,
       requirements: values.requirement,
-      skill: values.skill.join(", "), // Join the selected skills as a string
+      skill: values.skill.join(", "),
       currency: values.currency,
-      salary_type: values.salary_type, // Use the selected salary type
+      salary_type: values.salary_type,
       minimum_salary: parseInt(values.minSalary),
       maximum_salary: parseInt(values.maxSalary),
       location: values.location,
-      application_deadline: dayjs(selectedDate).format("YYYY-MM-DD"), // Convert the selected date to the required format
+      application_deadline: dayjs(selectedDate).format("YYYY-MM-DD"),
       additional_info: values.information,
-      client_id: parseInt(values.client_id) // Add client_id to the job data
+      client_id: parseInt(values.client_id),
     };
-  
+
     createJob(jobData)
-    .then((response) => {
-      console.log("Job created:", response);
-      reset();
-      close();
-    })
-    .catch((error) => {
-      console.error("Error creating job:", error);
-    })
-    .finally(() => {
-      setSubmitting(false); // Hide loader when submission completes or fails
-    });
+      .then((response) => {
+        console.log("Job created:", response);
+        reset();
+        close();
+      })
+      .catch((error) => {
+        console.error("Error creating job:", error);
+      })
+      .finally(() => {
+        setSubmitting(false);
+      });
   };
-  
+
+  const currencyMap = {
+    NGN: "₦",
+    EUR: "€",
+    USD: "$",
+    GBP: "£",
+  };
+
   return (
     <div>
       <Dialog
@@ -184,7 +178,6 @@ const NewJob = ({ open, close }: Props) => {
             <Button onClick={close} sx={{ color: "#111" }}>
               <Icon icon="basil:caret-left-solid" fontSize={25} />
             </Button>
-
             <Typography
               sx={{
                 flex: 1,
@@ -217,12 +210,10 @@ const NewJob = ({ open, close }: Props) => {
                 Job Details
               </Typography>
               <Grid container spacing={4}>
-                {/* Client Selection Field - Added at the top */}
                 <Grid item xs={12} md={12}>
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Select Company
                   </Typography>
-
                   <Controller
                     name="client_id"
                     control={control}
@@ -255,7 +246,6 @@ const NewJob = ({ open, close }: Props) => {
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Job Title
                   </Typography>
-
                   <Controller
                     name="title"
                     control={control}
@@ -278,7 +268,6 @@ const NewJob = ({ open, close }: Props) => {
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Job Type
                   </Typography>
-
                   <Controller
                     name="type"
                     control={control}
@@ -308,7 +297,6 @@ const NewJob = ({ open, close }: Props) => {
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Description
                   </Typography>
-
                   <Controller
                     name="description"
                     control={control}
@@ -325,7 +313,7 @@ const NewJob = ({ open, close }: Props) => {
                           disableUnderline: true,
                           sx: {
                             "& textarea": {
-                              overflow: "hidden",
+                              overflowY: "auto",
                               resize: "none",
                             },
                           },
@@ -342,7 +330,6 @@ const NewJob = ({ open, close }: Props) => {
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Requirements
                   </Typography>
-
                   <Controller
                     name="requirement"
                     control={control}
@@ -359,7 +346,7 @@ const NewJob = ({ open, close }: Props) => {
                           disableUnderline: true,
                           sx: {
                             "& textarea": {
-                              overflow: "hidden",
+                              overflowY: "auto",
                               resize: "none",
                             },
                           },
@@ -376,7 +363,6 @@ const NewJob = ({ open, close }: Props) => {
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Skills
                   </Typography>
-
                   <Controller
                     name="skill"
                     control={control}
@@ -428,7 +414,6 @@ const NewJob = ({ open, close }: Props) => {
                       />
                     )}
                   />
-
                   <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 2 }}>
                     {selectedSkills.map((skill) => (
                       <Chip
@@ -444,12 +429,11 @@ const NewJob = ({ open, close }: Props) => {
                     ))}
                   </Box>
                 </Grid>
-                  <Grid item xs={12} md={12}>
+
+                <Grid item xs={12} md={12}>
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Salary Type
                   </Typography>
-
-              
                   <Controller
                     name="salary_type"
                     control={control}
@@ -461,24 +445,20 @@ const NewJob = ({ open, close }: Props) => {
                         value={value}
                         onChange={onChange}
                         size="medium"
-                        sx={{ overflow: "hidden" }}
                         error={Boolean(errors.salary_type)}
                         helperText={errors.salary_type?.message}
                       >
                         <MenuItem value="MONTHLY">MONTHLY</MenuItem>
                         <MenuItem value="ANNUALLY">ANNUALLY</MenuItem>
-                      
                       </CustomTextField>
                     )}
                   />
-               
                 </Grid>
 
                 <Grid item xs={2} md={2}>
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Currency
                   </Typography>
-
                   <Controller
                     name="currency"
                     control={control}
@@ -490,14 +470,33 @@ const NewJob = ({ open, close }: Props) => {
                         value={value}
                         onChange={onChange}
                         size="medium"
-                        sx={{ overflow: "hidden" }}
                         error={Boolean(errors.currency)}
                         helperText={errors.currency?.message}
+                        SelectProps={{
+                          renderValue: (value: unknown) => {
+                            const selected = value as keyof typeof currencyMap;
+                            return currencyMap[selected] || selected;
+                          },
+                          MenuProps: {
+                            PaperProps: {
+                              style: {
+                                maxHeight: 300,
+                              },
+                            },
+                            disableScrollLock: true,
+                          },
+                        }}
                       >
-                        <MenuItem value="NGN">₦</MenuItem>
-                        <MenuItem value="EUR">£</MenuItem>
-                        <MenuItem value="USD">$</MenuItem>
-                        <MenuItem value="GBP">¥</MenuItem>
+                        {[
+                          { code: "NGN", symbol: "₦" },
+                          { code: "EUR", symbol: "€" },
+                          { code: "USD", symbol: "$" },
+                          { code: "GBP", symbol: "£" },
+                        ].map(({ code, symbol }) => (
+                          <MenuItem key={code} value={code}>
+                            {symbol} ({code})
+                          </MenuItem>
+                        ))}
                       </CustomTextField>
                     )}
                   />
@@ -507,7 +506,6 @@ const NewJob = ({ open, close }: Props) => {
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Minimum
                   </Typography>
-
                   <Controller
                     name="minSalary"
                     control={control}
@@ -521,6 +519,13 @@ const NewJob = ({ open, close }: Props) => {
                         placeholder="1"
                         error={Boolean(errors.minSalary)}
                         helperText={errors.minSalary?.message}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              {currencyMap[selectedCurrency as keyof typeof currencyMap] || ""}
+                            </InputAdornment>
+                          ),
+                        }}
                       />
                     )}
                   />
@@ -530,7 +535,6 @@ const NewJob = ({ open, close }: Props) => {
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Maximum
                   </Typography>
-
                   <Controller
                     name="maxSalary"
                     control={control}
@@ -544,6 +548,13 @@ const NewJob = ({ open, close }: Props) => {
                         placeholder="999999"
                         error={Boolean(errors.maxSalary)}
                         helperText={errors.maxSalary?.message}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              {currencyMap[selectedCurrency as keyof typeof currencyMap] || ""}
+                            </InputAdornment>
+                          ),
+                        }}
                       />
                     )}
                   />
@@ -553,7 +564,6 @@ const NewJob = ({ open, close }: Props) => {
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Location
                   </Typography>
-
                   <Controller
                     name="location"
                     control={control}
@@ -600,7 +610,6 @@ const NewJob = ({ open, close }: Props) => {
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Additional Information
                   </Typography>
-
                   <Controller
                     name="information"
                     control={control}
@@ -617,7 +626,7 @@ const NewJob = ({ open, close }: Props) => {
                           disableUnderline: true,
                           sx: {
                             "& textarea": {
-                              overflow: "hidden",
+                              overflowY: "auto",
                               resize: "none",
                             },
                           },
@@ -632,24 +641,23 @@ const NewJob = ({ open, close }: Props) => {
               </Grid>
             </Box>
 
-            
-          <DialogActions
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              gap: 2,
-            }}
-          >
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={isSubmitting || submitting}
-              sx={{ textTransform: "capitalize", width: "30%" }}
+            <DialogActions
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: 2,
+              }}
             >
-              {submitting ? <CircularProgress size={24} color="inherit" /> : "Create Job"}
-            </Button>
-          </DialogActions>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={isSubmitting || submitting}
+                sx={{ textTransform: "capitalize", width: "30%" }}
+              >
+                {submitting ? <CircularProgress size={24} color="inherit" /> : "Create Job"}
+              </Button>
+            </DialogActions>
           </DialogContent>
         </form>
         <Loader loading={submitting} />

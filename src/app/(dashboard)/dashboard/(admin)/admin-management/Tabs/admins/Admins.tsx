@@ -1,31 +1,20 @@
-// *React Imports
 import { SetStateAction, useState, useEffect, ReactNode } from "react";
-
-// * Icon Imports
 import Icon from "@/@core/component/icon";
-
-// * Custom Component Imports
 import CustomTextField from "@/@core/component/mui/text-field";
 import { TableCellStyled } from "@/@core/component/mui/tableStyled";
 import CustomChip from "@/@core/component/mui/chip";
-
-// * Component Import
 import EditAdmin from "./EditAdmin";
 import ViewAdmin from "./ViewAdmin";
-import { getAdmins } from "@/@core/services/adminService";
-
-// ** Third Party Imports
+import { getAdmins, getAdminById, deleteAdmin } from "@/@core/services/adminService";
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-
-// ** MUI Imports
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Paper from "@mui/material/Paper";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import InputAdornment from "@mui/material/InputAdornment";
-import { Avatar, Menu } from "@mui/material";
+import { Avatar, Menu, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
 import Checkbox from "@mui/material/Checkbox";
 import MenuItem from "@mui/material/MenuItem";
 import IconButton from "@mui/material/IconButton";
@@ -55,7 +44,7 @@ export type MockData = {
 };
 
 export type AdminData = {
-  account_type: ReactNode;
+  account_type?: ReactNode;
   id: number;
   name: string;
   email: string;
@@ -63,8 +52,6 @@ export type AdminData = {
   role: string;
   status: boolean;
 };
-
-
 
 const AdminsTable = () => {
   const [openFilter, setOpenFilter] = useState<boolean>(false);
@@ -74,18 +61,16 @@ const AdminsTable = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [admins, setAdmins] = useState<AdminData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [anchorEl, setAnchorEl] = useState<(HTMLElement | null)[]>(
-    Array(admins.length).fill(null)
-  );
+  const [anchorEl, setAnchorEl] = useState<(HTMLElement | null)[]>([]);
   const [editAdminModal, setEditAdminModal] = useState<boolean>(false);
   const [viewAdminDrawer, setViewAdminDrawer] = useState<boolean>(false);
   const [activeAdmin, setActiveAdmin] = useState<MockData | null>(null);
+  const [deleting, setDeleting] = useState<number | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState<boolean>(false);
+  const [adminToDelete, setAdminToDelete] = useState<{ id: number; index: number } | null>(null);
 
-  const smallScreen = useMediaQuery((theme: Theme) =>
-    theme.breakpoints.up("md")
-  );
+  const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up("md"));
 
-  // Fetch admin data on component mount
   useEffect(() => {
     const fetchAdmins = async () => {
       try {
@@ -104,14 +89,44 @@ const AdminsTable = () => {
 
   const toggleEditAdminModal = () => setEditAdminModal(!editAdminModal);
 
-  const setAdminView = (admin: MockData) => {
-    setViewAdminDrawer(true);
-    setActiveAdmin(admin);
+  const setAdminView = async (admin: MockData) => {
+    try {
+      const adminData = await getAdminById(String(admin.id));
+      setActiveAdmin(adminData);
+      setViewAdminDrawer(true);
+    } catch (error) {
+      console.error("Error fetching admin by ID:", error);
+      alert("Failed to fetch admin details");
+    }
   };
 
   const closeAdminDrawer = () => {
     setViewAdminDrawer(false);
     setActiveAdmin(null);
+  };
+
+  const handleDeleteAdmin = (id: number, index: number) => {
+    setAdminToDelete({ id, index });
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (adminToDelete) {
+      try {
+        setDeleting(adminToDelete.id);
+        await deleteAdmin(String(adminToDelete.id));
+        setAdmins((prevAdmins) => prevAdmins.filter((admin) => admin.id !== adminToDelete.id));
+        handleRowOptionsClose(adminToDelete.index);
+        alert(`Admin with ID ${adminToDelete.id} deleted successfully`);
+      } catch (error) {
+        console.error("Error deleting admin:", error);
+        alert("Failed to delete admin");
+      } finally {
+        setDeleting(null);
+        setDeleteConfirmOpen(false);
+        setAdminToDelete(null);
+      }
+    }
   };
 
   const handleChangePage = (
@@ -154,117 +169,6 @@ const AdminsTable = () => {
       <CardContent sx={{ p: (theme) => theme.spacing(3) }}>
         {!smallScreen && <Typography variant="h6">Admins</Typography>}
 
-        <Collapse
-          easing={"ease-in-out"}
-          in={openFilter}
-          timeout={500}
-          unmountOnExit
-          sx={{ mb: 3, boxShadow: 4 }}
-        >
-          <Paper
-            sx={{
-              px: 3,
-              py: 3,
-            }}
-          >
-            <Typography
-              sx={{
-                mb: 3,
-                fontSize: { xs: "1rem", sm: "1.25rem", md: "1.5rem" },
-              }}
-            >
-              Filter
-            </Typography>
-            <Grid container spacing={3}>
-              <Grid item xs={6} sm={3}>
-                <CustomTextField
-                  select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  size="small"
-                  placeholder="Reviewed, Hired, Short..."
-                  fullWidth
-                  label="Status"
-                >
-                  <MenuItem value="0">Select Status</MenuItem>
-                  <MenuItem value="1">Shortlisted</MenuItem>
-                  <MenuItem value="2">Reviewed</MenuItem>
-                  <MenuItem value="3">Interviewed</MenuItem>
-                  <MenuItem value="4">Hired</MenuItem>
-                </CustomTextField>
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <CustomTextField
-                  select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  size="small"
-                  placeholder="Senior, mid-level, entry..."
-                  fullWidth
-                  label="Level of Experience"
-                >
-                  <MenuItem value="0">Select Level</MenuItem>
-                  <MenuItem value="1">Entry Level</MenuItem>
-                  <MenuItem value="2">Intermediate</MenuItem>
-                  <MenuItem value="3">Mid-Level</MenuItem>
-                  <MenuItem value="4">Senior</MenuItem>
-                </CustomTextField>
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <CustomTextField
-                  select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  size="small"
-                  placeholder="less than 3..."
-                  fullWidth
-                  label="Years of Experience"
-                >
-                  <MenuItem value="0">Select Years of Experience</MenuItem>
-                  <MenuItem value="1">Less than 1</MenuItem>
-                  <MenuItem value="2">Less than 3</MenuItem>
-                  <MenuItem value="3">More than 3</MenuItem>
-                  <MenuItem value="4">More than 5</MenuItem>
-                </CustomTextField>
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <CustomTextField
-                  select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  size="small"
-                  placeholder="Month and Year..."
-                  fullWidth
-                  label="Date Applied"
-                >
-                  <MenuItem value="0">Date of Application</MenuItem>
-                  <MenuItem value="1">11, July 2023</MenuItem>
-                  <MenuItem value="2">11, Aug 2024</MenuItem>
-                  <MenuItem value="3">11, Sept 2021</MenuItem>
-                  <MenuItem value="4">11, Jan 2022</MenuItem>
-                </CustomTextField>
-              </Grid>
-              {/* <Grid item xs={6} sm={2}>
-                <CustomTextField
-                  select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  size="small"
-                  placeholder="Senior, mid-level, entry..."
-                  fullWidth
-                  label="Comment"
-                >
-                  <MenuItem value="0">Good</MenuItem>
-                  <MenuItem value="1">Satifactory</MenuItem>
-                  <MenuItem value="2">11, Aug 2024</MenuItem>
-                  <MenuItem value="3">11, Sept 2021</MenuItem>
-                  <MenuItem value="4">11, Jan 2022</MenuItem>
-                </CustomTextField>
-              </Grid> */}
-            </Grid>
-          </Paper>
-        </Collapse>
-
         <Box
           sx={{
             my: 3,
@@ -302,22 +206,6 @@ const AdminsTable = () => {
                 ),
               }}
             />
-
-            {/* <Button
-              onClick={toggleFilter}
-              variant={openFilter ? "contained" : "outlined"}
-              size="medium"
-              sx={{
-                textTransform: "capitalize",
-                width: "fit-content",
-                minWidth: { md: 80 },
-              }}
-            >
-              {smallScreen && (
-                <Typography sx={{ fontSize: ".857rem" }}> Filter</Typography>
-              )}
-              <Icon icon="basil:filter-outline" />
-            </Button> */}
           </Box>
         </Box>
 
@@ -328,144 +216,99 @@ const AdminsTable = () => {
                 sx={{ background: (theme) => theme.palette.secondary.dark }}
               >
                 <TableCellStyled align="left" sx={{ minWidth: 50 }}>
-                  <Checkbox
-                    size="small"
-                    // name={"all-checked"}
-                    // onChange={() => {
-                    //   if (allChecked) {
-                    //     setAllChecked(false)
-                    //     setChecked([])
-                    //   } else {
-                    //     setAllChecked(true)
-                    //     setChecked(PayrollData?.map(p => p?.id))
-                    //   }
-                    // }}
-                  />
+                  <Checkbox size="small" />
                 </TableCellStyled>
                 <TableCellStyled align={"left"}>Admin ID</TableCellStyled>
                 <TableCellStyled align="left" sx={{ minWidth: 150 }}>
                   Name
                 </TableCellStyled>
                 <TableCellStyled align="left">Email</TableCellStyled>
-                {/* <TableCellStyled align="center">Account Type</TableCellStyled> */}
                 <TableCellStyled align="left">Role</TableCellStyled>
                 <TableCellStyled align="center">Status</TableCellStyled>
-                {/* <TableCellStyled align="left">Actions</TableCellStyled> */}
+                <TableCellStyled align="left">Actions</TableCellStyled>
               </TableRow>
             </TableHead>
             <TableBody>
-              {/* Work Here */}
-              {admins.map((item, i) => {
-                return (
-                  <TableRow key={item.id}>
-                    <TableCell align="left">
-                      <Checkbox
+              {admins.map((item, i) => (
+                <TableRow key={item.id}>
+                  <TableCell align="left">
+                    <Checkbox size="small" />
+                  </TableCell>
+                  <TableCell>{item.id}</TableCell>
+                  <TableCell>{item.name}</TableCell>
+                  <TableCell>{item.email}</TableCell>
+                  <TableCell>{item.account_type}</TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      textTransform: "capitalize",
+                      fontWeight: "semibold",
+                    }}
+                  >
+                    {item.status ? (
+                      <CustomChip
                         size="small"
-                        // name={`${payroll?.id}-checked`}
-                        // checked={checked.includes(payroll?.id)}
-                        // onChange={() => {
-                        //   if (checked.includes(payroll.id)) {
-                        //     const restChecked = checked.filter(c => c !== payroll?.id)
-                        //     setChecked(restChecked)
-                        //     setAllChecked(false)
-                        //   } else {
-                        //     if (checked.length + 1 === payroll?.length) {
-                        //       setAllChecked(true)
-                        //     }
-                        //     setChecked([...checked, payroll?.id])
-                        //   }
-                        // }}
+                        skin="light"
+                        label="Active"
+                        color="success"
+                        sx={{ width: "100%", borderRadius: "5px" }}
                       />
-                    </TableCell>
-                    <TableCell>{item.id}</TableCell>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell>{item.email}</TableCell>
-                    <TableCell>SUPER {item.account_type}</TableCell>
-                    {/* <TableCell>{item.status}</TableCell> */}
-                    {/* <TableCell>{item.id}</TableCell>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell>{item.email}</TableCell>
-                    <TableCell align="center">{item.level}</TableCell>
-                    <TableCell>{item.role}</TableCell> */}
-                    <TableCell
-                      align="center"
-                      sx={{
-                        textTransform: "capitalize",
-                        fontWeight: "semibold",
-                      }}
-                    >
-                      {item.status ? (
-                        <CustomChip
+                    ) : (
+                      <CustomChip
+                        size="small"
+                        skin="light"
+                        label="Inactive"
+                        color="default"
+                        sx={{ width: "100%", borderRadius: "5px" }}
+                      />
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ alignSelf: "end" }}>
+                      <Avatar sx={{ background: "transparent" }}>
+                        <IconButton
                           size="small"
-                          skin="light"
-                          label="Active"
-                          color="success"
-                          sx={{ width: "100%", borderRadius: "5px" }}
-                        />
-                      ) : (
-                        <CustomChip
-                          size="small"
-                          skin="light"
-                          label="Inactive"
-                          color="default"
-                          sx={{ width: "100%", borderRadius: "5px" }}
-                        />
-                      )}
-                    </TableCell>
-                    {/* <TableCell>
-                      <Box sx={{ alignSelf: "end" }}>
-                        <Avatar sx={{ background: "transparent" }}>
-                          <IconButton
-                            size="small"
-                            onClick={(event) => handleRowOptionsClick(event, i)}
+                          onClick={(event) => handleRowOptionsClick(event, i)}
+                        >
+                          <Icon icon="tabler:dots-vertical" />
+                        </IconButton>
+                        <Menu
+                          keepMounted
+                          disableScrollLock
+                          anchorEl={anchorEl[i]}
+                          open={Boolean(anchorEl[i])}
+                          onBlur={() => handleRowOptionsClose(i)}
+                          anchorOrigin={{
+                            vertical: "bottom",
+                            horizontal: "right",
+                          }}
+                          transformOrigin={{
+                            vertical: "top",
+                            horizontal: "right",
+                          }}
+                          PaperProps={{ style: { minWidth: "8rem" } }}
+                        >
+                          <MenuItem
+                            onClick={() => setAdminView(item)}
+                            sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
                           >
-                            <Icon icon="tabler:dots-vertical" />
-                          </IconButton>
-                          <Menu
-                            keepMounted
-                            disableScrollLock
-                            anchorEl={anchorEl[i]}
-                            open={Boolean(anchorEl[i])}
-                            onBlur={() => handleRowOptionsClose(i)}
-                            anchorOrigin={{
-                              vertical: "bottom",
-                              horizontal: "right",
-                            }}
-                            transformOrigin={{
-                              vertical: "top",
-                              horizontal: "right",
-                            }}
-                            PaperProps={{ style: { minWidth: "8rem" } }}
+                            <Icon icon="tabler:eye" fontSize={20} />
+                            View
+                          </MenuItem>
+                          <MenuItem
+                            onClick={() => handleDeleteAdmin(item.id, i)}
+                            sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
+                            disabled={deleting === item.id}
                           >
-                            <MenuItem
-                              onClick={() => setAdminView(item)}
-                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                            >
-                              <Icon icon="tabler:eye" fontSize={20} />
-                              View
-                            </MenuItem>
-                            <MenuItem
-                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                            >
-                              <Icon icon="carbon:pause-outline" fontSize={20} />
-                              Deactivate
-                            </MenuItem>
-                            <MenuItem
-                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                            >
-                              <Icon
-                                icon="fluent:delete-24-regular"
-                                fontSize={20}
-                              />
-                              Delete
-                            </MenuItem>
-                          </Menu>
-                        </Avatar>
-                      </Box>
-                    </TableCell> */}
-                  </TableRow>
-                );
-              })}
+                            <Icon icon="fluent:delete-24-regular" fontSize={20} />
+                            Delete
+                          </MenuItem>
+                        </Menu>
+                      </Avatar>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </TableContainer>
@@ -479,6 +322,28 @@ const AdminsTable = () => {
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
+
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+      >
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this admin? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
+          <Button
+            onClick={confirmDelete}
+            color="error"
+            disabled={deleting !== null}
+          >
+            {deleting ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <EditAdmin
         open={editAdminModal}

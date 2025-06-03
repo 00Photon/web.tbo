@@ -1,23 +1,40 @@
 "use client";
-import { Badge, Box, Grid, Stack, Typography } from "@mui/material";
+import {
+  Badge,
+  Box,
+  Button,
+  Grid,
+  Stack,
+  TextField,
+  Typography,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  SelectChangeEvent,
+} from "@mui/material";
+import { Restore, Search, Person } from "@mui/icons-material";
 import JobCard from "./components/cards/job";
 import JobFilter from "./components/filter";
-import JobFind from "./components/find";
-import { Person } from "@mui/icons-material";
 import { useEffect, useState, useMemo } from "react";
 import { Job } from "@/@core/services/types/job";
 import { getJobs, saveJob } from "@/@core/services/jobVanciesService";
 import ApplicationFormModal from "./components/modals/application-form";
-import SavedJobsTab from "./components/saved-jobs"; // adjust path accordingly
+import SavedJobsTab from "./components/saved-jobs";
 
 export default function TalentJobVacanciesPage() {
   const [activeTab, setActiveTab] = useState(0);
   const [openApplicationFormModal, setOpenApplicationFormModal] = useState(false);
+  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
-    jobType: [] as string[], // e.g., ["FULLTIME", "FREELANCE"]
-    experience: [] as string[], // e.g., ["0-1year", "2-5 Years"]
+    jobType: [] as string[],
+    experience: [] as string[],
+  });
+  const [searchParams, setSearchParams] = useState({
+    titleOrCompany: "",
+    location: "" as "" | "Hybrid" | "Remote" | "Onsite",
   });
 
   const hoverTabStyle = {
@@ -60,7 +77,21 @@ export default function TalentJobVacanciesPage() {
     }));
   };
 
-  // Map display labels to job_type enum values
+  const handleSearch = (params: {
+    titleOrCompany: string;
+    location: "" | "Hybrid" | "Remote" | "Onsite";
+  }) => {
+    setSearchParams(params);
+  };
+
+  const handleReset = () => {
+    setFilters({
+      jobType: [],
+      experience: [],
+    });
+    setSearchParams({ titleOrCompany: "", location: "" });
+  };
+
   const jobTypeMap: { [key: string]: string } = {
     "Full Time": "FULLTIME",
     "Part Time": "PARTTIME",
@@ -69,7 +100,6 @@ export default function TalentJobVacanciesPage() {
     "Freelance": "FREELANCE",
   };
 
-  // Parse experience from requirements field
   const parseExperience = (requirements: string): string | null => {
     const lowerReq = requirements.toLowerCase();
     if (lowerReq.includes("5+ years") || lowerReq.includes("5 years and above")) {
@@ -83,27 +113,32 @@ export default function TalentJobVacanciesPage() {
     ) {
       return "0-1year";
     }
-    return null; // No matching experience range
+    return null;
   };
 
   const filteredJobs = useMemo(() => {
     return jobs.filter((job) => {
-      // Job Type filter
       const matchesJobType =
         filters.jobType.length === 0 ||
-        filters.jobType.some((displayLabel) =>
-          job.job_type === jobTypeMap[displayLabel]
-        );
+        filters.jobType.some((displayLabel) => job.job_type === jobTypeMap[displayLabel]);
 
-      // Experience filter
       const jobExperience = parseExperience(job.requirements);
       const matchesExperience =
         filters.experience.length === 0 ||
         (jobExperience && filters.experience.includes(jobExperience));
 
-      return matchesJobType && matchesExperience;
+      const matchesLocation =
+        !searchParams.location ||
+        job.location.toLowerCase().includes(searchParams.location.toLowerCase());
+
+      const matchesTitleOrCompany =
+        !searchParams.titleOrCompany ||
+        job.title.toLowerCase().includes(searchParams.titleOrCompany.toLowerCase()) ||
+        (job.client?.company_name || "").toLowerCase().includes(searchParams.titleOrCompany.toLowerCase());
+
+      return matchesJobType && matchesExperience && matchesLocation && matchesTitleOrCompany;
     });
-  }, [jobs, filters]);
+  }, [jobs, filters, searchParams]);
 
   if (loading) {
     return <Typography>Loading...</Typography>;
@@ -157,10 +192,205 @@ export default function TalentJobVacanciesPage() {
           </Box>
         </Box>
       </Box>
-  
+
       {activeTab === 0 ? (
         <>
-          <JobFind sx={{ mb: "20px" }} />
+          <Box
+            sx={{
+              mb: "20px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 3,
+              backgroundColor: "white",
+              padding: "20px",
+              borderRadius: "8px",
+              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+            }}
+          >
+            <Box>
+              <Typography
+                sx={{ fontWeight: 600, color: "#2D2D2D", fontSize: "18px" }}
+              >
+                Find Your Dream Job
+              </Typography>
+            </Box>
+            <Box
+              sx={{
+                display: "flex",
+                gap: { xs: 4, md: 5 },
+                flexDirection: { xs: "column", md: "row" },
+                alignItems: "center",
+              }}
+            >
+              <Grid flexGrow={1} columnSpacing={3} rowSpacing={3} container>
+                {[
+                  {
+                    placeholder: "Job Title, Company name or Anything",
+                    xs: 12,
+                    lg: 6,
+                    value: searchParams.titleOrCompany,
+                    isSelect: false,
+                  },
+                  {
+                    label: "Location",
+                    xs: 12,
+                    sm: 6,
+                    lg: 3,
+                    value: searchParams.location,
+                    isSelect: true,
+                  },
+                ].map((item, index) => (
+                  <Grid key={index} xs={item.xs} sm={item.sm} lg={item.lg} item>
+                    {item.isSelect ? (
+                      <FormControl fullWidth sx={{ minWidth: "150px" }}>
+                        <InputLabel
+                          sx={{
+                            color: "#6B7280",
+                            "&.Mui-focused": { color: "#E61C31" },
+                          }}
+                        >
+                          Location
+                        </InputLabel>
+                        <Select
+                          value={item.value}
+                          onChange={(e: SelectChangeEvent<string>) =>
+                            setSearchParams((prev) => ({
+                              ...prev,
+                              location: e.target.value as "" | "Hybrid" | "Remote" | "Onsite",
+                            }))
+                          }
+                          sx={{
+                            height: "40px",
+                            borderRadius: "4px",
+                            "& .MuiOutlinedInput-notchedOutline": {
+                              borderColor: "#D1D5DB",
+                            },
+                            "&:hover .MuiOutlinedInput-notchedOutline": {
+                              borderColor: "#9CA3AF",
+                            },
+                            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                              borderColor: "#E61C31",
+                            },
+                            "& .MuiSelect-icon": {
+                              color: "#6B7280",
+                            },
+                          }}
+                        >
+                          <MenuItem
+                            value=""
+                            sx={{
+                              "&.Mui-selected": { backgroundColor: "#F3F4F6" },
+                              "&:hover": { backgroundColor: "#E5E7EB" },
+                            }}
+                          >
+                            Any
+                          </MenuItem>
+                          <MenuItem
+                            value="Hybrid"
+                            sx={{
+                              "&.Mui-selected": { backgroundColor: "#F3F4F6" },
+                              "&:hover": { backgroundColor: "#E5E7EB" },
+                            }}
+                          >
+                            Hybrid
+                          </MenuItem>
+                          <MenuItem
+                            value="Remote"
+                            sx={{
+                              "&.Mui-selected": { backgroundColor: "#F3F4F6" },
+                              "&:hover": { backgroundColor: "#E5E7EB" },
+                            }}
+                          >
+                            Remote
+                          </MenuItem>
+                          <MenuItem
+                            value="Onsite"
+                            sx={{
+                              "&.Mui-selected": { backgroundColor: "#F3F4F6" },
+                              "&:hover": { backgroundColor: "#E5E7EB" },
+                            }}
+                          >
+                            Onsite
+                          </MenuItem>
+                        </Select>
+                      </FormControl>
+                    ) : (
+                      <TextField
+                        placeholder={item.placeholder}
+                        value={item.value}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          setSearchParams((prev) => ({
+                            ...prev,
+                            titleOrCompany: e.target.value,
+                          }))
+                        }
+                        InputProps={{
+                          startAdornment: <Search sx={{ color: "#6B7280", mr: 1 }} />,
+                          sx: {
+                            height: "40px",
+                            borderRadius: "4px",
+                            "& .MuiOutlinedInput-notchedOutline": {
+                              borderColor: "#D1D5DB",
+                            },
+                            "&:hover .MuiOutlinedInput-notchedOutline": {
+                              borderColor: "#9CA3AF",
+                            },
+                            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                              borderColor: "#E61C31",
+                            },
+                            "& input": {
+                              padding: "8px 12px",
+                            },
+                          },
+                        }}
+                        fullWidth
+                        variant="outlined"
+                      />
+                    )}
+                  </Grid>
+                ))}
+              </Grid>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 2,
+                }}
+              >
+                <Button
+                  variant="outlined"
+                  sx={{
+                    textTransform: "none",
+                    color: "#E61C31",
+                    borderColor: "#E61C31",
+                    "&:hover": {
+                      borderColor: "#C8102E",
+                      backgroundColor: "#FFF5F5",
+                    },
+                  }}
+                  onClick={handleReset}
+                >
+                  <Restore sx={{ marginRight: "5px", color: "#E61C31" }} />
+                  Reset
+                </Button>
+                <Button
+                  variant="contained"
+                  sx={{
+                    textTransform: "none",
+                    backgroundColor: "#E61C31",
+                    "&:hover": {
+                      backgroundColor: "#C8102E",
+                    },
+                  }}
+                  onClick={() => handleSearch(searchParams)}
+                >
+                  Search
+                </Button>
+              </Box>
+            </Box>
+          </Box>
+
           <Grid columnSpacing={3} container>
             <Grid
               sm={4}
@@ -198,27 +428,25 @@ export default function TalentJobVacanciesPage() {
                   filteredJobs.map((job) => (
                     <Grid key={job.id} xs={12} lg={6} item>
                       <JobCard
-                        id={job.id}
-                        setOpenApplicationFormModal={() =>
-                          setOpenApplicationFormModal(true)
-                        }
-                        logo={
-                          job.client?.company_logo ?? "/icons/default-logo.png"
-                        }
-                        name={job.client?.company_name ?? "Unknown Company"}
-                        location={job.location}
-                        title={job.title}
-                        commitment={job.job_type}
-                        salary={`${job.currency} ${job.minimum_salary} - ${job.maximum_salary}`}
-                        description={job.description}
-                        noOfApplied={job.applicant_count.toString()}
-                        postedAt={new Date(job.created_at).toLocaleDateString()}
-                        daysLeft={Math.ceil(
-                          (new Date(job.application_deadline).getTime() -
-                            new Date().getTime()) /
-                            (1000 * 60 * 60 * 24)
-                        ).toString()}
-                      />
+                      id={job.id}
+                      logo={job.client?.company_logo ?? "/icons/default-logo.png"}
+                      name={job.client?.company_name ?? "Unknown Company"}
+                      location={job.location}
+                      title={job.title}
+                      commitment={job.job_type}
+                      salary={`${job.currency} ${job.minimum_salary} - ${job.maximum_salary}`}
+                      description={job.description}
+                      noOfApplied={job.applicant_count.toString()}
+                      postedAt={new Date(job.created_at).toLocaleDateString()}
+                      daysLeft={Math.ceil(
+                        (new Date(job.application_deadline).getTime() - new Date().getTime()) /
+                          (1000 * 60 * 60 * 24)
+                      ).toString()}
+                      setOpenApplicationFormModal={(jobId: number) => {
+                        setSelectedJobId(jobId);
+                        setOpenApplicationFormModal(true);
+                      }}
+                    />
                     </Grid>
                   ))
                 ) : (
@@ -231,13 +459,16 @@ export default function TalentJobVacanciesPage() {
       ) : (
         <SavedJobsTab />
       )}
-  
+
       <ApplicationFormModal
         open={openApplicationFormModal}
-        onClose={() => setOpenApplicationFormModal(false)}
+        onClose={() => {
+          setOpenApplicationFormModal(false);
+          setSelectedJobId(null);
+        }}
         newApplication
+        jobId={selectedJobId === null ? undefined : selectedJobId}
       />
     </main>
   );
-  
 }

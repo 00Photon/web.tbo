@@ -72,8 +72,23 @@ export const newJobSchema = yup.object().shape({
   skill: yup.array().required("Please add at least one skill"),
   location: yup.string().required("Job location is required"),
   currency: yup.string().required("Job currency is required"),
-  minSalary: yup.string().required("Minimum salary is required"),
-  maxSalary: yup.string().required("Maximum salary is required"),
+ minSalary: yup
+    .string()
+    .required("Minimum salary is required")
+    .matches(/^\d+$/, "Minimum salary must be a valid number")
+    .test(
+      "minSalary-lte-maxSalary",
+      "Minimum salary must not be greater than maximum salary",
+      function (value) {
+        const { maxSalary } = this.parent;
+        if (!value || !maxSalary) return true; // Skip if either value is missing
+        return parseFloat(value) <= parseFloat(maxSalary);
+      }
+    ),
+  maxSalary: yup
+    .string()
+    .required("Maximum salary is required")
+    .matches(/^\d+$/, "Maximum salary must be a valid number"),
   salary_type: yup.string().required("Salary type is required"),
   application_deadline: yup.string().required("Job deadline is required"),
   information: yup.string().required("Job information is required"),
@@ -88,11 +103,25 @@ export const newJobSchema2 = yup.object().shape({
   location: yup.string().required("Job location is required"),
   salary_type: yup.string().required("Salary type is required"),
   currency: yup.string().required("Job currency is required"),
-  minSalary: yup.string().required("Minimum salary is required"),
-  maxSalary: yup.string().required("Maximum salary is required"),
+  minSalary: yup
+    .string()
+    .required("Minimum salary is required")
+    .matches(/^\d+$/, "Minimum salary must be a valid number")
+    .test(
+      "minSalary-lte-maxSalary",
+      "Minimum salary must not be greater than maximum salary",
+      function (value) {
+        const { maxSalary } = this.parent;
+        if (!value || !maxSalary) return true; // Skip if either value is missing
+        return parseFloat(value) <= parseFloat(maxSalary);
+      }
+    ),
+  maxSalary: yup
+    .string()
+    .required("Maximum salary is required")
+    .matches(/^\d+$/, "Maximum salary must be a valid number"),
   application_deadline: yup.string().required("Job deadline is required"),
   information: yup.string().required("Job information is required"),
-
 });
 
 export const newJobSchemaClone = yup.object().shape({
@@ -130,13 +159,27 @@ export const interviewSchema = yup.object().shape({
 
 
 export const newAdminSchema = yup.object().shape({
-  fullName: yup.string().required("Full Name is required"),
-  role: yup.string().required("Role is required"),
-  email: yup.string().required("Email is required"),
-  password: yup.string().required("Password is required"),
-  confirmPassword: yup.string().required("Password must match"),
-  level: yup.string().required("Level is require"),
-  status: yup.string().required("Status is required"),
+  name: yup
+    .string()
+    .required("Full Name is required")
+    .max(255, "Full Name must be at most 255 characters"),
+  account_type: yup
+    .mixed<"ADMIN" | "SUPER_ADMIN" | "TECH">()
+    .oneOf(["ADMIN", "SUPER_ADMIN", "TECH"], "Invalid role")
+    .required("Role is required"),
+  email: yup
+    .string()
+    .required("Email is required")
+    .email("Must be a valid email")
+    .max(255, "Email must be at most 255 characters"),
+  password: yup
+    .string()
+    .required("Password is required")
+    .min(8, "Password must be at least 8 characters"),
+  password_confirmation: yup
+    .string()
+    .required("Confirm Password is required")
+    .oneOf([yup.ref("password")], "Passwords must match"),
 });
 
 export const AdminProfileSchema = yup.object().shape({

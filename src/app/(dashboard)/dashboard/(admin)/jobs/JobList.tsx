@@ -26,7 +26,7 @@ import TableBody from "@mui/material/TableBody";
 import TablePagination from "@mui/material/TablePagination";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { Theme } from "@mui/material/styles";
-import { fetchJobs, activateJob, deactivateJob, deleteJob } from "@/@core/services/jobService";
+import { fetchJobs, activateJob, rejectJob, deleteJob } from "@/@core/services/jobService";
 import JobDialog from "./JobDialog";
 import NewJob from "./NewJob";
 
@@ -47,10 +47,10 @@ const JobListTable: React.FC = () => {
   const [viewJobModal, setViewJobModal] = React.useState<boolean>(false);
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [filteredJobs, setFilteredJobs] = useState<Job[]>([]); // State for filtered jobs
+  const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [postJobModal, setPostJobModal] = React.useState<boolean>(false);
   const [value, setValue] = React.useState<string>("");
-  const [status, setStatus] = React.useState<string>("all"); // Default to "all" for no filter
+  const [status, setStatus] = React.useState<string>("all");
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [anchorEl, setAnchorEl] = React.useState<{ [key: number]: HTMLElement | null }>({});
@@ -61,7 +61,6 @@ const JobListTable: React.FC = () => {
 
   const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up("md"));
 
-  // Fetch jobs on component mount
   useEffect(() => {
     const loadJobs = async () => {
       try {
@@ -70,7 +69,7 @@ const JobListTable: React.FC = () => {
         console.log("Fetched data:", response);
         if (response && Array.isArray(response.jobs)) {
           setJobs(response.jobs);
-          setFilteredJobs(response.jobs); // Initialize with all jobs
+          setFilteredJobs(response.jobs);
         } else {
           setJobs([]);
           setFilteredJobs([]);
@@ -85,16 +84,13 @@ const JobListTable: React.FC = () => {
     loadJobs();
   }, []);
 
-  // Apply filter when status or search value changes
   useEffect(() => {
     let result = [...jobs];
 
-    // Apply status filter
     if (status !== "all") {
       result = result.filter((job) => job.status.toLowerCase() === status.toLowerCase());
     }
 
-    // Apply search filter
     if (value) {
       result = result.filter((job) =>
         job.title.toLowerCase().includes(value.toLowerCase())
@@ -148,7 +144,7 @@ const JobListTable: React.FC = () => {
         console.log("Job deleted:", jobToDelete);
         const updatedJobs = jobs.filter((job) => job.id !== jobToDelete);
         setJobs(updatedJobs);
-        setFilteredJobs(updatedJobs); // Update filtered jobs after deletion
+        setFilteredJobs(updatedJobs);
       } catch (error) {
         console.error("Failed to delete job:", error instanceof Error ? error.message : error);
       }
@@ -156,31 +152,40 @@ const JobListTable: React.FC = () => {
     handleCloseDeleteDialog();
   };
 
-  const handleToggleJobStatus = async (jobId: number, currentStatus: string) => {
+  const handleApproveJob = async (jobId: number) => {
     try {
-      if (currentStatus === "active") {
-        const result = await deactivateJob(jobId);
-        console.log("Job deactivated:", result);
-        const updatedJobs = jobs.map((job) =>
-          job.id === jobId ? { ...job, status: "pending" } : job
-        );
-        setJobs(updatedJobs);
-        setFilteredJobs(updatedJobs); // Update filtered jobs after status change
-      } else {
-        const result = await activateJob(jobId);
-        console.log("Job activated:", result);
-        const updatedJobs = jobs.map((job) =>
-          job.id === jobId ? { ...job, status: "active" } : job
-        );
-        setJobs(updatedJobs);
-        setFilteredJobs(updatedJobs); // Update filtered jobs after status change
-      }
+      const result = await activateJob(jobId);
+      console.log("Job approved:", result);
+      const updatedJobs = jobs.map((job) =>
+        job.id === jobId ? { ...job, status: "active" } : job
+      );
+      setJobs(updatedJobs);
+      setFilteredJobs(updatedJobs);
       handleRowOptionsClose(jobId);
     } catch (error: unknown) {
       if (error instanceof Error) {
-        console.error("Failed to toggle job status:", error.message);
+        console.error("Failed to approve job:", error.message);
       } else {
-        console.error("Failed to toggle job status: Unknown error");
+        console.error("Failed to approve job: Unknown error");
+      }
+    }
+  };
+
+  const handleRejectJob = async (jobId: number) => {
+    try {
+      const result = await rejectJob(jobId);
+      console.log("Job rejected:", result);
+      const updatedJobs = jobs.map((job) =>
+        job.id === jobId ? { ...job, status: "rejected" } : job
+      );
+      setJobs(updatedJobs);
+      setFilteredJobs(updatedJobs);
+      handleRowOptionsClose(jobId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Failed to reject job:", error.message);
+      } else {
+        console.error("Failed to reject job: Unknown error");
       }
     }
   };
@@ -236,6 +241,7 @@ const JobListTable: React.FC = () => {
                   <MenuItem value="all">All</MenuItem>
                   <MenuItem value="active">Active</MenuItem>
                   <MenuItem value="pending">Pending</MenuItem>
+                  <MenuItem value="rejected">Rejected</MenuItem>
                 </CustomTextField>
               </Grid>
             </Grid>
@@ -344,15 +350,15 @@ const JobListTable: React.FC = () => {
                           />
                         ) : job.status === "pending" ? (
                           <CustomChip
-                            label="Inactive"
+                            label="Pending"
                             color="warning"
                             skin="light"
                             size="small"
                             sx={{ width: "100%", borderRadius: "5px" }}
                           />
-                        ) : job.status === "expired" ? (
+                        ) : job.status === "rejected" ? (
                           <CustomChip
-                            label="Expired"
+                            label="Rejected"
                             color="error"
                             skin="light"
                             size="small"
@@ -393,19 +399,17 @@ const JobListTable: React.FC = () => {
                               </Link>
                               <MenuItem
                                 sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                                onClick={() => handleToggleJobStatus(job.id, job.status)}
+                                onClick={() => handleApproveJob(job.id)}
                               >
-                                {job.status === "active" ? (
-                                  <>
-                                    <Icon icon="tabler:eye-off" />
-                                    Deactivate
-                                  </>
-                                ) : (
-                                  <>
-                                    <Icon icon="tabler:eye" />
-                                    Approve
-                                  </>
-                                )}
+                                <Icon icon="tabler:check" fontSize={20} />
+                                Approve
+                              </MenuItem>
+                              <MenuItem
+                                sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
+                                onClick={() => handleRejectJob(job.id)}
+                              >
+                                <Icon icon="tabler:x" fontSize={20} />
+                                Reject
                               </MenuItem>
                               <MenuItem
                                 sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}

@@ -114,54 +114,55 @@ const ClientListTable: React.FC = () => {
     setAnchorEl(newAnchorEl);
   };
 
-  const handleToggleActivation = async (client: ClientData) => {
-    try {
-      setProcessingId(client.id);
-      
-      let updatedClient;
-      
-      if (client.status.toLowerCase() === 'active') {
-        updatedClient = await deactivateClient(client.id);
-        setAlert({
-          open: true,
-          message: 'Client deactivated successfully',
-          severity: 'success'
-        });
-      } else {
-        updatedClient = await activateClient(client.id);
-        setAlert({
-          open: true,
-          message: 'Client activated successfully',
-          severity: 'success'
-        });
-      }
-  
-      setClients(prevClients => 
-        prevClients.map(c => 
-          c.id === client.id ? { 
-            ...c, 
-            status: updatedClient.status
-          } : c
-        )
-      );
-  
-      const index = filteredClients.findIndex(c => c.id === client.id);
-      handleRowOptionsClose(index);
-      
-    } catch (error) {
-      console.error('Error toggling client status:', error);
+const handleToggleActivation = async (client: ClientData) => {
+  try {
+    setProcessingId(client.id);
+    
+    let updatedClient;
+    const status = typeof client.status === 'string' ? client.status.toLowerCase() : 'inactive';
+    
+    if (status === 'active') {
+      updatedClient = await deactivateClient(client.id);
       setAlert({
         open: true,
-        message: error instanceof Error ? error.message : 'Failed to update client status',
-        severity: 'error'
+        message: 'Client deactivated successfully',
+        severity: 'success'
       });
-    } finally {
-      setProcessingId(null);
-      setTimeout(() => {
-        setAlert(prev => ({...prev, open: false}));
-      }, 5000);
+    } else {
+      updatedClient = await activateClient(client.id);
+      setAlert({
+        open: true,
+        message: 'Client activated successfully',
+        severity: 'success'
+      });
     }
-  };
+
+    setClients(prevClients => 
+      prevClients.map(c => 
+        c.id === client.id ? { 
+          ...c, 
+          status: updatedClient.status
+        } : c
+      )
+    );
+
+    const index = filteredClients.findIndex(c => c.id === client.id);
+    handleRowOptionsClose(index);
+    
+  } catch (error) {
+    console.error('Error toggling client status:', error);
+    setAlert({
+      open: true,
+      message: error instanceof Error ? error.message : 'Failed to update client status',
+      severity: 'error'
+    });
+  } finally {
+    setProcessingId(null);
+    setTimeout(() => {
+      setAlert(prev => ({...prev, open: false}));
+    }, 5000);
+  }
+};
 
   const handleDeleteClient = async () => {
     if (!clientToDelete) return;
@@ -205,64 +206,63 @@ const ClientListTable: React.FC = () => {
   };
 
   // Filter clients based on status and search value
-  useEffect(() => {
-    console.log("Status changed to:", status); // Debug log
-    console.log("Clients:", clients); // Debug log
-    let filtered = clients;
+useEffect(() => {
+  console.log("Status changed to:", status); // Debug log
+  console.log("Clients:", clients); // Debug log
+  let filtered = clients;
 
-    // Apply status filter
-    if (status !== "all") {
-      filtered = clients.filter(client => 
-        client.status.toLowerCase() === status.toLowerCase()
-      );
-    }
+  // Apply status filter
+  if (status !== "all") {
+    filtered = clients.filter(client => 
+      typeof client.status === 'string' && client.status.toLowerCase() === status.toLowerCase()
+    );
+  }
 
-    // Apply search filter with null checks
-    if (value) {
-      filtered = filtered.filter(client => {
-        // Log clients with missing data
-        if (!client.company_name || !client.email) {
-          console.warn("Client with missing data:", client);
-        }
-        // Ensure company_name and email are strings before applying toLowerCase
-        const companyName = client.company_name || "";
-        const email = client.email || "";
-        return (
-          companyName.toLowerCase().includes(value.toLowerCase()) ||
-          email.toLowerCase().includes(value.toLowerCase())
-        );
-      });
-    }
-
-    console.log("Filtered clients:", filtered); // Debug log
-    setFilteredClients(filtered);
-    // Update anchorEl to match filteredClients length
-    setAnchorEl(Array(filtered.length).fill(null));
-  }, [clients, status, value]);
-
-  React.useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        const apiData: ClientData[] = await getClients();
-        // Normalize status values and ensure company_name and email are strings
-        const normalizedData = apiData.map(client => ({
-          ...client,
-          status: client.status.toLowerCase() === 'active' ? 'active' : 'inactive',
-          company_name: client.company_name || "", // Ensure string
-          email: client.email || "" // Ensure string
-        }));
-        setClients(normalizedData);
-        setFilteredClients(normalizedData);
-        setAnchorEl(Array(normalizedData.length).fill(null));
-      } catch (error) {
-        console.error("Error fetching clients:", error);
-      } finally {
-        setLoading(false);
+  // Apply search filter with null checks
+  if (value) {
+    filtered = filtered.filter(client => {
+      // Log clients with missing data
+      if (!client.company_name || !client.email) {
+        console.warn("Client with missing data:", client);
       }
-    };
-  
-    fetchClients();
-  }, []);
+      const companyName = client.company_name || "";
+      const email = client.email || "";
+      return (
+        companyName.toLowerCase().includes(value.toLowerCase()) ||
+        email.toLowerCase().includes(value.toLowerCase())
+      );
+    });
+  }
+
+  console.log("Filtered clients:", filtered); // Debug log
+  setFilteredClients(filtered);
+  setAnchorEl(Array(filtered.length).fill(null));
+}, [clients, status, value]);
+
+React.useEffect(() => {
+  const fetchClients = async () => {
+    try {
+      const apiData: ClientData[] = await getClients();
+      const normalizedData = apiData.map(client => ({
+        ...client,
+        status: typeof client.status === 'string' 
+          ? client.status.toLowerCase() === 'active' ? 'active' : 'inactive'
+          : 'inactive', // Fallback to 'inactive' if status is not a string
+        company_name: client.company_name || "", // Ensure string
+        email: client.email || "" // Ensure string
+      }));
+      setClients(normalizedData);
+      setFilteredClients(normalizedData);
+      setAnchorEl(Array(normalizedData.length).fill(null));
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchClients();
+}, []);
 
   return (
     <> 
@@ -396,10 +396,9 @@ const ClientListTable: React.FC = () => {
                 <TableRow
                   sx={{ background: (theme) => theme.palette.secondary.dark }}
                 >
-                  <TableCellStyled>Company Name</TableCellStyled>
-                  <TableCellStyled>Company Representative Name</TableCellStyled>
-                  <TableCellStyled>Email</TableCellStyled>
-                  <TableCellStyled>Website</TableCellStyled>
+                  <TableCellStyled>Company Information</TableCellStyled>
+                  <TableCellStyled>Company Rep Name</TableCellStyled>
+                  <TableCellStyled>Company Rep Email</TableCellStyled>
                   <TableCellStyled>Status</TableCellStyled>
                   <TableCellStyled>Actions</TableCellStyled>
                 </TableRow>
@@ -420,16 +419,16 @@ const ClientListTable: React.FC = () => {
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                           <Box sx={{ maxWidth: 85, maxHeight: 85 }}>
                             <StyledImage
-                              src={client.company_logo || ""}
-                              alt={client.company_name || "Unknown"}
+                              src={client.company_logo || "/unknown.png"}
+                              alt={client.company_name || ""}
                             />
                           </Box>
                           {client.company_name || "N/A"}
                         </Box>
                       </TableCell>
-                      <TableCell>{client.name || "N/A"}</TableCell>
-                      <TableCell>{client.email || "N/A"}</TableCell>
-                      <TableCell>
+                      <TableCell>{client.name || ""}</TableCell>
+                      <TableCell>{client.email || ""}</TableCell>
+                      {/* <TableCell>
                         {client.company_website ? (
                           <Link
                             href={client.company_website}
@@ -443,32 +442,32 @@ const ClientListTable: React.FC = () => {
                         ) : (
                           '-'
                         )}
-                      </TableCell>
-                      <TableCell
-                        align="center"
-                        sx={{
-                          textTransform: "capitalize",
-                          fontWeight: "semibold",
-                        }}
-                      >
-                        {client.status.toLowerCase() === 'active' ? (
-                          <CustomChip
-                            label="Active"
-                            color="success"
-                            skin="light"
-                            size="small"
-                            sx={{ width: "100%", borderRadius: "5px" }}
-                          />
-                        ) : (
-                          <CustomChip
-                            color="default"
-                            label="Inactive"
-                            skin="light"
-                            size="small"
-                            sx={{ width: "100%", borderRadius: "5px" }}
-                          />
-                        )}
-                      </TableCell>
+                      </TableCell> */}
+                 <TableCell
+                    align="center"
+                    sx={{
+                      textTransform: "capitalize",
+                      fontWeight: "semibold",
+                    }}
+                  >
+                    {typeof client.status === 'string' && client.status.toLowerCase() === 'active' ? (
+                      <CustomChip
+                        label="Active"
+                        color="success"
+                        skin="light"
+                        size="small"
+                        sx={{ width: "100%", borderRadius: "5px" }}
+                      />
+                    ) : (
+                      <CustomChip
+                        color="default"
+                        label="Inactive"
+                        skin="light"
+                        size="small"
+                        sx={{ width: "100%", borderRadius: "5px" }}
+                      />
+                    )}
+                  </TableCell>
                       <TableCell>
                         <Box sx={{ alignSelf: "end" }}>
                           <Avatar sx={{ background: "transparent" }}>
@@ -501,18 +500,26 @@ const ClientListTable: React.FC = () => {
                                 <Icon icon="tabler:eye" fontSize={20} />
                                 View
                               </MenuItem>
-                              <MenuItem
-                                sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                                onClick={() => handleToggleActivation(client)}
-                                disabled={processingId === client.id}
-                              >
-                                {processingId === client.id ? (
-                                  <CircularProgress size={20} sx={{ mr: 2 }} />
-                                ) : (
-                                  <Icon icon={client.status.toLowerCase() === 'active' ? "tabler:eye-off" : "tabler:eye"} />
-                                )}
-                                {client.status.toLowerCase() === 'active' ? "Deactivate" : "Activate"}
-                              </MenuItem>
+                          <MenuItem
+                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
+                              onClick={() => handleToggleActivation(client)}
+                              disabled={processingId === client.id}
+                            >
+                              {processingId === client.id ? (
+                                <CircularProgress size={20} sx={{ mr: 2 }} />
+                              ) : (
+                                <Icon
+                                  icon={
+                                    typeof client.status === 'string' && client.status.toLowerCase() === 'active'
+                                      ? 'tabler:eye-off'
+                                      : 'tabler:eye'
+                                  }
+                                />
+                              )}
+                              {typeof client.status === 'string' && client.status.toLowerCase() === 'active'
+                                ? 'Deactivate'
+                                : 'Activate'}
+                            </MenuItem>
                               <MenuItem
                                 sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
                                 onClick={() => openDeleteConfirm(client)}

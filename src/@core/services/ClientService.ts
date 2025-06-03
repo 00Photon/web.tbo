@@ -16,6 +16,9 @@ export interface ClientData {
   company_phone_number: string | null;
   country: string | null;
   company_website: string;
+  contact_person: string;
+  work_email: string;
+  position_in_company: string;
   email: string;
   status: string;
   // Add other fields as needed

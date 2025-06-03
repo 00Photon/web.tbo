@@ -1,19 +1,10 @@
-// *React Imports
 import { useState } from "react";
-
-// *Icon Imports
 import Icon from "@/@core/component/icon";
-
-// ** Third Party Imports
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { newAdminSchema } from "@/@core/formSchema";
-
-// *Custom Component Imports
 import ProfileImage from "../component/ProfileImage";
 import CustomTextField from "@/@core/component/mui/text-field";
-
-// *MUI Imports
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
@@ -24,29 +15,44 @@ import Divider from "@mui/material/Divider";
 import MenuItem from "@mui/material/MenuItem";
 import { InputAdornment, IconButton } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { registerAdmin } from "@/@core/services/user";
 
 interface Props {
   open: boolean;
   close: () => void;
 }
 
-const defaultValues = {
-  fullName: "",
-  role: "",
+interface FormData {
+  name: string;
+  account_type: "ADMIN" | "SUPER_ADMIN" | "TECH";
+  email: string;
+  password: string;
+  password_confirmation: string;
+}
+
+const defaultValues: FormData = {
+  name: "",
+  account_type: "" as "ADMIN" | "SUPER_ADMIN" | "TECH",
   email: "",
   password: "",
-  confirmPassword: "",
-  level: "",
-  status: "",
+  password_confirmation: "",
 };
 
 const NewAdmin = ({ open, close }: Props) => {
-  const [password, setPassword] = useState<string>("");
-  const [newPassword, setNewPassword] = useState<string>("");
-  const [focusNewPassword, setFocusNewPassword] = useState<boolean>(false);
-  const [confirmPassword, setConfirmPassword] = useState<string>("");
-
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const {
+    control,
+    reset,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>({
+    defaultValues,
+    mode: "onChange",
+    resolver: yupResolver(newAdminSchema),
+  });
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
 
@@ -62,16 +68,40 @@ const NewAdmin = ({ open, close }: Props) => {
     avatar: "",
   };
 
-  const {
-    control,
-    reset,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm({
-    defaultValues: defaultValues,
-    mode: "onChange",
-    resolver: yupResolver(newAdminSchema),
-  });
+  const onSubmit = async (data: FormData) => {
+    try {
+      const response = await registerAdmin(data);
+      setSuccessMessage(response.message);
+      setErrorMessage(null);
+      reset(); // Reset form on success
+      setTimeout(() => {
+        setSuccessMessage(null);
+        close(); // Close dialog after 2 seconds
+      }, 2000);
+    } catch (error: any) {
+      setSuccessMessage(null);
+      if (error.message) {
+        try {
+          // Parse validation errors if they exist
+          const errors = JSON.parse(error.message);
+          const errorMessages = Object.values(errors).flat().join(", ");
+          setErrorMessage(errorMessages);
+        } catch {
+          setErrorMessage(error.message || "Failed to register admin");
+        }
+      } else {
+        setErrorMessage("Failed to register admin");
+      }
+    }
+  };
+
+  // Reset form when dialog closes
+  const handleClose = () => {
+    reset();
+    setSuccessMessage(null);
+    setErrorMessage(null);
+    close();
+  };
 
   return (
     <main>
@@ -88,7 +118,7 @@ const NewAdmin = ({ open, close }: Props) => {
         disableScrollLock
       >
         <Box sx={{ display: "flex", alignItems: "center", p: 3, mt: 2 }}>
-          <Button onClick={close} sx={{ color: "#111" }}>
+          <Button onClick={handleClose} sx={{ color: "#111" }}>
             <Icon icon="basil:caret-left-solid" fontSize={25} />
           </Button>
 
@@ -119,9 +149,9 @@ const NewAdmin = ({ open, close }: Props) => {
             },
           }}
         >
-          <ProfileImage user={user} />
+          {/* <ProfileImage user={user} /> */}
           <Box sx={{ my: 1 }}>
-            <form>
+            <form onSubmit={handleSubmit(onSubmit)}>
               <Grid container spacing={4} sx={{ my: 4 }}>
                 <Grid item xs={12} sm={6} lg={6}>
                   <Typography
@@ -131,7 +161,7 @@ const NewAdmin = ({ open, close }: Props) => {
                   </Typography>
 
                   <Controller
-                    name="fullName"
+                    name="name"
                     control={control}
                     rules={{ required: true }}
                     render={({ field: { value, onChange } }) => (
@@ -141,8 +171,8 @@ const NewAdmin = ({ open, close }: Props) => {
                         onChange={onChange}
                         size="medium"
                         placeholder="ABC Holdings..."
-                        error={Boolean(errors.fullName)}
-                        helperText={errors.fullName?.message}
+                        error={Boolean(errors.name)}
+                        helperText={errors.name?.message}
                       />
                     )}
                   />
@@ -156,7 +186,7 @@ const NewAdmin = ({ open, close }: Props) => {
                   </Typography>
 
                   <Controller
-                    name="role"
+                    name="account_type"
                     control={control}
                     rules={{ required: true }}
                     render={({ field: { value, onChange } }) => (
@@ -170,20 +200,18 @@ const NewAdmin = ({ open, close }: Props) => {
                           MenuProps: {
                             PaperProps: {
                               style: {
-                                maxHeight: 200, // Limit the height to prevent overflow
+                                maxHeight: 200,
                               },
                             },
-                            disableScrollLock: true, // Prevent scroll locking
+                            disableScrollLock: true,
                           },
                         }}
-                        error={Boolean(errors?.role)}
-                        helperText={errors?.role?.message}
+                        error={Boolean(errors.account_type)}
+                        helperText={errors.account_type?.message}
                       >
-                        <MenuItem value="0">Consultancy</MenuItem>
-                        <MenuItem value="1">Technology</MenuItem>
-                        <MenuItem value="2">Travel</MenuItem>
-                        <MenuItem value="3">Logistic</MenuItem>
-                        <MenuItem value="4">Education</MenuItem>
+                        <MenuItem value="ADMIN">Admin</MenuItem>
+                        <MenuItem value="SUPER_ADMIN">Super Admin</MenuItem>
+                        <MenuItem value="TECH">Tech</MenuItem>
                       </CustomTextField>
                     )}
                   />
@@ -261,50 +289,11 @@ const NewAdmin = ({ open, close }: Props) => {
                   <Typography
                     sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
                   >
-                    Level
-                  </Typography>
-
-                  <Controller
-                    name="level"
-                    control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
-                      <CustomTextField
-                        fullWidth
-                        select
-                        value={value}
-                        onChange={onChange}
-                        size="medium"
-                        SelectProps={{
-                          MenuProps: {
-                            PaperProps: {
-                              style: {
-                                maxHeight: 200, // Limit the height to prevent overflow
-                              },
-                            },
-                            disableScrollLock: true, // Prevent scroll locking
-                          },
-                        }}
-                        error={Boolean(errors?.level)}
-                        helperText={errors?.level?.message}
-                      >
-                        <MenuItem value="0">Senior</MenuItem>
-                        <MenuItem value="1">Mid-Level</MenuItem>
-                        <MenuItem value="2">Junior</MenuItem>
-                      </CustomTextField>
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} sm={6} lg={6}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
                     Confirm Password
                   </Typography>
 
                   <Controller
-                    name="confirmPassword"
+                    name="password_confirmation"
                     control={control}
                     rules={{ required: true }}
                     render={({ field: { value, onChange } }) => (
@@ -332,47 +321,9 @@ const NewAdmin = ({ open, close }: Props) => {
                             </InputAdornment>
                           ),
                         }}
-                        error={Boolean(errors.confirmPassword)}
-                        helperText={errors.confirmPassword?.message}
+                        error={Boolean(errors.password_confirmation)}
+                        helperText={errors.password_confirmation?.message}
                       />
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} sm={6} lg={6}>
-                  <Typography
-                    sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}
-                  >
-                    Status
-                  </Typography>
-
-                  <Controller
-                    name="status"
-                    control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
-                      <CustomTextField
-                        fullWidth
-                        select
-                        value={value}
-                        onChange={onChange}
-                        size="medium"
-                        SelectProps={{
-                          MenuProps: {
-                            PaperProps: {
-                              style: {
-                                maxHeight: 200, // Limit the height to prevent overflow
-                              },
-                            },
-                            disableScrollLock: true, // Prevent scroll locking
-                          },
-                        }}
-                        error={Boolean(errors?.status)}
-                        helperText={errors?.status?.message}
-                      >
-                        <MenuItem value="0">Active</MenuItem>
-                        <MenuItem value="1">Inactive</MenuItem>
-                      </CustomTextField>
                     )}
                   />
                 </Grid>
@@ -384,19 +335,30 @@ const NewAdmin = ({ open, close }: Props) => {
                 sx={{
                   mt: 4,
                   display: "flex",
-                  justifyContent: "center",
+                  flexDirection: "column",
                   alignItems: "center",
+                  gap: 2,
                 }}
               >
+                {successMessage && (
+                  <Typography color="success.main">
+                    {successMessage}
+                  </Typography>
+                )}
+                {errorMessage && (
+                  <Typography color="error.main">{errorMessage}</Typography>
+                )}
                 <Button
                   variant="contained"
                   size="large"
+                  type="submit"
+                  disabled={isSubmitting}
                   sx={{
                     width: { xs: "fit-content", md: "30%" },
                     textTransform: "capitalize",
                   }}
                 >
-                  Add
+                  {isSubmitting ? "Submitting..." : "Add Admin"}
                 </Button>
               </Box>
             </form>

@@ -1,9 +1,21 @@
-import { Box, Button, Snackbar, Alert, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material';
-import Image from 'next/image';
-import { Job } from '../../../../../../../../../types';
-import { saveJob, applyJob } from '@/@core/services/jobVanciesService';
-import { useState } from 'react';
-import { styled } from '@mui/system';
+"use client";
+import {
+  Box,
+  Button,
+  Snackbar,
+  Alert,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Typography,
+} from "@mui/material";
+import Image from "next/image";
+import { saveJob } from "@/@core/services/jobVanciesService";
+import { useState, useEffect } from "react";
+import { styled } from "@mui/system";
+import axios from "axios";
+
 const StyledDialog = styled(Dialog)`
   & .MuiDialog-paper {
     border-radius: 12px;
@@ -37,26 +49,39 @@ const ButtonStyled = styled(Button)`
   border-radius: 8px;
   margin: 10px;
   &.MuiButton-contained {
-    background-color: #5cb85c;
+    background-color: #E61C31;
     color: white;
     &:hover {
-      background-color: #4cae4c;
+      background-color: #C8102E;
     }
   }
   &.MuiButton-outlined {
     background-color: #f8f9fa;
-    color: #5cb85c;
-    border: 1px solid #5cb85c;
+    color: #E61C31;
+    border: 1px solid #E61C31;
     &:hover {
       background-color: #d9d9d9;
     }
   }
 `;
-const JobCard: React.FC<
-  Job & {
-    setOpenApplicationFormModal: () => void;
-  }
-> = ({
+
+interface JobCardProps {
+  id: number;
+  logo: string;
+  name: string;
+  location: string;
+  title: string;
+  commitment: string;
+  salary: string;
+  description: string;
+  noOfApplied: string;
+  postedAt: string;
+  daysLeft: string;
+  setOpenApplicationFormModal: (jobId: number) => void;
+  hideSaveButton?: boolean;
+}
+
+const JobCard: React.FC<JobCardProps> = ({
   id,
   logo,
   name,
@@ -68,111 +93,109 @@ const JobCard: React.FC<
   noOfApplied,
   postedAt,
   daysLeft,
- 
+  setOpenApplicationFormModal,
+  hideSaveButton = false,
 }) => {
   const [isSaving, setIsSaving] = useState(false);
-  const [isApplying, setIsApplying] = useState(false);
   const [saved, setSaved] = useState(false);
   const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('error');
-
-  // Dialog state
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error" | "info">("error");
   const [openDialog, setOpenDialog] = useState(false);
-  const [actionType, setActionType] = useState<'save' | 'apply'>('save'); // Track action type (save or apply)
 
-  const handleDialogOpen = (action: 'save' | 'apply') => {
-    setActionType(action);
-    setOpenDialog(true); // Open dialog for confirmation
+  // Auto-close snackbar after 3 seconds
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (openSnackbar) {
+      timer = setTimeout(() => {
+        setOpenSnackbar(false);
+      }, 3000);
+    }
+    return () => clearTimeout(timer);
+  }, [openSnackbar]);
+
+  const handleDialogOpen = () => {
+    setOpenDialog(true);
   };
 
   const handleDialogClose = () => {
-    setOpenDialog(false); // Close the dialog without performing any action
+    setOpenDialog(false);
   };
 
-  const handleConfirmAction = async () => {
-    if (actionType === 'save') {
-      handleSaveJob();
-    } else if (actionType === 'apply') {
-      handleApplyJob();
-    }
-    setOpenDialog(false); // Close dialog after action
-  };
-
-  const handleSaveJob = async () => {
+  const handleConfirmSave = async () => {
     if (!id) {
-      setSnackbarMessage('Job ID is missing');
-      setSnackbarSeverity('error');
+      setSnackbarMessage("Job ID is missing");
+      setSnackbarSeverity("error");
       setOpenSnackbar(true);
+      setOpenDialog(false);
       return;
     }
 
     try {
       setIsSaving(true);
-      await saveJob(id); 
+      await saveJob(id);
       setSaved(true);
-      setSnackbarMessage('Job saved successfully!');
-      setSnackbarSeverity('success');
+      setSnackbarMessage("Job saved successfully!");
+      setSnackbarSeverity("success");
       setOpenSnackbar(true);
     } catch (error) {
-      setSnackbarMessage('Could not save job. Please try again.');
-      setSnackbarSeverity('error');
+      if (axios.isAxiosError(error) && error.response?.status === 400) {
+        setSnackbarMessage("You have already saved this job.");
+        setSnackbarSeverity("info");
+        setSaved(true);
+      } else {
+        setSnackbarMessage("Could not save job. Please try again.");
+        setSnackbarSeverity("error");
+      }
       setOpenSnackbar(true);
     } finally {
       setIsSaving(false);
+      setOpenDialog(false);
     }
   };
 
-  const handleApplyJob = async () => {
+  const handleApplyJob = () => {
     if (!id) {
-      setSnackbarMessage('Job ID is missing');
-      setSnackbarSeverity('error');
+      setSnackbarMessage("Job ID is missing");
+      setSnackbarSeverity("error");
       setOpenSnackbar(true);
       return;
     }
-
-    try {
-      setIsApplying(true); 
-      await applyJob(id); 
-      setSnackbarMessage('Applied to job successfully!');
-      setSnackbarSeverity('success');
-      setOpenSnackbar(true);
-    } catch (error) {
-      setSnackbarMessage('Could not apply to job. Please try again.');
-      setSnackbarSeverity('error');
-      setOpenSnackbar(true);
-    } finally {
-      setIsApplying(false); 
-    }
+    setOpenApplicationFormModal(id);
   };
 
   const handleCloseSnackbar = () => {
-    setOpenSnackbar(false); 
+    setOpenSnackbar(false);
   };
 
   return (
     <Box
       sx={{
-        border: '1px solid #E4E5E8',
-        borderRadius: '8px',
-        padding: '20px',
-        display: 'flex',
-        flexDirection: 'column',
+        border: "1px solid #E4E5E8",
+        borderRadius: "8px",
+        padding: "20px",
+        display: "flex",
+        flexDirection: "column",
         gap: 2,
       }}
     >
-      <Box sx={{ display: 'flex', gap: 3 }}>
+      <Box sx={{ display: "flex", gap: 3 }}>
         <Box
           sx={{
-            backgroundColor: '#EDEFF5',
-            padding: '10px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            alignSelf: 'flex-start',
+            backgroundColor: "#EDEFF5",
+            padding: "10px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            alignSelf: "flex-start",
           }}
         >
-          <Image src={logo} width={18} height={18} alt={`${name} Logo`} />
+          <Image
+            src={logo || "/unknown.png"}
+            width={18}
+            height={18}
+            alt={`${name} Logo`}
+          />
         </Box>
         <Box>
           <Box>{name}</Box>
@@ -180,85 +203,102 @@ const JobCard: React.FC<
         </Box>
         <Box
           sx={{
-            display: 'flex',
-            justifyContent: 'center',
+            display: "flex",
+            justifyContent: "center",
             gap: 2,
           }}
         >
           <Box>
             <Image
-              src='/icons/bookmark.svg'
+              src="/icons/bookmark.svg"
               width={18}
               height={18}
-              alt='Bookmark Icon'
+              alt="Bookmark Icon"
             />
           </Box>
           <Box>{postedAt}</Box>
         </Box>
       </Box>
       <Box>{title}</Box>
-      <Box sx={{ display: 'flex', gap: 1 }}>
+      <Box sx={{ display: "flex", gap: 1 }}>
         <Box>{commitment}</Box>
         <Box>Salary: {salary}</Box>
       </Box>
       <Box>{description}</Box>
-      <Box sx={{ display: 'flex', gap: 3 }}>
+      <Box sx={{ display: "flex", gap: 3 }}>
         {[commitment, `${noOfApplied} Applied`, `${daysLeft} Days Left`].map(
           (item, index) => (
-            <Box key={index} sx={{ display: 'flex', alignItems: 'center' }}>
+            <Box key={index} sx={{ display: "flex", alignItems: "center" }}>
               <Image
-                src='/icons/location_marker.svg'
+                src="/icons/location_marker.svg"
                 width={18}
                 height={18}
-                alt='Location Marker Icon'
+                alt="Location Marker Icon"
               />
               {item}
             </Box>
           )
         )}
       </Box>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <Box sx={{ display: 'flex', gap: 3 }}>
-          <Button
-            variant='outlined'
-            sx={{ textTransform: 'none' }}
-            onClick={() => handleDialogOpen('save')}
-            disabled={saved || isSaving}
+      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+        <Box sx={{ display: "flex", gap: 3 }}>
+          {!hideSaveButton && (
+            <ButtonStyled
+              variant="outlined"
+              onClick={handleDialogOpen}
+              disabled={saved || isSaving}
+              aria-label="Save job"
+            >
+              {saved ? "Saved" : isSaving ? "Saving..." : "Save Job"}
+            </ButtonStyled>
+          )}
+          <ButtonStyled
+            variant="contained"
+            onClick={handleApplyJob}
+            aria-label="Apply for job"
           >
-            {saved ? 'Saved' : isSaving ? 'Saving...' : 'Save Job'}
-          </Button>
-          <Button
-            variant='contained'
-            sx={{ textTransform: 'none' }}
-            onClick={() => handleDialogOpen('apply')}
-            disabled={isApplying}
-          >
-            {isApplying ? 'Applying...' : 'Apply Job'}
-          </Button>
+            Apply Now
+          </ButtonStyled>
         </Box>
       </Box>
 
-      {/* Confirmation Dialog */}
+      {/* Confirmation Dialog for Save Job */}
       <StyledDialog open={openDialog} onClose={handleDialogClose}>
         <DialogTitleStyled>Confirm Action</DialogTitleStyled>
         <DialogContentStyled>
           <Typography variant="body1">
-            Are you sure you want to {actionType === 'save' ? 'save' : 'apply for'} this job?
+            Are you sure you want to save this job?
           </Typography>
         </DialogContentStyled>
         <DialogActionsStyled>
-          <ButtonStyled onClick={handleDialogClose} variant="outlined">Cancel</ButtonStyled>
-          <ButtonStyled onClick={handleConfirmAction} variant="contained">Confirm</ButtonStyled>
+          <ButtonStyled
+            onClick={handleDialogClose}
+            variant="outlined"
+            aria-label="Cancel save"
+          >
+            Cancel
+          </ButtonStyled>
+          <ButtonStyled
+            onClick={handleConfirmSave}
+            variant="contained"
+            aria-label="Confirm save"
+          >
+            Confirm
+          </ButtonStyled>
         </DialogActionsStyled>
       </StyledDialog>
 
-      {/* Snackbar to show success or error messages */}
+      {/* Snackbar for success/error/info messages */}
       <Snackbar
         open={openSnackbar}
-        autoHideDuration={3000}
         onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%' }}>
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbarSeverity}
+          sx={{ width: "100%" }}
+        >
           {snackbarMessage}
         </Alert>
       </Snackbar>

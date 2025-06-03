@@ -1,14 +1,7 @@
 import { Close } from '@mui/icons-material';
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Typography,
-} from '@mui/material';
-import React, { ReactNode } from 'react';
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material';
+import React, { ReactNode, useState } from 'react';
+import { withdrawJob } from '@/@core/services/jobVanciesService';
 
 interface Props {
   open: boolean;
@@ -22,8 +15,10 @@ interface Props {
   widthSM?: string;
   widthMD?: string;
   widthLG?: string;
-  buttonOneClick: (data?: any) => any;
-  buttonTwoClick: (data?: any) => any;
+  buttonOneClick?: (data?: any) => any;
+  buttonTwoClick?: (data?: any) => any; // Optional for other actions
+  jobId?: number; // New prop for withdrawal
+  onWithdrawSuccess?: () => void; // Callback for successful withdrawal
 }
 
 export const ConfirmationModal: React.FC<Props> = ({
@@ -40,53 +35,60 @@ export const ConfirmationModal: React.FC<Props> = ({
   widthSM,
   widthMD,
   widthLG,
+  jobId,
+  onWithdrawSuccess,
 }) => {
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleWithdraw = async () => {
+    if (!jobId) {
+      setError('No job selected. Please try again.');
+      return;
+    }
+
+    setIsWithdrawing(true);
+    setError(null);
+    try {
+      console.log('Attempting to withdraw job ID:', jobId);
+      await withdrawJob(jobId);
+      console.log('Withdrawal successful for job ID:', jobId);
+      if (onWithdrawSuccess) {
+        onWithdrawSuccess(); // Notify parent component
+      }
+      closeFn(); // Close modal on success
+    } catch (error: any) {
+      console.error('Error withdrawing job application:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to withdraw application. Please try again.';
+      setError(errorMessage);
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onClose={closeFn}>
+    <Dialog open={open} onClose={isWithdrawing ? undefined : closeFn}>
       <Box
         sx={{
           width: {
-            xs: `${widthXS}`,
-            sm: `${widthSM}`,
-            md: `${widthMD}`,
-            lg: `${widthLG}`,
+            xs: `${widthXS || 'auto'}`,
+            sm: `${widthSM || 'auto'}`,
+            md: `${widthMD || 'auto'}`,
+            lg: `${widthLG || 'auto'}`,
           },
         }}
       >
         <DialogTitle>
-          <Box
-            sx={{
-              display: 'flex',
-              position: 'relative',
-              mb: '10px',
-              mt: '10px',
-            }}
-          >
-            <Box
-              sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}
-            >
-              <Typography
-                sx={{
-                  color: '#0D0A0B',
-                  fontSize: '24px',
-                  fontWeight: 700,
-                  textAlign: 'center',
-                }}
-              >
+          <Box sx={{ display: 'flex', position: 'relative', mb: '10px', mt: '10px' }}>
+            <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
+              <Typography sx={{ color: '#0D0A0B', fontSize: '24px', fontWeight: 700, textAlign: 'center' }}>
                 {title}
               </Typography>
             </Box>
-            <Box
-              sx={{
-                display: { xs: 'none', sm: 'block' },
-                position: 'absolute',
-                right: 0,
-                top: 4,
-              }}
-            >
+            <Box sx={{ display: { xs: 'none', sm: 'block' }, position: 'absolute', right: 0, top: 4 }}>
               <Close
-                onClick={() => closeFn()}
-                sx={{ color: '#0D0A0B', cursor: 'pointer' }}
+                onClick={isWithdrawing ? undefined : closeFn}
+                sx={{ color: '#0D0A0B', cursor: isWithdrawing ? 'not-allowed' : 'pointer' }}
               />
             </Box>
           </Box>
@@ -96,11 +98,14 @@ export const ConfirmationModal: React.FC<Props> = ({
             customComponentsAsMessage
           ) : (
             <Box sx={{ mb: '20px', width: { xs: 'auto', sm: '500px' } }}>
-              <Typography
-                sx={{ color: '#0D0A0B', fontSize: '16px', textAlign: 'center' }}
-              >
+              <Typography sx={{ color: '#0D0A0B', fontSize: '16px', textAlign: 'center' }}>
                 {message}
               </Typography>
+              {error && (
+                <Typography sx={{ color: 'red', fontSize: '14px', textAlign: 'center', mt: 2 }}>
+                  {error}
+                </Typography>
+              )}
             </Box>
           )}
         </DialogContent>
@@ -114,8 +119,16 @@ export const ConfirmationModal: React.FC<Props> = ({
         >
           <Box>
             <Button
-              onClick={() => buttonOneClick()}
-              variant={'outlined'}
+              onClick={() => {
+                setError(null); // Clear error on cancel
+                if (buttonOneClick) {
+                  buttonOneClick();
+                } else {
+                  closeFn();
+                }
+              }}
+              variant="outlined"
+              disabled={isWithdrawing}
               sx={{
                 fontSize: '14px',
                 py: '10px',
@@ -126,9 +139,7 @@ export const ConfirmationModal: React.FC<Props> = ({
                 textTransform: 'none',
                 fontWeight: 'bold',
                 border: '2px solid',
-                '&:hover': {
-                  border: '2px solid',
-                },
+                '&:hover': { border: '2px solid' },
               }}
             >
               {buttonOneText}
@@ -136,8 +147,15 @@ export const ConfirmationModal: React.FC<Props> = ({
           </Box>
           <Box>
             <Button
-              onClick={() => buttonTwoClick()}
-              variant={'contained'}
+              onClick={() => {
+                if (buttonTwoClick) {
+                  buttonTwoClick(); // Call external handler if provided
+                } else if (jobId) {
+                  handleWithdraw(); // Call internal withdrawal logic
+                }
+              }}
+              variant="contained"
+              disabled={isWithdrawing}
               sx={{
                 fontSize: '14px',
                 py: '10px',
@@ -147,7 +165,7 @@ export const ConfirmationModal: React.FC<Props> = ({
                 fontWeight: 'bold',
               }}
             >
-              {buttonTwoText}
+              {isWithdrawing ? 'Withdrawing...' : buttonTwoText}
             </Button>
           </Box>
         </DialogActions>

@@ -1,160 +1,177 @@
+"use client";
 import {
-  Box,
   Button,
   Dialog,
+  DialogActions,
   DialogContent,
   DialogTitle,
-  Divider,
-  Grid,
-  Stack,
   Typography,
-} from '@mui/material';
-import PictureSection from '../../../../profile/tabs/my-profile/sections/picture';
-import PersonalInformation from '../../../../profile/tabs/my-profile/sections/personal-information';
-import OtherInformationTab from '../../../../profile/tabs/my-profile/sections/other-information';
-import { Close, Delete } from '@mui/icons-material';
-import PastExperienceFormSection from '@/@core/utils/form/sections/past-experience';
+  CircularProgress,
+  Alert,
+  Box,
+} from "@mui/material";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { applyJob } from "@/@core/services/jobVanciesService";
+import axios from "axios";
 
-const ApplicationFormModal: React.FC<{
+interface ApplicationFormModalProps {
   open: boolean;
   onClose: () => void;
-  newApplication?: boolean;
-  onDeleteClick?: () => void;
-}> = ({ open, onClose, newApplication, onDeleteClick }) => {
+  newApplication: boolean;
+  jobId?: number;
+}
+
+export default function ApplicationFormModal({
+  open,
+  onClose,
+  newApplication,
+  jobId,
+}: ApplicationFormModalProps) {
+  const [step, setStep] = useState<"choice" | "submitting" | "submitted" | "alreadyApplied">("choice");
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+
+  // Auto-close modal after 3 seconds for submitted or alreadyApplied steps
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (step === "submitted" || step === "alreadyApplied") {
+      timer = setTimeout(() => {
+        handleClose();
+      }, 3000);
+    }
+    return () => clearTimeout(timer); // Cleanup timer
+  }, [step]);
+
+  const submitApplication = async () => {
+    if (!jobId) {
+      setError("Job ID is missing");
+      setStep("choice");
+      return;
+    }
+
+    setStep("submitting");
+    try {
+      await applyJob(jobId); // Call the provided applyJob service
+      setStep("submitted");
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response?.status === 400) {
+        setStep("alreadyApplied");
+      } else {
+        setError("Failed to submit application. Please try again.");
+        setStep("choice");
+      }
+    }
+  };
+
+  const handleUseCurrentProfile = () => {
+    submitApplication();
+  };
+
+  const handleEditProfile = () => {
+    router.push("/dashboard/talent/profile"); // Redirect to profile page
+    onClose(); // Close the modal
+  };
+
+  const handleClose = () => {
+    setStep("choice");
+    setError(null);
+    onClose();
+  };
+
   return (
-    <Dialog sx={{ maxWidth: 'none' }} open={open} onClose={onClose}>
-      {/** Global style created to remove max width of dialog. This allows the width to be properly adjusted */}
-      <Box sx={{ width: '100%', pb: '15px', px: '20px' }}>
-        <DialogTitle>
-          <Box
-            sx={{
-              display: 'flex',
-              position: 'relative',
-              mb: '10px',
-              mt: '10px',
-            }}
-          >
-            <Box
-              sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}
-            >
-              <Typography
-                sx={{
-                  color: '#0D0A0B',
-                  fontSize: '20px',
-                  fontWeight: 700,
-                  textAlign: 'center',
-                }}
-              >
-                {'Job Application Form'}
-              </Typography>
-            </Box>
-            <Box
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      {step === "choice" && (
+        <>
+          <DialogTitle sx={{ color: "#333", fontWeight: 600, textAlign: "center" }}>
+            Apply for Job
+          </DialogTitle>
+          <DialogContent>
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+            <Typography sx={{ textAlign: "center" }}>
+              Would you like to use your current profile or edit your profile before applying?
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ justifyContent: "center" }}>
+            <Button
+              onClick={handleUseCurrentProfile}
+              variant="contained"
               sx={{
-                display: { xs: 'none', sm: 'block' },
-                position: 'absolute',
-                right: 0,
-                top: 4,
+                textTransform: "none",
+                backgroundColor: "#E61C31",
+                "&:hover": { backgroundColor: "#C8102E" },
               }}
+              aria-label="Apply with current profile"
             >
-              <Close
-                onClick={() => onClose()}
-                sx={{ color: '#0D0A0B', cursor: 'pointer' }}
-              />
+              Use Current Profile
+            </Button>
+            <Button
+              onClick={handleEditProfile}
+              variant="outlined"
+              sx={{
+                textTransform: "none",
+                color: "#E61C31",
+                borderColor: "#E61C31",
+                "&:hover": { borderColor: "#C8102E", backgroundColor: "#FFF5F5" },
+              }}
+              aria-label="Edit profile"
+            >
+              Edit Profile
+            </Button>
+            <Button
+              onClick={handleClose}
+              variant="text"
+              sx={{ textTransform: "none", color: "#6B7280" }}
+              aria-label="Cancel application"
+            >
+              Cancel
+            </Button>
+          </DialogActions>
+        </>
+      )}
+
+      {step === "submitting" && (
+        <>
+          <DialogTitle sx={{ color: "#333", fontWeight: 600, textAlign: "center" }}>
+            Submitting Application
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+              <CircularProgress sx={{ color: "#E61C31" }} />
             </Box>
-          </Box>
-        </DialogTitle>
-        <Stack gap={4}>
-          <Divider />
-          {newApplication ? (
-            <Stack direction='row' justifyContent='center'>
-              <Button
-                sx={{
-                  textTransform: 'none',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                }}
-                variant='contained'
-              >
-                Automatically Apply with Existing Job Profile Details
-              </Button>
-            </Stack>
-          ) : (
-            <Stack direction='row' justifyContent='flex-end'>
-              <Stack direction='row' alignItems='center' gap={3}>
-                {[
-                  {
-                    icon: <Delete sx={{ marginRight: '5px' }} />,
-                    label: 'Delete',
-                    variant: 'outlined',
-                  },
-                  {
-                    icon: null,
-                    label: 'Edit Application',
-                    variant: 'contained',
-                  },
-                ].map((button, index) => (
-                  <Button
-                    key={index}
-                    {...(index == 0 && { onClick: onDeleteClick })}
-                    variant={button.variant as 'outlined' | 'contained'}
-                    sx={{ textTransform: 'none' }}
-                  >
-                    {button.icon}
-                    {button.label}
-                  </Button>
-                ))}
-              </Stack>
-            </Stack>
-          )}
-          <Divider />
-        </Stack>
-        <DialogContent>
-          {newApplication && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: '20px' }}>
-              <Typography
-                sx={{
-                  color: '#0D0A0B',
-                  fontSize: '20px',
-                  fontWeight: 700,
-                  textAlign: 'center',
-                }}
-              >
-                {'Or Apply Manually (Fill Form Below)'}
-              </Typography>
-            </Box>
-          )}
-          <Grid rowSpacing={3} columnSpacing={5} container>
-            <Grid lg={2.5} item>
-              <PictureSection />
-            </Grid>
-            <Grid lg={9.5} item>
-              <PersonalInformation />
-            </Grid>
-          </Grid>
-          <Divider sx={{ mt: '35px', mb: '20px' }} />
-          <PastExperienceFormSection />
-          <Divider sx={{ mt: '35px' }} />
-          <Stack gap={4}>
-            <OtherInformationTab />
-            <Stack direction='row' justifyContent='center'>
-              <Button
-                sx={{
-                  textTransform: 'none',
-                  paddingX: { xs: '', sm: '150px' },
-                  paddingY: { xs: '10px', sm: '10px' },
-                  width: { xs: '100%', sm: 'auto' },
-                  fontWeight: 600,
-                }}
-                variant='contained'
-              >
-                Send Application
-              </Button>
-            </Stack>
-          </Stack>
-        </DialogContent>
-      </Box>
+          </DialogContent>
+        </>
+      )}
+
+      {step === "submitted" && (
+        <>
+          <DialogTitle sx={{ color: "#333", fontWeight: 600, textAlign: "center" }}>
+            Application Submitted
+          </DialogTitle>
+          <DialogContent>
+            <Alert severity="success">
+              Your profile has been successfully sent to the employer!
+            </Alert>
+          </DialogContent>
+        </>
+      )}
+
+      {step === "alreadyApplied" && (
+        <>
+          <DialogTitle sx={{ color: "#333", fontWeight: 600, textAlign: "center" }}>
+            Application Status
+          </DialogTitle>
+          <DialogContent>
+            <Alert severity="info">
+              You have already applied. Please wait to be contacted by the employer.
+            </Alert>
+          </DialogContent>
+        </>
+      )}
     </Dialog>
   );
-};
-
-export default ApplicationFormModal;
+}

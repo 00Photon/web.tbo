@@ -475,7 +475,7 @@ export const ApplicationDetail: React.FC<{ applicationId: string }> = ({ applica
             </Box>
           )}
 
-          <Typography variant="h6" sx={{ mt: 2 }}>Application Details</Typography>
+          <Typography variant="h6" sx={{ mt: 2 }}>Candidate Details</Typography>
           <Typography><strong>Job Title:</strong> {application.job.title}</Typography>
           <Typography><strong>Application Date:</strong> {new Date(application.created_at).toLocaleDateString()}</Typography>
           <Typography><strong>Status:</strong> {application.status}</Typography>

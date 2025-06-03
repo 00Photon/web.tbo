@@ -22,7 +22,7 @@ export const adminNavItemsData = [
   },
   {
     icon: <StorageRounded />,
-    name: "Clients",
+    name: "Companies",
     path: "/dashboard/clients",
   },
   {

@@ -1,8 +1,27 @@
 import { Restore, Search } from '@mui/icons-material';
 import { Box, Button, Grid, SxProps, TextField } from '@mui/material';
+import { useState } from 'react';
 
+interface JobFindProps {
+  sx?: SxProps;
+  onSearch: (searchParams: { titleOrCompany: string; location: string }) => void;
+  onReset: () => void;
+}
 
-const JobFind: React.FC<{ sx?: SxProps }> = ({ sx }) => {
+const JobFind: React.FC<JobFindProps> = ({ sx, onSearch, onReset }) => {
+  const [titleOrCompany, setTitleOrCompany] = useState('');
+  const [location, setLocation] = useState('');
+
+  const handleSearch = () => {
+    onSearch({ titleOrCompany, location });
+  };
+
+  const handleReset = () => {
+    setTitleOrCompany('');
+    setLocation('');
+    onReset();
+  };
+
   return (
     <Box
       sx={{
@@ -28,13 +47,25 @@ const JobFind: React.FC<{ sx?: SxProps }> = ({ sx }) => {
               placeholder: 'Job Title, Company name or Anything',
               xs: 12,
               lg: 6,
+              value: titleOrCompany,
+              onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+                setTitleOrCompany(e.target.value),
             },
-            { placeholder: 'Location', xs: 12, sm: 6, lg: 3 },
-            // { placeholder: 'Salary Range', xs: 12, sm: 6, lg: 3 },
+            {
+              placeholder: 'Location',
+              xs: 12,
+              sm: 6,
+              lg: 3,
+              value: location,
+              onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+                setLocation(e.target.value),
+            },
           ].map((item, index) => (
             <Grid key={index} xs={item.xs} sm={item.sm} lg={item.lg} item>
               <TextField
                 placeholder={item.placeholder}
+                value={item.value}
+                onChange={item.onChange}
                 InputProps={{
                   startAdornment: <Search />,
                   sx: { height: '36px' },
@@ -52,23 +83,21 @@ const JobFind: React.FC<{ sx?: SxProps }> = ({ sx }) => {
             gap: 2,
           }}
         >
-          {[
-            {
-              icon: <Restore sx={{ marginRight: '5px' }} />,
-              label: 'Reset',
-              variant: 'outlined',
-            },
-            { icon: null, label: 'Search', variant: 'contained' },
-          ].map((button, index) => (
-            <Button
-              key={index}
-              variant={button.variant as 'outlined' | 'contained'}
-              sx={{ textTransform: 'none' }}
-            >
-              {button.icon}
-              {button.label}
-            </Button>
-          ))}
+          <Button
+            variant="outlined"
+            sx={{ textTransform: 'none' }}
+            onClick={handleReset}
+          >
+            <Restore sx={{ marginRight: '5px' }} />
+            Reset
+          </Button>
+          <Button
+            variant="contained"
+            sx={{ textTransform: 'none' }}
+            onClick={handleSearch}
+          >
+            Search
+          </Button>
         </Box>
       </Box>
     </Box>

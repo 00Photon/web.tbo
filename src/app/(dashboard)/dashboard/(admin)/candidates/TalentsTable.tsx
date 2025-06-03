@@ -1,17 +1,10 @@
-// * React Imports
 import React, { useEffect, useState } from "react";
-
-// * Custom Component Imports
 import CustomTextField from "@/@core/component/mui/text-field";
 import { TableCellStyled } from "@/@core/component/mui/tableStyled";
 import CustomChip from "@/@core/component/mui/chip";
 import { CandidateData, getCandidates, activateCandidate, deactivateCandidate, deleteCandidate } from "@/@core/services/CandidateService";
-
-// ** Third Party Imports
 import { useMediaQuery } from "@mui/material";
 import { Theme } from "@mui/material/styles";
-
-// ** MUI Imports
 import {
   Box,
   Card,
@@ -38,32 +31,27 @@ import {
   Alert,
   Paper,
   Grid,
+  FormControl,
+  Select,
+  MenuItem as SelectMenuItem,
+  SelectChangeEvent,
 } from "@mui/material";
-
-// ** Icon Imports
 import Icon from "@/@core/component/icon";
 
-// Define CandidateData interface
-// interface CandidateData {
-//   id: string | number;
-//   name: string;
-//   email: string;
-//   phone_number: string;
-//   status: string;
-// }
-
 const TalentTable = () => {
-  const [openFilter, setOpenFilter] = useState<boolean>(false);
+  const [showDropdown, setShowDropdown] = useState<boolean>(false);
   const [searchValue, setSearchValue] = useState<string>("");
   const [page, setPage] = useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
   const [anchorEl, setAnchorEl] = useState<(HTMLElement | null)[]>([]);
   const [candidates, setCandidates] = useState<CandidateData[]>([]);
+  const [filteredCandidates, setFilteredCandidates] = useState<CandidateData[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
   const [candidateToDelete, setCandidateToDelete] = useState<CandidateData | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState<boolean>(false);
   const [candidateToView, setCandidateToView] = useState<CandidateData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = useState<string>("all");
 
   const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up("md"));
 
@@ -73,6 +61,7 @@ const TalentTable = () => {
       try {
         const data = await getCandidates();
         setCandidates(data);
+        setFilteredCandidates(data);
         setAnchorEl(new Array(data.length).fill(null));
       } catch (error) {
         setError("Failed to load candidates.");
@@ -80,6 +69,25 @@ const TalentTable = () => {
     };
     fetchCandidates();
   }, []);
+
+  // Apply search and filter
+  useEffect(() => {
+    const filtered = candidates.filter((candidate) => {
+      const matchesSearch = searchValue
+        ? (candidate.name?.toLowerCase() || "").includes(searchValue.toLowerCase()) ||
+          (candidate.email?.toLowerCase() || "").includes(searchValue.toLowerCase()) ||
+          (candidate.phone_number?.toLowerCase() || "").includes(searchValue.toLowerCase())
+        : true;
+
+      const matchesStatus = filterStatus === "all" ||
+        (filterStatus === "active" && candidate.status.toLowerCase() === "active") ||
+        (filterStatus === "inactive" && candidate.status.toLowerCase() === "inactive");
+
+      return matchesSearch && matchesStatus;
+    });
+    setFilteredCandidates(filtered);
+    setPage(0);
+  }, [searchValue, filterStatus, candidates]);
 
   const handleChangePage = (_: unknown, newPage: number) => setPage(newPage);
 
@@ -157,7 +165,11 @@ const TalentTable = () => {
     setCandidateToView(null);
   };
 
-  const toggleFilter = () => setOpenFilter(!openFilter);
+  const toggleDropdown = () => setShowDropdown(!showDropdown);
+
+  const handleFilterChange = (event: SelectChangeEvent<string>) => {
+    setFilterStatus(event.target.value);
+  };
 
   return (
     <Card sx={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0, my: 4, background: "#fff" }}>
@@ -170,14 +182,14 @@ const TalentTable = () => {
         {!smallScreen && <Typography variant="h6">Talents</Typography>}
 
         {/* Search and Filter Section */}
-        <Box sx={{ my: 3, mx: 1, display: "flex", justifyContent: { xs: "flex-end", md: "space-between" } }}>
+        <Box sx={{ my: 3, mx: 1, display: "flex", justifyContent: { xs: "flex-end", md: "space-between" }, alignItems: "center" }}>
           {smallScreen && <Typography variant="h6">Talents</Typography>}
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, minWidth: 400 }}>
             <CustomTextField
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
               size="small"
-              placeholder="Search by name, email, phone"
+              placeholder="Company name, email"
               fullWidth
               InputProps={{
                 startAdornment: (
@@ -187,10 +199,25 @@ const TalentTable = () => {
                 ),
               }}
             />
-            <Button onClick={toggleFilter} variant={openFilter ? "contained" : "outlined"} size="medium">
+            <Button onClick={toggleDropdown} variant={showDropdown ? "contained" : "outlined"} size="medium" sx={{ minWidth: "40px" }}>
               <Icon icon="basil:filter-outline" />
               {smallScreen && <Typography sx={{ fontSize: ".857rem", ml: 1 }}>Filter</Typography>}
             </Button>
+            {showDropdown && (
+              <FormControl variant="outlined" size="small" sx={{ minWidth: 120 }}>
+                <Select
+                  value={filterStatus}
+                  onChange={handleFilterChange}
+                  displayEmpty
+                  inputProps={{ "aria-label": "Status filter" }}
+                  sx={{ ml: 2 }}
+                >
+                  <SelectMenuItem value="all">All</SelectMenuItem>
+                  <SelectMenuItem value="active">Active</SelectMenuItem>
+                  <SelectMenuItem value="inactive">Inactive</SelectMenuItem>
+                </Select>
+              </FormControl>
+            )}
           </Box>
         </Box>
 
@@ -211,14 +238,14 @@ const TalentTable = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {candidates.length === 0 ? (
+              {filteredCandidates.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} align="center">
                     No candidates found.
                   </TableCell>
                 </TableRow>
               ) : (
-                candidates.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((item, index) => (
+                filteredCandidates.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((item, index) => (
                   <TableRow key={item.id}>
                     <TableCell>
                       <Checkbox size="small" />
@@ -263,7 +290,7 @@ const TalentTable = () => {
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
-          count={candidates.length}
+          count={filteredCandidates.length}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}

@@ -42,13 +42,12 @@ const JobApplicationsTable: React.FC<{
     'Role Applied For',
     'Date of Application',
     'Application Status',
-    'Action',
+    // 'Action',
   ];
 
   const companyNameField = (name: string) => (
     <TableCell>
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-      
         <Typography sx={{ fontWeight: '600', color: '#101828', fontSize: '14px' }}>
           {name}
         </Typography>
@@ -63,20 +62,30 @@ const JobApplicationsTable: React.FC<{
   );
 
   const applicationStatusField = (status: string) => {
-    const statusVariant = status === 'pending' ? 'grey' : 'success';
-    const statusText = status === 'pending' ? 'Awaiting Feedback' : 'Interview In Progress';
+    // Define status mappings for variant and display text
+    const statusConfig: Record<string, { variant: 'grey' | 'warning' | 'success' | 'error' | 'info'; text: string }> = {
+      PENDING: { variant: 'grey', text: 'Awaiting Feedback' },
+      SCHEDULED: { variant: 'warning', text: 'Interview Scheduled' },
+      INTERVIEWED: { variant: 'success', text: 'Interview Completed' },
+      REJECTED: { variant: 'error', text: 'Application Rejected' },
+      SHORTLISTED: { variant: 'warning', text: 'Shortlisted' },
+      HIRED: { variant: 'success', text: 'Hired' },
+    };
+
+    // Get the configuration for the current status, default to PENDING if status is unknown
+    const { variant, text } = statusConfig[status.toUpperCase()] || statusConfig.PENDING;
 
     return (
       <TableCell>
-        <TextOnlyPill variant={statusVariant} text={statusText} />
+        <TextOnlyPill variant={variant} text={text} />
       </TableCell>
     );
   };
 
   const viewButtonField = (jobId: number) => (
     <TableCell>
-   <Button
-    onClick={() => setOpenWithdrawModal()}
+      <Button
+        onClick={() => setOpenWithdrawModal()}
         variant="contained"
         sx={{ textTransform: 'none' }}
       >
@@ -111,7 +120,7 @@ const JobApplicationsTable: React.FC<{
               {textOnlyField(job.job.title)}
               {textOnlyField(formatDate(job.created_at))}
               {applicationStatusField(job.status)}
-              {viewButtonField(job.job_id)}
+              {/* {viewButtonField(job.job_id)} */}
             </TableRow>
           ))}
         </TableBody>

@@ -27,7 +27,32 @@ interface CurrentUserResponse {
 }
 
 
-
+export const registerAdmin = async (data: {
+  name: string;
+  account_type: 'ADMIN' | 'SUPER_ADMIN' | 'TECH';
+  email: string;
+  password: string;
+  password_confirmation: string;
+}) => {
+  try {
+    const session = await getSession();
+    const token = session?.user?.accessToken;
+    if (!token) throw new Error("Missing token");
+    const response = await axios.post(`${API_BASE_URL}/register-admin`, data, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error registering admin:", error);
+    if (axios.isAxiosError(error) && error.response?.data?.errors) {
+      throw new Error(JSON.stringify(error.response.data.errors));
+    } else {
+      throw new Error("Failed to register admin");
+    }
+  }
+};
 
 
 export const changePassword = async (data: { current_password: string, password: string, password_confirmation: string }) => {

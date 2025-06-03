@@ -24,19 +24,17 @@ import { API_BASE_URL } from '@/@core/utils/constants';
 import { useEffect } from 'react';
 import { GoogleAuthService } from '@/@core/services/user';
 import { useSearchParams } from 'next/navigation';
-
 import { useSession } from 'next-auth/react';
+
 interface RegistrationData {
-  account_type: 'CLIENT' | 'TALENT';
   name: string;
+  account_type: 'CLIENT' | 'TALENT';
   email: string;
   password: string;
   password_confirmation: string;
 }
 
-const registerUser = async (
-  registrationData: RegistrationData
-): Promise<any> => {
+const registerUser = async (registrationData: RegistrationData): Promise<any> => {
   const response = await fetch(`${API_BASE_URL}/register`, {
     method: 'POST',
     headers: {
@@ -48,21 +46,19 @@ const registerUser = async (
   const responseData = await response.json();
 
   if (!response.ok) {
-    // Check if it's a specific error (e.g., email already exists)
     if (response.status === 422 || responseData.message?.includes('email')) {
       throw new Error('This email is already registered. Please use another one.');
     }
-    // Generic error
     throw new Error(responseData.message || 'Registration failed. Please try again.');
   }
 
   return responseData;
 };
 
-
 const SignUpForm: React.FC = () => {
   const [activeAccountType, setActiveAccountType] = useState<'CLIENT' | 'TALENT'>('CLIENT');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [formEmail, setFormEmail] = useState('');
   const { data: session, status } = useSession();
@@ -71,19 +67,17 @@ const SignUpForm: React.FC = () => {
 
   const router = useRouter();
 
-
-   useEffect(() => {
+  useEffect(() => {
     const code = searchParams.get('code');
     if (code) {
       handleGoogleCallback(code);
     }
   }, [searchParams]);
 
-    const handleGoogleCallback = async (code: string) => {
+  const handleGoogleCallback = async (code: string) => {
     try {
       const { token, user } = await GoogleAuthService.handleCallback(code);
       localStorage.setItem('authToken', token);
-      
       const returnTo = sessionStorage.getItem('preAuthRoute') || '/dashboard';
       router.replace(returnTo);
     } catch (error) {
@@ -94,39 +88,36 @@ const SignUpForm: React.FC = () => {
       sessionStorage.removeItem('accountType');
     }
   };
-   const googleLogin = () => {
+
+  const googleLogin = () => {
     GoogleAuthService.initiateGoogleLogin(activeAccountType);
   };
+
   useEffect(() => {
     if (status === 'loading') {
-      return; // Prevent initial flicker while loading session
+      return;
     }
     if (session?.user) {
-      router.replace('/'); // redirect if logged in
+      router.replace('/');
     }
   }, [session, status, router]);
 
   if (status === 'loading' || session?.user) {
-    return null; // or loading spinner while checking session/redirecting
+    return null;
   }
 
-useEffect(() => {
+  useEffect(() => {
     const token = localStorage.getItem('authToken');
     if (token) {
-      router.replace('/dashboard'); // Redirect if already authenticated
+      router.replace('/dashboard');
     }
   }, [router]);
 
- 
-  
-const isCompanyEmail = (email: string) => {
-  // Basic check for company emails (disallows common domains)
-  const commonDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com'];
-  const domain = email.split('@')[1]?.toLowerCase();
-  return domain && !commonDomains.includes(domain);
-};
-
-  
+  const isCompanyEmail = (email: string) => {
+    const commonDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com'];
+    const domain = email.split('@')[1]?.toLowerCase();
+    return domain && !commonDomains.includes(domain);
+  };
 
   const activeStyle = {
     backgroundColor: '#E61C31',
@@ -170,23 +161,28 @@ const isCompanyEmail = (email: string) => {
       placeholder: 'Enter Email Address',
       icon: <MailOutline />,
     },
-    {
-      label: 'Password',
-      name: 'password',
-      placeholder: 'Enter Password',
-    },
   ];
+
   const fieldErrorMessageStyle = {
     fontSize: '11px',
     marginTop: '5px',
     color: '#E61C31',
   };
 
+  const passwordHintStyle = {
+    fontSize: '10px',
+    color: '#666',
+    marginTop: '5px',
+  };
+
   const {
     register,
     handleSubmit,
     formState: { errors },
+    watch,
   } = useForm();
+
+  const password = watch('password');
 
   const mutation = useMutation({
     mutationFn: registerUser,
@@ -198,28 +194,17 @@ const isCompanyEmail = (email: string) => {
       console.error('Registration failed:', error);
     },
   });
-  
-   {authError && (
-    <Alert
-      sx={{ position: 'fixed', right: 20, top: 10, zIndex: 1000 }}
-      variant="filled"
-      severity="error"
-    >
-      Google authentication failed. Please try again.
-    </Alert>
-  )}
 
   return (
-    
     <Box
       sx={{
-        width: { xs: '100%', md: '50%' },
+        width: '100%',
         display: 'flex',
         justifyContent: 'center',
-        paddingY: '30px',
+        padding: { xs: '10px', md: '30px' },
       }}
     >
-      <Box>
+      <Box sx={{ width: '100%', maxWidth: '400px' }}>
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: '-5px' }}>
           <Link href="/">
             <Image
@@ -233,9 +218,11 @@ const isCompanyEmail = (email: string) => {
         </Box>
         <Box
           sx={{
+            flexDirection: { xs: 'column', md: 'row' },
             display: 'flex',
-            justifyContent: 'space-evenly',
+            justifyContent: 'space-between',
             marginBottom: '20px',
+            gap: { xs: '10px', md: '0' },
           }}
         >
           {account_type.map((account, index) => (
@@ -247,14 +234,10 @@ const isCompanyEmail = (email: string) => {
                 flexDirection: 'column',
                 justifyContent: 'center',
                 alignItems: 'center',
-                padding: '20px',
+                padding: '15px',
                 borderRadius: '8px',
-                ...(index === 0
-                  ? { marginRight: '5px' }
-                  : { marginLeft: '5px' }),
-                ...(activeAccountType === account.name
-                  ? activeStyle
-                  : inActiveStyle),
+                width: '100%',
+                ...(activeAccountType === account.name ? activeStyle : inActiveStyle),
                 cursor: 'pointer',
               }}
             >
@@ -271,40 +254,47 @@ const isCompanyEmail = (email: string) => {
           ))}
         </Box>
         <Box sx={{ textAlign: 'center', marginBottom: '20px' }}>
-          <Box sx={{ fontSize: '20px', fontWeight: 700 }}>Create Account</Box>
+          <Box sx={{ fontSize: { xs: '18px', md: '20px' }, fontWeight: 700 }}>Create Account</Box>
           <Box sx={{ fontSize: '12px' }}>
             Enter your credentials to create your account
           </Box>
         </Box>
 
-     
+        {authError && (
+          <Alert
+            sx={{ position: 'relative', mb: 2, width: '100%' }}
+            variant="filled"
+            severity="error"
+          >
+            Google authentication failed. Please try again.
+          </Alert>
+        )}
 
         <form
           onSubmit={handleSubmit((data) => {
             setFormEmail(data.email);
             mutation.mutate({
-              account_type: activeAccountType,
               name: data.name,
+              account_type: activeAccountType,
               email: data.email,
               password: data.password,
-              password_confirmation: data.password,
+              password_confirmation: data.password_confirmation,
             });
           })}
         >
-          {fieldData.map((field, index) =>
-            field.label !== 'Password' ? (
-              <Box key={index} sx={{ marginBottom: '14px' }}>
-                <Box
-                  sx={{
-                    color: '#101928',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    marginBottom: '5px',
-                  }}
-                >
-                  {field.label}
-                </Box>
-                <TextField
+          {fieldData.map((field, index) => (
+            <Box key={index} sx={{ marginBottom: '14px' }}>
+              <Box
+                sx={{
+                  color: '#101928',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  marginBottom: '5px',
+                }}
+              >
+                {field.label}
+              </Box>
+              <TextField
                 {...register(field.name, {
                   required: `${field.label} is required`,
                   ...(field.name === 'email' && {
@@ -314,72 +304,118 @@ const isCompanyEmail = (email: string) => {
                         : true,
                   }),
                 })}
-                
-                
-                  placeholder={field.placeholder}
-                  sx={{ width: '100%' }}
-                  inputProps={{ style: { fontSize: '12px' } }}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        {field.icon}
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-                <p style={fieldErrorMessageStyle}>
-                  {errors[field.name]?.message as string}
-                </p>
-              </Box>
-            ) : (
-              <Box key={index} sx={{ marginBottom: '14px' }}>
-                <Box
-                  sx={{
-                    color: '#101928',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    marginBottom: '5px',
-                  }}
-                >
-                  {field.label}
-                </Box>
-                <TextField
-                  {...register(field.name, {
-                    required: 'Password is required',
-                    minLength: {
-                      value: 8,
-                      message: 'Password must have at least 8 characters',
-                    },
-                  })}
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder={field.placeholder}
-                  sx={{ width: '100%' }}
-                  inputProps={{ style: { fontSize: '12px' } }}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={() => setShowPassword(!showPassword)}
-                          edge="end"
-                        >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-                <p style={fieldErrorMessageStyle}>
-                  {errors[field.name]?.message as string}
-                </p>
-              </Box>
-            )
-          )}
+                placeholder={field.placeholder}
+                sx={{ width: '100%' }}
+                inputProps={{ style: { fontSize: '12px' } }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      {field.icon}
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <p style={fieldErrorMessageStyle}>
+                {errors[field.name]?.message as string}
+              </p>
+            </Box>
+          ))}
+
+          {/* Password Field */}
+          <Box sx={{ marginBottom: '14px' }}>
+            <Box
+              sx={{
+                color: '#101928',
+                fontSize: '12px',
+                fontWeight: 500,
+                marginBottom: '5px',
+              }}
+            >
+              Password
+            </Box>
+            <TextField
+              {...register('password', {
+                required: 'Password is required',
+                minLength: {
+                  value: 8,
+                  message: 'Password must be at least 8 characters',
+                },
+                pattern: {
+                  value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.])[A-Za-z\d@$!%*?&.]{8,}$/,
+                  message: 'Must include uppercase, lowercase, number, and special character (@$!%*?&.)',
+                },
+              })}
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Enter Password (min 8 chars with A-Z, a-z, 0-9, special)"
+              sx={{ width: '100%' }}
+              inputProps={{ style: { fontSize: '12px' } }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <p style={fieldErrorMessageStyle}>
+              {errors.password?.message as string}
+            </p>
+            <p style={passwordHintStyle}>
+              Password must contain: 8+ characters, uppercase, lowercase, number, and special character (@$!%*?&)
+            </p>
+          </Box>
+
+          {/* Confirm Password Field */}
+          <Box sx={{ marginBottom: '14px' }}>
+            <Box
+              sx={{
+                color: '#101928',
+                fontSize: '12px',
+                fontWeight: 500,
+                marginBottom: '5px',
+              }}
+            >
+              Confirm Password
+            </Box>
+            <TextField
+              {...register('password_confirmation', {
+                required: 'Please confirm your password',
+                validate: (value) =>
+                  value === password || 'Passwords do not match',
+              })}
+              type={showConfirmPassword ? 'text' : 'password'}
+              placeholder="Confirm Password"
+              sx={{ width: '100%' }}
+              inputProps={{ style: { fontSize: '12px' } }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      edge="end"
+                    >
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <p style={fieldErrorMessageStyle}>
+              {errors.password_confirmation?.message as string}
+            </p>
+          </Box>
+
           <Box>
             <Button
               type="submit"
               variant="contained"
               {...(mutation.isPending || mutation.isSuccess) && { disabled: true }}
-              style={{
+              sx={{
                 textTransform: 'none',
                 width: '100%',
                 marginTop: '10px',
@@ -391,14 +427,14 @@ const isCompanyEmail = (email: string) => {
           </Box>
         </form>
 
-        <Box sx={{ fontSize: '12px', textAlign: 'center' }}>
+        <Box sx={{ fontSize: '12px', textAlign: 'center', mb: '20px' }}>
           Already have an account?{' '}
           <Link style={{ display: 'inline' }} href="/signin">
             <span style={{ color: '#E61C31', fontWeight: 500 }}>Log in</span>
           </Link>
         </Box>
 
-  <Box
+        <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
@@ -419,7 +455,6 @@ const isCompanyEmail = (email: string) => {
           <Divider sx={{ width: '45%' }} />
         </Box>
 
-
         <Box sx={{ display: 'flex', justifyContent: 'center' }}>
           {oAuthOptions.map((option, index) => (
             <Box
@@ -433,14 +468,11 @@ const isCompanyEmail = (email: string) => {
                 display: 'flex',
                 border: '1.5px solid #D0D5DD',
                 borderRadius: '6px',
-                padding: '6px 30px',
+                padding: '6px 20px',
                 alignItems: 'center',
-                width: '320px', // <-- Increase the width here
+                width: { xs: '100%', md: '320px' },
                 height: '50px',
-                justifyContent: 'center', // optional: center content
-                ...(index === 0
-                  ? { marginRight: '5px' }
-                  : { marginLeft: '5px' }),
+                justifyContent: 'center',
                 cursor: 'pointer',
                 '&:hover': { border: '1.5px solid #E61C31' },
               }}
@@ -459,10 +491,9 @@ const isCompanyEmail = (email: string) => {
           ))}
         </Box>
 
-      
         {showSuccess && (
           <Alert
-            sx={{ position: 'fixed', right: 20, top: 10, zIndex: 1000 }}
+            sx={{ position: 'relative', mb: 2, width: '100%' }}
             variant="filled"
             severity="success"
           >
@@ -471,7 +502,7 @@ const isCompanyEmail = (email: string) => {
         )}
         {mutation.isError && !mutation.isPending && (
           <Alert
-            sx={{ position: 'fixed', right: 20, top: 10, zIndex: 1000 }}
+            sx={{ position: 'relative', mb: 2, width: '100%' }}
             variant="filled"
             severity="error"
           >

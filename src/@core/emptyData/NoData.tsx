@@ -22,28 +22,28 @@ import Fade from "@mui/material/Fade";
 import { styled } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
 import CheckIcon from "@mui/icons-material/Check";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import CustomChip from "@/@core/component/mui/chip";
-import NoData from "./NoData";
 import { fetchInterviews, updateInterviewStatus } from "@/@core/services/interviewService";
 
 // Styled Components
 const StyledModal = styled(Box)(({ theme }) => ({
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
   width: 450,
   backgroundColor: theme.palette.background.paper,
   boxShadow: theme.shadows[24],
   borderRadius: theme.shape.borderRadius * 2,
   padding: theme.spacing(4),
-  outline: 'none',
+  outline: "none",
 }));
 
 const ModalHeader = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
   marginBottom: theme.spacing(3),
 }));
 
@@ -57,20 +57,34 @@ const ModalContent = styled(Box)(({ theme }) => ({
 }));
 
 const ModalFooter = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  justifyContent: 'flex-end',
+  display: "flex",
+  justifyContent: "flex-end",
   gap: theme.spacing(2),
+}));
+
+const NoDataContainer = styled(Box)(({ theme }) => ({
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  height: "50vh",
+  gap: theme.spacing(2),
+  textAlign: "center",
+  color: theme.palette.text.secondary,
 }));
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case 'completed': return { color: 'success', label: 'Completed' };
-    case 'scheduled': return { color: 'info', label: 'Scheduled' };
-    case 'cancelled': return { color: 'error', label: 'Cancelled' };
-    default: return { color: 'warning', label: 'Pending' };
+    case "completed":
+      return { color: "success", label: "Completed" };
+    case "scheduled":
+      return { color: "info", label: "Scheduled" };
+    case "cancelled":
+      return { color: "error", label: "Cancelled" };
+    default:
+      return { color: "warning", label: "Pending" };
   }
 };
-
 
 // Types
 interface Interview {
@@ -94,7 +108,7 @@ interface Interview {
 }
 
 // Allowed status values (matches backend)
-const allowedStatuses = ['scheduled', 'pending', 'completed', 'cancelled'];
+const allowedStatuses = ["scheduled", "pending", "completed", "cancelled"];
 
 const Interviews = () => {
   const [interviews, setInterviews] = useState<Interview[]>([]);
@@ -104,17 +118,43 @@ const Interviews = () => {
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
   const [selectedStatus, setSelectedStatus] = useState("");
 
-  useEffect(() => {
-    const loadInterviews = async () => {
-      try {
-        const data = await fetchInterviews();
-        setInterviews(data);
-      } catch (err) {
-        setError("Failed to fetch interviews.");
-      } finally {
-        setLoading(false);
+  const loadInterviews = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchInterviews();
+      if (data.status && Array.isArray(data.interviews)) {
+        const mappedData: Interview[] = data.interviews.map((item: any) => ({
+          id: item.id,
+          job: item.job,
+          interview_date: item.interview_date,
+          interview_time: item.interview_time,
+          interview_location: item.interview_location,
+          status: item.status,
+          qualified_user: {
+            id: item.qualified_user?.id,
+            name: item.qualified_user?.name,
+            email: item.qualified_user?.email,
+          },
+          interviewer: {
+            name: item.interviewer?.name,
+            department: item.interviewer?.department,
+            email: item.interviewer?.email,
+            phone: item.interviewer?.phone,
+          },
+        }));
+        setInterviews(mappedData);
+      } else {
+        setError("Invalid response format from server.");
       }
-    };
+    } catch (err: any) {
+      setError(err.message || "Failed to fetch interviews.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadInterviews();
   }, []);
 
@@ -141,14 +181,16 @@ const Interviews = () => {
 
     try {
       await updateInterviewStatus(selectedInterview.id, selectedStatus);
-      setInterviews(interviews.map(interview =>
-        interview.id === selectedInterview.id
-          ? { ...interview, status: selectedStatus }
-          : interview
-      ));
+      setInterviews(
+        interviews.map((interview) =>
+          interview.id === selectedInterview.id
+            ? { ...interview, status: selectedStatus }
+            : interview
+        )
+      );
       handleCloseModal();
-    } catch (err) {
-      setError("Failed to update interview status.");
+    } catch (err: any) {
+      setError(err.message || "Failed to update interview status.");
     }
   };
 
@@ -156,41 +198,65 @@ const Interviews = () => {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="50vh">
         <CircularProgress />
+        <Typography ml={2}>Loading interviews...</Typography>
       </Box>
     );
   }
 
   if (error) {
-    return <Typography color="error" align="center">{error}</Typography>;
+    return (
+      <NoDataContainer>
+        <Typography variant="h6" color="error">
+          {error}
+        </Typography>
+      </NoDataContainer>
+    );
   }
 
   if (interviews.length === 0) {
-    return <NoData />;
+    return (
+      <NoDataContainer>
+        <Typography variant="h6">No Interviews Yet</Typography>
+        <Typography variant="body1">
+          There are currently no scheduled interviews. Check back later or schedule a new interview.
+        </Typography>
+      </NoDataContainer>
+    );
   }
 
   return (
     <Box sx={{ p: 4 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: "bold", color: 'primary.main' }}>
-        Interviews
-      </Typography>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h5" sx={{ fontWeight: "bold", color: "primary.main" }}>
+          Interviews
+        </Typography>
+        <Button
+          variant="outlined"
+          startIcon={<RefreshIcon />}
+          onClick={loadInterviews}
+          sx={{ textTransform: "none", borderRadius: 2 }}
+        >
+          Refresh
+        </Button>
+      </Box>
 
       <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 3 }}>
         <Table>
           <TableHead sx={{ backgroundColor: "primary.light" }}>
             <TableRow>
-              <TableCell sx={{ fontWeight: "bold", color: 'primary.contrastText' }}>Job</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: 'primary.contrastText' }}>Candidate</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: 'primary.contrastText' }}>Interview Date</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: 'primary.contrastText' }}>Time</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: 'primary.contrastText' }}>Location</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: 'primary.contrastText' }}>Interviewer</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: 'primary.contrastText' }}>Status</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: 'primary.contrastText' }}>Actions</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "primary.contrastText" }}>Job</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "primary.contrastText" }}>Candidate</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "primary.contrastText" }}>Interview Date</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "primary.contrastText" }}>Time</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "primary.contrastText" }}>Location</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "primary.contrastText" }}>Interviewer</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "primary.contrastText" }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "primary.contrastText" }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {interviews.map((interview) => (
-              <TableRow key={interview.id} sx={{ '&:hover': { backgroundColor: 'action.hover' } }}>
+              <TableRow key={interview.id} sx={{ "&:hover": { backgroundColor: "action.hover" } }}>
                 <TableCell>{interview.job}</TableCell>
                 <TableCell>{interview.qualified_user.name}</TableCell>
                 <TableCell>{interview.interview_date}</TableCell>
@@ -205,13 +271,12 @@ const Interviews = () => {
                     size="small"
                   />
                 </TableCell>
-
                 <TableCell align="center">
                   <Tooltip title="Edit status" arrow>
-                    <IconButton 
+                    <IconButton
                       color="primary"
                       onClick={() => handleOpenModal(interview)}
-                      sx={{ '&:hover': { backgroundColor: 'primary.light', color: 'primary.dark' } }}
+                      sx={{ "&:hover": { backgroundColor: "primary.light", color: "primary.dark" } }}
                     >
                       <EditIcon fontSize="small" />
                     </IconButton>
@@ -229,7 +294,7 @@ const Interviews = () => {
           <StyledModal>
             <ModalHeader>
               <ModalTitle variant="h6">Update Interview Status</ModalTitle>
-              <IconButton onClick={handleCloseModal} size="small" sx={{ color: 'text.secondary' }}>
+              <IconButton onClick={handleCloseModal} size="small" sx={{ color: "text.secondary" }}>
                 <CloseIcon fontSize="small" />
               </IconButton>
             </ModalHeader>
@@ -241,12 +306,10 @@ const Interviews = () => {
                     <Typography variant="subtitle2" color="text.secondary">Job Position</Typography>
                     <Typography variant="body1" fontWeight={500}>{selectedInterview.job}</Typography>
                   </Box>
-
                   <Box mb={3}>
                     <Typography variant="subtitle2" color="text.secondary">Candidate</Typography>
                     <Typography variant="body1" fontWeight={500}>{selectedInterview.qualified_user.name}</Typography>
                   </Box>
-
                   <FormControl fullWidth>
                     <InputLabel id="status-select-label">Interview Status</InputLabel>
                     <Select
@@ -256,19 +319,30 @@ const Interviews = () => {
                       onChange={handleStatusChange}
                       sx={{ mt: 1 }}
                     >
-                      <MenuItem value="scheduled">Scheduled</MenuItem>
-                      <MenuItem value="pending">Pending</MenuItem>
-                      <MenuItem value="completed">Completed</MenuItem>
-                      <MenuItem value="cancelled">Cancelled</MenuItem>
+                      {allowedStatuses.map((status) => (
+                        <MenuItem key={status} value={status}>
+                          {getStatusColor(status).label}
+                        </MenuItem>
+                      ))}
                     </Select>
                   </FormControl>
                 </ModalContent>
 
                 <ModalFooter>
-                  <Button variant="outlined" onClick={handleCloseModal} startIcon={<CloseIcon />} sx={{ textTransform: 'none', borderRadius: 2 }}>
+                  <Button
+                    variant="outlined"
+                    onClick={handleCloseModal}
+                    startIcon={<CloseIcon />}
+                    sx={{ textTransform: "none", borderRadius: 2 }}
+                  >
                     Cancel
                   </Button>
-                  <Button variant="contained" onClick={handleSaveStatus} startIcon={<CheckIcon />} sx={{ textTransform: 'none', borderRadius: 2, boxShadow: 'none' }}>
+                  <Button
+                    variant="contained"
+                    onClick={handleSaveStatus}
+                    startIcon={<CheckIcon />}
+                    sx={{ textTransform: "none", borderRadius: 2, boxShadow: "none" }}
+                  >
                     Update Status
                   </Button>
                 </ModalFooter>

@@ -1,7 +1,9 @@
+"use client";
 import React, { useEffect, useState } from "react";
 import { getSavedJobs } from "@/@core/services/jobVanciesService";
 import { Grid, Typography, CircularProgress, Box } from "@mui/material";
-import JobCard from "./cards/job"; // Adjust the import path as necessary
+import JobCard from "./cards/job";
+import ApplicationFormModal from "./modals/application-form";
 
 interface Job {
   id: number;
@@ -22,6 +24,10 @@ interface Job {
   updated_at: string;
   status: string;
   applicant_count: number;
+  client?: {
+    company_logo?: string | null;
+    company_name?: string | null;
+  };
 }
 
 interface SavedJob {
@@ -37,6 +43,8 @@ const SavedJobsTab: React.FC = () => {
   const [savedJobs, setSavedJobs] = useState<SavedJob[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+  const [openApplicationFormModal, setOpenApplicationFormModal] = useState(false);
+  const [selectedJobId, setSelectedJobId] = useState<number | undefined>(undefined); // Changed from number | null
 
   useEffect(() => {
     const fetchSavedJobs = async () => {
@@ -56,7 +64,7 @@ const SavedJobsTab: React.FC = () => {
   if (loading)
     return (
       <Box display="flex" justifyContent="center" mt={4}>
-        <CircularProgress />
+        <CircularProgress sx={{ color: "#E61C31" }} />
       </Box>
     );
 
@@ -76,30 +84,44 @@ const SavedJobsTab: React.FC = () => {
   }
 
   return (
-    <Grid container spacing={3}>
-    {savedJobs.map(({ job }) => (
-      <Grid item xs={12} lg={6} key={job.id}>
-        <JobCard
-          id={job.id}
-          logo="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+p6XYAAAAASUVORK5CYII="
-          setOpenApplicationFormModal={() => {}}
-          name=""
-          location={job.location}
-          title={job.title}
-          commitment={job.job_type}
-          salary={`${job.currency} ${job.minimum_salary} - ${job.maximum_salary}`}
-          description={job.description}
-          noOfApplied={job.applicant_count.toString()}
-          postedAt={new Date(job.created_at).toLocaleDateString()}
-          daysLeft={Math.ceil(
-            (new Date(job.application_deadline).getTime() - new Date().getTime()) /
-              (1000 * 60 * 60 * 24)
-          ).toString()}
-        />
-
+    <>
+      <Grid container spacing={3}>
+        {savedJobs.map(({ job }) => (
+          <Grid item xs={12} lg={6} key={job.id}>
+            <JobCard
+              id={job.id}
+              logo={job.client?.company_logo ?? "/icons/default-logo.png"}
+              name={job.client?.company_name ?? "Unknown Company"}
+              location={job.location}
+              title={job.title}
+              commitment={job.job_type}
+              salary={`${job.currency} ${job.minimum_salary} - ${job.maximum_salary}`}
+              description={job.description}
+              noOfApplied={job.applicant_count.toString()}
+              postedAt={new Date(job.created_at).toLocaleDateString()}
+              daysLeft={Math.ceil(
+                (new Date(job.application_deadline).getTime() - new Date().getTime()) /
+                  (1000 * 60 * 60 * 24)
+              ).toString()}
+              setOpenApplicationFormModal={(jobId: number) => {
+                setSelectedJobId(jobId);
+                setOpenApplicationFormModal(true);
+              }}
+              hideSaveButton={true}
+            />
+          </Grid>
+        ))}
       </Grid>
-    ))}
-  </Grid>
+      <ApplicationFormModal
+        open={openApplicationFormModal}
+        onClose={() => {
+          setOpenApplicationFormModal(false);
+          setSelectedJobId(undefined); // Changed from null
+        }}
+        newApplication
+        jobId={selectedJobId}
+      />
+    </>
   );
 };
 

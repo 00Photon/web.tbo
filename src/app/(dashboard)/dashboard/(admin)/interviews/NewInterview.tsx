@@ -292,7 +292,7 @@ const NewInterview = ({ open, close }: Props) => {
           }}
         >
           <Box sx={{ mb: 4 }}>
-            <Typography sx={{ mt: 4, mb: 2, fontWeight: 600 }}>Application Details</Typography>
+            <Typography sx={{ mt: 4, mb: 2, fontWeight: 600 }}>Candidatee Details</Typography>
             <Grid container spacing={4}>
               <Grid item xs={12}>
                 <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
@@ -314,7 +314,7 @@ const NewInterview = ({ open, close }: Props) => {
                       helperText={errors.applicationId?.message}
                     >
                       <MenuItem value={0} disabled>
-                        {loading ? "Loading applications..." : "Select an application"}
+                        {loading ? "Loading Candidates..." : "Select a Candidate"}
                       </MenuItem>
                       {applications.map((app) => (
                         <MenuItem key={app.id} value={app.id}>

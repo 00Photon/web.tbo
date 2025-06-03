@@ -292,7 +292,7 @@ const InterviewedTalents = () => {
           }}
         >
           {smallScreen && <Typography variant="h6">Shortlisted</Typography>}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2, minWidth: 400 }}>
+          {/* <Box sx={{ display: "flex", alignItems: "center", gap: 2, minWidth: 400 }}>
             <CustomTextField
               value={value}
               onChange={(e) => setValue(e.target.value)}
@@ -325,7 +325,7 @@ const InterviewedTalents = () => {
               )}
               <Icon icon="basil:filter-outline" />
             </Button>
-          </Box>
+          </Box> */}
         </Box>
 
         <TableContainer component={Paper}>

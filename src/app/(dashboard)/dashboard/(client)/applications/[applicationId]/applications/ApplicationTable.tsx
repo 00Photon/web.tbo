@@ -10,7 +10,7 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardHeader from "@mui/material/CardHeader";
 import InputAdornment from "@mui/material/InputAdornment";
-import { Avatar, Menu } from "@mui/material";
+import { Avatar, Menu, Dialog, DialogContent, DialogTitle } from "@mui/material";
 import Checkbox from "@mui/material/Checkbox";
 import MenuItem from "@mui/material/MenuItem";
 import IconButton from "@mui/material/IconButton";
@@ -27,11 +27,12 @@ import TablePagination from "@mui/material/TablePagination";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { Theme } from "@mui/material/styles";
 import Link from "next/link";
+import CloseIcon from "@mui/icons-material/Close";
+import { fetchApplications } from "@/@core/services/jobService";
+import { ApplicationDetail } from "./ApplicationDetail"; // Import ApplicationDetail
 
-// Assume these services are imported from your API client
-import { fetchApplications, fetchApplicationById } from "@/@core/services/jobService";
-
-interface Job {
+// Export interfaces
+export interface Job {
   id: number;
   title: string;
   job_type: string;
@@ -52,7 +53,7 @@ interface Job {
   applicant_count: number;
 }
 
-interface User {
+export interface User {
   id: number;
   name: string;
   email: string;
@@ -71,7 +72,7 @@ interface User {
   status: string;
 }
 
-interface Application {
+export interface Application {
   id: number;
   job_id: number;
   user_id: number;
@@ -98,6 +99,8 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({ jobId }) => {
   const [loading, setLoading] = useState(true);
   const [checked, setChecked] = useState<number[]>([]);
   const [allChecked, setAllChecked] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
 
   const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up("md"));
 
@@ -175,6 +178,17 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({ jobId }) => {
       }
       setChecked([...checked, id]);
     }
+  };
+
+  const handleViewApplication = (applicationId: number, index: number) => {
+    setSelectedApplicationId(applicationId.toString());
+    setOpenDialog(true);
+    handleRowOptionsClose(index);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setSelectedApplicationId(null);
   };
 
   return (
@@ -450,19 +464,12 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({ jobId }) => {
                             }}
                             PaperProps={{ style: { minWidth: "8rem" } }}
                           >
-                            <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
-                              <Icon icon="tabler:edit" fontSize={20} />
-                              Edit
-                            </MenuItem>
-                            <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
+                            <MenuItem
+                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
+                              onClick={() => handleViewApplication(item.id, i)}
+                            >
                               <Icon icon="tabler:eye" fontSize={20} />
-                              <Link href={`/dashboard/applications/${item.id}`}>
-                                View
-                              </Link>
-                            </MenuItem>
-                            <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
-                              <Icon icon="fluent:delete-24-regular" fontSize={20} />
-                              Delete
+                              View
                             </MenuItem>
                           </Menu>
                         </Avatar>
@@ -474,6 +481,29 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({ jobId }) => {
             </TableBody>
           </Table>
         </TableContainer>
+
+        <Dialog
+          open={openDialog}
+          onClose={handleCloseDialog}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>
+            Candidate Details
+            <IconButton
+              aria-label="close"
+              onClick={handleCloseDialog}
+              sx={{ position: "absolute", right: 8, top: 8 }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent>
+            {selectedApplicationId && (
+              <ApplicationDetail applicationId={selectedApplicationId} />
+            )}
+          </DialogContent>
+        </Dialog>
       </CardContent>
 
       <TablePagination
@@ -484,140 +514,6 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({ jobId }) => {
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
-    </Card>
-  );
-};
-
-export const ApplicationDetail: React.FC<{ applicationId: string }> = ({ applicationId }) => {
-  const [application, setApplication] = useState<Application | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchApplication = async () => {
-      try {
-        setLoading(true);
-        const response = await fetchApplicationById(applicationId);
-        if (response.status) {
-          setApplication(response.application);
-        }
-      } catch (error) {
-        console.error("Error fetching application:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchApplication();
-  }, [applicationId]);
-
-  if (loading) {
-    return <Typography>Loading...</Typography>;
-  }
-
-  if (!application) {
-    return <Typography>Application not found</Typography>;
-  }
-
-  return (
-    <Card sx={{ m: 4 }}>
-      <CardHeader title={`Application #${application.id}`} />
-      <CardContent>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <Typography variant="h6">Applicant Details</Typography>
-          <Typography><strong>Name:</strong> {application.user.name}</Typography>
-          <Typography><strong>Email:</strong> {application.user.email}</Typography>
-          {application.user.phone_number && (
-            <Typography><strong>Phone:</strong> {application.user.phone_number}</Typography>
-          )}
-          {application.user.profile_image && (
-            <Box sx={{ mt: 1 }}>
-              <Typography><strong>Profile Image:</strong></Typography>
-              <img
-                src={application.user.profile_image}
-                alt="Profile"
-                style={{ maxWidth: "200px", borderRadius: "8px" }}
-              />
-            </Box>
-          )}
-
-          <Typography variant="h6" sx={{ mt: 2 }}>Application Details</Typography>
-          <Typography><strong>Job Title:</strong> {application.job.title}</Typography>
-          <Typography><strong>Application Date:</strong> {new Date(application.created_at).toLocaleDateString()}</Typography>
-          <Typography><strong>Status:</strong> {application.status}</Typography>
-          <Typography>
-            <strong>Job:</strong>{" "}
-            <Link href={`/dashboard/jobs/${application.job_id}`}>
-              View Job Details
-            </Link>
-          </Typography>
-
-          <Typography variant="h6" sx={{ mt: 2 }}>Submitted Documents</Typography>
-          {application.user.cv_upload && (
-            <Typography>
-              <strong>CV:</strong>{" "}
-              <a href={application.user.cv_upload} target="_blank" rel="noopener noreferrer">
-                Download CV
-              </a>
-            </Typography>
-          )}
-          {application.user.cover_letter_upload && (
-            <Typography>
-              <strong>Cover Letter:</strong>{" "}
-              <a href={application.user.cover_letter_upload} target="_blank" rel="noopener noreferrer">
-                Download Cover Letter
-              </a>
-            </Typography>
-          )}
-          {application.user.id_upload && (
-            <Typography>
-              <strong>ID:</strong>{" "}
-              <a href={application.user.id_upload} target="_blank" rel="noopener noreferrer">
-                View ID
-              </a>
-            </Typography>
-          )}
-          {application.user.video_url && (
-            <Typography>
-              <strong>Intro Video:</strong>{" "}
-              <a href={application.user.video_url} target="_blank" rel="noopener noreferrer">
-                Watch Video
-              </a>
-            </Typography>
-          )}
-          {application.user.work_sample_upload && (
-            <Typography>
-              <strong>Work Sample:</strong>{" "}
-              <a href={application.user.work_sample_upload} target="_blank" rel="noopener noreferrer">
-                Download Work Sample
-              </a>
-            </Typography>
-          )}
-          {application.user.portfolio_link && (
-            <Typography>
-              <strong>Portfolio:</strong>{" "}
-              <a href={application.user.portfolio_link} target="_blank" rel="noopener noreferrer">
-                View Portfolio
-              </a>
-            </Typography>
-          )}
-
-          {application.user.project_screenshots && application.user.project_screenshots.length > 0 && (
-            <>
-              <Typography variant="h6" sx={{ mt: 2 }}>Project Screenshots</Typography>
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-                {application.user.project_screenshots.map((screenshot, index) => (
-                  <img
-                    key={index}
-                    src={screenshot}
-                    alt={`Project screenshot ${index + 1}`}
-                    style={{ maxWidth: "150px", borderRadius: "8px" }}
-                  />
-                ))}
-              </Box>
-            </>
-          )}
-        </Box>
-      </CardContent>
     </Card>
   );
 };
