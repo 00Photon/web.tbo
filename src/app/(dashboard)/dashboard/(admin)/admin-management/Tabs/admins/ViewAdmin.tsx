@@ -1,23 +1,10 @@
-// * React Import
 import { useState } from "react";
-
-// * Icon Imports
 import Icon from "@/@core/component/icon";
-
-// * Type Import
 import { MockData } from "./Admins";
-
-// * Utility Imports
 import { getInitials } from "@/@core/utils/getIntials";
-
-// * Custom Components Imports
-import { TableCellStyled } from "@/@core/component/mui/tableStyled";
 import CustomAvatar from "@/@core/component/mui/avatar";
 import CustomChip from "@/@core/component/mui/chip";
-
-//* MUI Imports
 import Paper from "@mui/material/Paper";
-import Grid from "@mui/material/Grid";
 import Drawer from "@mui/material/Drawer";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
@@ -25,8 +12,6 @@ import Button from "@mui/material/Button";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import { styled } from "@mui/material/styles";
-import Divider from "@mui/material/Divider";
-import Switch from "@mui/material/Switch";
 import Stack from "@mui/material/Stack";
 import TableContainer from "@mui/material/TableContainer";
 import Table from "@mui/material/Table";
@@ -34,9 +19,6 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
 import TableBody from "@mui/material/TableBody";
-import TablePagination from "@mui/material/TablePagination";
-import useMediaQuery from "@mui/material/useMediaQuery";
-import { Theme } from "@mui/material/styles";
 
 const Header = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -44,68 +26,6 @@ const Header = styled(Box)(({ theme }) => ({
   padding: theme.spacing(4),
   justifyContent: "space-between",
 }));
-
-interface PermissionProps {
-  title: string;
-  text: string;
-}
-
-const permission: PermissionProps[] = [
-  {
-    title: "User Management",
-    text: "Add, remove, and manage user accounts and permissions across the system.",
-  },
-  {
-    title: "Access Control",
-    text: "Manage access levels and security settings for various system resources and applications.",
-  },
-  {
-    title: "Service Management",
-    text: "Start, stop, and manage system services and processes as needed.",
-  },
-  {
-    title: "Security Management",
-    text: "Implement and manage firewalls, antivirus, and other security measures to protect the system.",
-  },
-];
-
-interface PermissionCardProps {
-  permission: PermissionProps;
-}
-
-const PermissionCard: React.FC<PermissionCardProps> = ({ permission }) => {
-  return (
-    <>
-      <Box
-        sx={{
-          p: 3,
-          mb: 1,
-          mt: 2,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <Box>
-          <Typography
-            sx={{
-              fontWeight: 600,
-              color: "#39353D",
-              fontSize: "1rem",
-            }}
-          >
-            {permission.title}
-          </Typography>
-          <Typography sx={{ fontSize: "13px", mb: "10px" }}>
-            {permission.text}
-          </Typography>
-        </Box>
-        <Switch color="primary" size="medium" />
-      </Box>
-      <Divider variant="inset" />
-    </>
-  );
-};
 
 interface Props {
   open: boolean;
@@ -115,9 +35,7 @@ interface Props {
 }
 
 const renderClient = (row: MockData) => {
-  const initials = `${row?.name}`;
-
-  if (row?.avatar && row?.avatar.length) {
+  if (row.avatar && row.avatar.length) {
     return (
       <CustomAvatar
         src={row.avatar}
@@ -129,7 +47,7 @@ const renderClient = (row: MockData) => {
     return (
       <CustomAvatar
         skin="light"
-        color={row?.avatarColor || "primary"}
+        color={row.avatarColor || "primary"}
         sx={{
           mr: 2.5,
           width: 100,
@@ -138,13 +56,19 @@ const renderClient = (row: MockData) => {
           fontSize: (24 / 100) * 100,
         }}
       >
-        {getInitials(row?.name || "John Doe")}
+        {getInitials(row.name || "John Doe")}
       </CustomAvatar>
     );
   }
 };
 
 const ViewAdmin = ({ open, close, activeAdmin, editModal }: Props) => {
+  // Placeholder for activity log (fetch from API)
+  const [activityLog, setActivityLog] = useState([
+    { date: "2025-06-01", activity: "Logged In", description: "User logged into the system" },
+    { date: "2025-06-02", activity: "Updated Profile", description: "Changed email address" },
+  ]);
+
   return (
     <Drawer
       open={open}
@@ -157,7 +81,6 @@ const ViewAdmin = ({ open, close, activeAdmin, editModal }: Props) => {
         <Button onClick={close} sx={{ color: "#111" }}>
           <Icon icon="basil:caret-left-solid" fontSize={30} />
         </Button>
-
         <Typography
           sx={{
             flex: 1,
@@ -174,7 +97,7 @@ const ViewAdmin = ({ open, close, activeAdmin, editModal }: Props) => {
       <Box>
         <DialogContent
           sx={{
-            pb: (theme) => `${theme.spacing(8)}  !important`,
+            pb: (theme) => `${theme.spacing(8)} !important`,
             px: (theme) => [
               `${theme.spacing(4)} !important`,
               `${theme.spacing(8)} !important`,
@@ -192,7 +115,7 @@ const ViewAdmin = ({ open, close, activeAdmin, editModal }: Props) => {
               }}
             >
               <Typography sx={{ fontWeight: 600, fontSize: "1.4rem" }}>
-                {activeAdmin?.name}
+                {activeAdmin?.name || "N/A"}
               </Typography>
               {activeAdmin?.status ? (
                 <CustomChip
@@ -218,91 +141,55 @@ const ViewAdmin = ({ open, close, activeAdmin, editModal }: Props) => {
           >
             <Stack direction="row" sx={{ mt: 4, gap: 3 }}>
               <Box>
-                <Typography
-                  sx={{
-                    color: "#858585",
-                    fontVariant: "small-caps",
-                    mb: 2,
-                  }}
-                >
+                <Typography sx={{ color: "#858585", fontVariant: "small-caps", mb: 2 }}>
                   Role
                 </Typography>
                 <Typography sx={{ fontSize: "1rem" }}>
-                  System Administrator
+                  {activeAdmin?.role || "ADMIN"}
                 </Typography>
               </Box>
               <Box>
-                <Typography
-                  sx={{
-                    color: "#858585",
-                    fontVariant: "small-caps",
-                    mb: 2,
-                  }}
-                >
-                  Level
+                <Typography sx={{ color: "#858585", fontVariant: "small-caps", mb: 2 }}>
+                  Admin ID
                 </Typography>
-                <Typography sx={{ fontSize: "1rem" }}>Mid-Level</Typography>
+                <Typography sx={{ fontSize: "1rem" }}>
+                  Admin-00{activeAdmin?.id || "N/A"}
+                </Typography>
               </Box>
             </Stack>
 
-            <Grid container spacing={4} sx={{ mt: 2, gap: 3, display: "flex" }}>
-              <Grid item xs={6} md={5}>
-                <Typography
-                  sx={{
-                    color: "#858585",
-                    fontVariant: "small-caps",
-                    mb: 2,
-                  }}
-                >
-                  Admin ID:
+            <Stack direction="row" sx={{ mt: 4, gap: 3 }}>
+              <Box>
+                <Typography sx={{ color: "#858585", fontVariant: "small-caps", mb: 2 }}>
+                  Email Address
                 </Typography>
                 <Typography sx={{ fontSize: "1rem" }}>
-                  System Administrator
+                  {activeAdmin?.email || "N/A"}
                 </Typography>
-              </Grid>
-
-              <Grid item xs={6} md={5}>
-                <Typography
-                  sx={{
-                    color: "#858585",
-                    fontVariant: "small-caps",
-                    mb: 2,
-                  }}
-                >
-                  Email Address:
-                </Typography>
-                <Typography sx={{ fontSize: "1rem" }}>Mid-Level</Typography>
-              </Grid>
-
-              <Grid item xs={6} md={5}>
-                <Typography
-                  sx={{
-                    color: "#858585",
-                    fontVariant: "small-caps",
-                    mb: 2,
-                  }}
-                >
+              </Box>
+              <Box>
+                <Typography sx={{ color: "#858585", fontVariant: "small-caps", mb: 2 }}>
                   Date Joined
                 </Typography>
-                <Typography sx={{ fontSize: "1rem" }}>
-                  System Administrator
-                </Typography>
-              </Grid>
+             <Typography sx={{ fontSize: "1rem" }}>
+              {activeAdmin?.created_at ? new Date(activeAdmin.created_at).toISOString().slice(0, 10) : "N/A"}
+            </Typography>
 
-              <Grid item xs={6} md={5}>
-                <Typography
-                  sx={{
-                    color: "#858585",
-                    fontVariant: "small-caps",
-                    mb: 2,
-                  }}
-                >
+              </Box>
+            </Stack>
+
+            <Stack direction="row" sx={{ mt: 4, gap: 3 }}>
+              {/* <Box>
+                <Typography sx={{ color: "#858585", fontVariant: "small-caps", mb: 2 }}>
                   Last Login
                 </Typography>
-                <Typography sx={{ fontSize: "1rem" }}>Mid-Level</Typography>
-              </Grid>
-            </Grid>
+                <Typography sx={{ fontSize: "1rem" }}>
+                  {activeAdmin?.lastLogin || "N/A"}
+                </Typography>
+              </Box> */}
+            </Stack>
 
+            {/* Permissions section commented out as requested
             <Box sx={{ my: 4 }}>
               <Typography
                 sx={{
@@ -313,7 +200,6 @@ const ViewAdmin = ({ open, close, activeAdmin, editModal }: Props) => {
               >
                 Permissions
               </Typography>
-
               <Stack sx={{ width: { xs: "100%", md: "90%" } }}>
                 {permission.map((permission, i) => (
                   <Box key={i}>
@@ -322,6 +208,7 @@ const ViewAdmin = ({ open, close, activeAdmin, editModal }: Props) => {
                 ))}
               </Stack>
             </Box>
+            */}
 
             <Paper sx={{ p: 3, borderRadius: 4 }}>
               <Typography
@@ -334,38 +221,43 @@ const ViewAdmin = ({ open, close, activeAdmin, editModal }: Props) => {
               >
                 Activity Log
               </Typography>
-              <TableContainer
-                component={Paper}
-                elevation={0}
-                sx={{ borderRadius: 2 }}
-              >
+              <TableContainer component={Paper} elevation={0} sx={{ borderRadius: 2 }}>
                 <Table stickyHeader>
                   <TableHead>
-                    <TableRow
-                      sx={{
-                        background: (theme) => theme.palette.secondary.dark,
-                      }}
-                    >
-                      <TableCellStyled align={"left"}>Date</TableCellStyled>
-                      <TableCellStyled align="left" sx={{ minWidth: 150 }}>
+                    <TableRow sx={{ background: (theme) => theme.palette.secondary.dark }}>
+                      <TableCell align="left">Date</TableCell>
+                      <TableCell align="left" sx={{ minWidth: 150 }}>
                         Activity
-                      </TableCellStyled>
-                      <TableCellStyled align="left">
-                        Description
-                      </TableCellStyled>
+                      </TableCell>
+                      <TableCell align="left">Description</TableCell>
                     </TableRow>
                   </TableHead>
-                  <TableBody></TableBody>
+                  <TableBody>
+                    {activityLog.length > 0 ? (
+                      activityLog.map((log, i) => (
+                        <TableRow key={i}>
+                          <TableCell>{log.date}</TableCell>
+                          <TableCell>{log.activity}</TableCell>
+                          <TableCell>{log.description}</TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={3} align="center">
+                          No activity log available
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
                 </Table>
               </TableContainer>
             </Paper>
           </Box>
         </DialogContent>
-
+{/* 
         <DialogActions
           sx={{
             justifyContent: "center",
-
             pb: (theme) => `${theme.spacing(8)} !important`,
             mt: (theme) => `${theme.spacing(4)} !important`,
           }}
@@ -373,10 +265,7 @@ const ViewAdmin = ({ open, close, activeAdmin, editModal }: Props) => {
           <Button
             type="button"
             variant="contained"
-            sx={{
-              textTransform: "capitalize",
-              minWidth: 120,
-            }}
+            sx={{ textTransform: "capitalize", minWidth: 120 }}
             onClick={editModal}
           >
             Edit
@@ -384,17 +273,14 @@ const ViewAdmin = ({ open, close, activeAdmin, editModal }: Props) => {
           <Button
             type="button"
             variant="outlined"
-            sx={{
-              textTransform: "capitalize",
-              minWidth: 120,
-            }}
+            sx={{ textTransform: "capitalize", minWidth: 120 }}
           >
             Deactivate
           </Button>
           <Button type="submit" variant="text" sx={{ mr: 2 }}>
             <Icon icon="fluent:delete-24-regular" fontSize={25} />
           </Button>
-        </DialogActions>
+        </DialogActions> */}
       </Box>
     </Drawer>
   );

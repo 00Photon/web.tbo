@@ -19,6 +19,7 @@ import { Theme, useTheme } from "@mui/material/styles";
 
 // ** Next Imports
 import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
 
 // ** Logo Import
 import Logo from "../../../../public/TBO.svg";
@@ -26,7 +27,6 @@ import Bitmap from "../assets/Bitmap.svg";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { Dashboard, ExitToApp, Person } from "@mui/icons-material";
 import { Button, IconButton, Popover } from "@mui/material";
-import { useRouter } from "next/navigation";
 
 const pages = [
   { href: "/", title: "Home" },
@@ -39,13 +39,19 @@ const pages = [
 function Header() {
   const { data: session } = useSession();
   const router = useRouter();
-
+  const pathname = usePathname(); // Get the current route
   const [active, setActive] = React.useState<number>(0);
   const [anchorElNav, setAnchorElNav] = React.useState(null);
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [anchorMobileNav, setAnchorMobileNav] = React.useState(false);
 
   const theme: Theme = useTheme();
+
+  // Update active state based on the current route
+  React.useEffect(() => {
+    const activeIndex = pages.findIndex((page) => page.href === pathname);
+    setActive(activeIndex !== -1 ? activeIndex : 0); // Default to 0 if no match
+  }, [pathname]);
 
   const handleActive = (index: number) => {
     setActive(index);
@@ -76,44 +82,44 @@ function Header() {
     setAnchorElNav(null);
   };
 
-  const { data } = useSession();
   const isMediumScreenUp = useMediaQuery(theme.breakpoints.up("sm"));
+
   return (
     <>
-       <AppBar
-          position="static"
-          elevation={0}
-          sx={{
-            p: 3,
-            position: "relative",
-            backgroundColor: theme => theme.palette.primary.dark,
-          }}
-        >
-        <Box
+      <AppBar
+        position="static"
+        elevation={0}
         sx={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          backgroundImage: `url(${Bitmap.src})`,
-          backgroundSize: "cover",
-        }}
-      />
-         <Container
-        maxWidth="lg"
-        sx={{
-          backgroundColor: theme => theme.palette.primary.light,
-          borderRadius: 2,
-          p: 2,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 2,
+          p: 3,
           position: "relative",
-          zIndex: 1,
+          backgroundColor: (theme) => theme.palette.primary.dark,
         }}
       >
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundImage: `url(${Bitmap.src})`,
+            backgroundSize: "cover",
+          }}
+        />
+        <Container
+          maxWidth="lg"
+          sx={{
+            backgroundColor: (theme) => theme.palette.primary.light,
+            borderRadius: 2,
+            p: 2,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 2,
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
           <Box>
             <Link href="/">
               <StyledImage src={Logo.src} alt="TBO Logo" />
@@ -153,7 +159,7 @@ function Header() {
                     transition: "border-color 0.3s",
                     "&:after": {
                       content: '""',
-                      display: "blocK",
+                      display: "block",
                       width: "fit",
                     },
                     "&:focus, &.MuiButton-root:hover": {
@@ -183,7 +189,7 @@ function Header() {
           </Box>
 
           <Box sx={{ display: "flex", gap: 2, alignItems: "baseline" }}>
-            {!data?.user ? (
+            {!session?.user ? (
               <Box sx={{ display: "flex", gap: 2 }}>
                 <Box
                   sx={{
@@ -235,7 +241,7 @@ function Header() {
                       },
                     }}
                   >
-                    <Link href="/sign-up">Sign&nbsp;Up</Link>
+                    <Link href="/sign-up">Sign Up</Link>
                   </Button>
                 </Box>
               </Box>
@@ -302,19 +308,23 @@ function Header() {
                   },
                 }}
               >
-                {pages.map((page) => (
+                {pages.map((page, i) => (
                   <MenuItem
                     key={page.title}
-                    // component={Link}
-                    href={page.href}
-                    onClick={handleCloseMobileNav}
+                    onClick={() => {
+                      handleCloseMobileNav();
+                      handleActive(i); // Update active state for mobile menu
+                    }}
                     sx={{
                       color: (theme) => theme.palette.primary.main,
                     }}
                   >
                     <Button
                       sx={{
-                        color: (theme) => theme.palette.primary.dark,
+                        color:
+                          active === i
+                            ? (theme) => theme.palette.primary.dark
+                            : (theme) => theme.palette.primary.main,
                         fontSize: "small",
                       }}
                     >
@@ -348,7 +358,7 @@ function Header() {
             alignItems: "center",
           }}
         >
-          {data?.user.email}
+          {session?.user.email}
         </Typography>
         <Divider />
         <Typography

@@ -211,7 +211,7 @@ const NewAdmin = ({ open, close }: Props) => {
                       >
                         <MenuItem value="ADMIN">Admin</MenuItem>
                         <MenuItem value="SUPER_ADMIN">Super Admin</MenuItem>
-                        <MenuItem value="TECH">Tech</MenuItem>
+                   
                       </CustomTextField>
                     )}
                   />

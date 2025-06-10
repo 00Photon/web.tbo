@@ -71,7 +71,7 @@ export const changePassword = async (data: { current_password: string, password:
     if (axios.isAxiosError(error) && error.response?.data?.message) {
       throw new Error(error.response.data.message);
     } else {
-      throw new Error("Failed to change password");
+      throw new Error("Failed to change password. Current password is incorrect.");
     }
   }
 };

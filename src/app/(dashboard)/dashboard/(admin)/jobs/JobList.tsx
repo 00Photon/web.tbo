@@ -326,9 +326,9 @@ const JobListTable: React.FC = () => {
               {filteredJobs.length > 0 ? (
                 filteredJobs
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((job) => (
+                  .map((job, i) => (
                     <TableRow key={job.id}>
-                      <TableCell>{job.id}</TableCell>
+                      <TableCell>{i + 1}</TableCell>
                       <TableCell>{job.title}</TableCell>
                       <TableCell>{job.applicant_count}</TableCell>
                       <TableCell>{new Date(job.created_at).toISOString().split("T")[0]}</TableCell>

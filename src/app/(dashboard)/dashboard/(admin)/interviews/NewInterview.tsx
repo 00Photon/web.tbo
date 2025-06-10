@@ -1,3 +1,4 @@
+
 // *React Imports
 import { useState, useEffect } from "react";
 
@@ -8,13 +9,29 @@ import Icon from "@/@core/component/icon";
 import CustomTextField from "@/@core/component/mui/text-field";
 
 // *Utility Imports
-import { interviewSchema } from "@/@core/formSchema";
+import { interviewSchema as baseInterviewSchema } from "@/@core/formSchema";
+import * as yup from "yup";
+
+// Extend the schema to include jobId and phone number validation
+const interviewSchema = baseInterviewSchema.shape({
+  jobId: yup.number().min(1, "Please select a job").required("Job is required"),
+  applicationId: yup.number().min(1, "Please select a candidate").required("Candidate is required"),
+  interviewerPhone: yup
+    .string()
+    .required("Phone number is required")
+    .matches(/^\+234\d{10}$/, "Phone number must start with +234 followed by 10 digits"),
+  tboRepPhone: yup
+    .string()
+    .required("Phone number is required")
+    .matches(/^\+234\d{10}$/, "Phone number must start with +234 followed by 10 digits"),
+});
 
 // *Third Party Imports
 import { Controller, useForm, SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { TimeField } from "@mui/x-date-pickers/TimeField";
+import Autocomplete from "@mui/material/Autocomplete";
 import dayjs from "dayjs";
 
 // *MUI Imports
@@ -26,15 +43,12 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import MenuItem from "@mui/material/MenuItem";
+import InputAdornment from "@mui/material/InputAdornment";
 
 import { scheduleInterview } from "@/@core/services/interviewService";
 import { getAppliedJob } from "@/@core/services/jobVanciesService";
 
-interface Props {
-  open: boolean;
-  close: () => void;
-}
-
+// Assuming a new service to fetch jobs with applications
 interface Job {
   id: number;
   title: string;
@@ -55,6 +69,7 @@ interface Job {
   status: string;
   applicant_count: number;
   client: Client;
+  applications?: Application[];
 }
 
 interface Client {
@@ -74,7 +89,6 @@ interface Client {
   contact_person: string | null;
   work_email: string | null;
   position_in_company: string | null;
-  phone_number: string | null;
   cv_upload: string | null;
   cover_letter_upload: string | null;
   id_upload: string | null;
@@ -137,6 +151,7 @@ interface Application {
 }
 
 interface IFormInput {
+  jobId: number;
   applicationId: number;
   userId: number;
   interviewerName: string;
@@ -155,6 +170,7 @@ interface IFormInput {
 }
 
 const defaultValues: IFormInput = {
+  jobId: 0,
   applicationId: 0,
   userId: 0,
   interviewerName: "",
@@ -172,8 +188,14 @@ const defaultValues: IFormInput = {
   tboRepPhone: "",
 };
 
+interface Props {
+  open: boolean;
+  close: () => void;
+}
+
 const NewInterview = ({ open, close }: Props) => {
-  const [applications, setApplications] = useState<Application[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [selectedJobId, setSelectedJobId] = useState<number>(0);
   const [loading, setLoading] = useState(false);
 
   const {
@@ -189,39 +211,63 @@ const NewInterview = ({ open, close }: Props) => {
     resolver: yupResolver(interviewSchema),
   });
 
-  // Watch applicationId to update userId when changed
+  // Watch jobId and applicationId
+  const selectedJobIdValue = watch("jobId");
   const selectedApplicationId = watch("applicationId");
 
   useEffect(() => {
-    const fetchApplications = async () => {
+    const fetchJobs = async () => {
       try {
         setLoading(true);
         const applications = await getAppliedJob();
-        setApplications(applications);
+        const jobsMap = new Map<number, Job>();
+        (applications as Application[]).forEach((app) => {
+          if (!jobsMap.has(app.job_id)) {
+            jobsMap.set(app.job_id, {
+              ...app.job,
+              applications: [] as Application[],
+              // Ensure all Job properties are present if needed
+            });
+          }
+          const job = jobsMap.get(app.job_id);
+          if (job) {
+            if (!job.applications) {
+              job.applications = [];
+            }
+            job.applications.push(app);
+          }
+        });
+        setJobs(Array.from(jobsMap.values()));
       } catch (error) {
-        console.error("Error fetching applications:", error);
+        console.error("Error fetching jobs:", error);
       } finally {
         setLoading(false);
       }
     };
 
     if (open) {
-      fetchApplications();
+      fetchJobs();
     }
   }, [open]);
 
   useEffect(() => {
     if (selectedApplicationId) {
-      const selectedApp = applications.find((app) => app.id === selectedApplicationId);
+      const selectedApp = jobs
+        .flatMap((job) => job.applications)
+        .find((app) => app && app.id === selectedApplicationId);
       if (selectedApp) {
         setValue("userId", selectedApp.user_id);
       }
     }
-  }, [selectedApplicationId, applications, setValue]);
+  }, [selectedApplicationId, jobs, setValue]);
+
+  // Filter applications based on selected job
+  const filteredApplications = jobs.find((job) => job.id === selectedJobIdValue)?.applications || [];
 
   const submitForm: SubmitHandler<IFormInput> = async (values) => {
     try {
       const formattedData = {
+        job_id: values.jobId, // Changed to job_id to match backend response
         application_id: values.applicationId,
         user_id: values.userId,
         interview_date: values.interviewDate,
@@ -229,23 +275,32 @@ const NewInterview = ({ open, close }: Props) => {
         interview_location: values.format === "In-Person" ? "Company Headquarters, Meeting Room 3" : "Virtual",
         interviewer_department: values.interviewerDepartment,
         interviewer_name: values.interviewerName,
-        interviewer_role: values.interviewerName, // Can be made dynamic if needed
         interviewer_email: values.interviewerEmail,
         interviewer_phone: values.interviewerPhone,
+        interviewer_role: "", // Provide a value or map from form if available
         tbo_rep_name: values.tboRepName,
         tbo_rep_email: values.tboRepEmail,
         tbo_rep_phone: values.tboRepPhone,
-        status: "Scheduled",
+        status: "scheduled",
       };
       const response = await scheduleInterview(formattedData);
       console.log("Interview scheduled successfully:", response);
       alert("Interview scheduled successfully!");
       reset();
+      setSelectedJobId(0);
       close();
     } catch (error) {
       console.error("Error scheduling interview:", error);
       alert("Failed to schedule interview. Please try again.");
     }
+  };
+
+  // Handle phone number input to ensure +234 prefix
+  const handlePhoneChange = (value: string, onChange: (value: string) => void) => {
+    if (!value.startsWith("+234")) {
+      value = "+234" + value.replace(/^\+234/, "");
+    }
+    onChange(value);
   };
 
   return (
@@ -280,21 +335,57 @@ const NewInterview = ({ open, close }: Props) => {
         </Box>
 
         <DialogContent
-          sx={{
-            pb: (theme) => `${theme.spacing(4)} !important`,
-            px: (theme) => [`${theme.spacing(4)} !important`],
-            m: (theme) => theme.spacing(3),
+          sx={(theme) => ({
+            pb: `${theme.spacing(4)} !important`,
+            px: [`${theme.spacing(4)} !important`],
+            m: theme.spacing(3),
             borderRadius: "10px",
             overflowY: "scroll",
             scrollbarWidth: "none",
             msOverflowStyle: "none",
             "&::-webkit-scrollbar": { display: "none" },
-          }}
+          })}
         >
           <Box sx={{ mb: 4 }}>
-            <Typography sx={{ mt: 4, mb: 2, fontWeight: 600 }}>Candidatee Details</Typography>
+            <Typography sx={{ mt: 4, mb: 2, fontWeight: 600 }}>Candidate Details</Typography>
             <Grid container spacing={4}>
-              <Grid item xs={12}>
+              <Grid item xs={12} md={6}>
+                <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
+                  Select Job
+                </Typography>
+                <Controller
+                  name="jobId"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <CustomTextField
+                      fullWidth
+                      value={value}
+                      onChange={(e) => {
+                        onChange(e);
+                        setSelectedJobId(Number(e.target.value));
+                        setValue("applicationId", 0);
+                        setValue("userId", 0);
+                      }}
+                      size="medium"
+                      select
+                      disabled={loading}
+                      error={Boolean(errors.jobId)}
+                      helperText={errors.jobId?.message}
+                    >
+                      <MenuItem value={0} disabled>
+                        {loading ? "Loading Jobs..." : "Select a Job"}
+                      </MenuItem>
+                      {jobs.map((job) => (
+                        <MenuItem key={job.id} value={job.id}>
+                          {job.title}
+                        </MenuItem>
+                      ))}
+                    </CustomTextField>
+                  )}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
                 <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
                   Select Candidate
                 </Typography>
@@ -303,25 +394,25 @@ const NewInterview = ({ open, close }: Props) => {
                   control={control}
                   rules={{ required: true }}
                   render={({ field: { value, onChange } }) => (
-                    <CustomTextField
-                      fullWidth
-                      value={value}
-                      onChange={onChange}
-                      size="medium"
-                      select
-                      disabled={loading}
-                      error={Boolean(errors.applicationId)}
-                      helperText={errors.applicationId?.message}
-                    >
-                      <MenuItem value={0} disabled>
-                        {loading ? "Loading Candidates..." : "Select a Candidate"}
-                      </MenuItem>
-                      {applications.map((app) => (
-                        <MenuItem key={app.id} value={app.id}>
-                          {app.job.title} - {app.user.name} - {app.user.email}
-                        </MenuItem>
-                      ))}
-                    </CustomTextField>
+                    <Autocomplete
+                      options={filteredApplications}
+                      getOptionLabel={(option) => `${option.user.name} - ${option.user.email}`}
+                      onChange={(_, newValue) => {
+                        onChange(newValue ? newValue.id : 0);
+                      }}
+                      disabled={loading || !selectedJobIdValue}
+                      renderInput={(params) => (
+                        <CustomTextField
+                          {...params}
+                          fullWidth
+                          size="medium"
+                          placeholder="Search for a candidate..."
+                          error={Boolean(errors.applicationId)}
+                          helperText={errors.applicationId?.message}
+                        />
+                      )}
+                      noOptionsText={selectedJobIdValue ? "No candidates available" : "Select a job first"}
+                    />
                   )}
                 />
               </Grid>
@@ -404,11 +495,14 @@ const NewInterview = ({ open, close }: Props) => {
                     <CustomTextField
                       fullWidth
                       value={value}
-                      onChange={onChange}
+                      onChange={(e) => handlePhoneChange(e.target.value, onChange)}
                       size="medium"
-                      placeholder="+1234567890"
+                      placeholder="8100011111"
                       error={Boolean(errors.interviewerPhone)}
                       helperText={errors.interviewerPhone?.message}
+                      InputProps={{
+                        startAdornment: <InputAdornment position="start"></InputAdornment>,
+                      }}
                     />
                   )}
                 />
@@ -515,75 +609,77 @@ const NewInterview = ({ open, close }: Props) => {
                   )}
                 />
               </Grid>
-           
             </Grid>
-            <Typography sx={{ mt: 4, mb: 2, fontWeight: 600 }}>TBO Representative Information</Typography>
-<Grid container spacing={4}>
-  <Grid item xs={12} md={6}>
-    <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
-      TBO Representative Name
-    </Typography>
-    <Controller
-      name="tboRepName"
-      control={control}
-      rules={{ required: true }}
-      render={({ field: { value, onChange } }) => (
-        <CustomTextField
-          fullWidth
-          value={value}
-          onChange={onChange}
-          size="medium"
-          placeholder="Jane Smith"
-          error={Boolean(errors.tboRepName)}
-          helperText={errors.tboRepName?.message}
-        />
-      )}
-    />
-  </Grid>
-  <Grid item xs={12} md={6}>
-    <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
-      TBO Email Address
-    </Typography>
-    <Controller
-      name="tboRepEmail"
-      control={control}
-      rules={{ required: true }}
-      render={({ field: { value, onChange } }) => (
-        <CustomTextField
-          fullWidth
-          value={value}
-          onChange={onChange}
-          size="medium"
-          placeholder="janesmith@example.com"
-          error={Boolean(errors.tboRepEmail)}
-          helperText={errors.tboRepEmail?.message}
-        />
-      )}
-    />
-  </Grid>
-  <Grid item xs={12} md={6}>
-    <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
-      TBO Phone Number
-    </Typography>
-    <Controller
-      name="tboRepPhone"
-      control={control}
-      rules={{ required: true }}
-      render={({ field: { value, onChange } }) => (
-        <CustomTextField
-          fullWidth
-          value={value}
-          onChange={onChange}
-          size="medium"
-          placeholder="+1234567890"
-          error={Boolean(errors.tboRepPhone)}
-          helperText={errors.tboRepPhone?.message}
-        />
-      )}
-    />
-  </Grid>
 
-  <Grid item xs={12}>
+            <Typography sx={{ mt: 4, mb: 2, fontWeight: 600 }}>TBO Representative Information</Typography>
+            <Grid container spacing={4}>
+              <Grid item xs={12} md={6}>
+                <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
+                  TBO Representative Name
+                </Typography>
+                <Controller
+                  name="tboRepName"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <CustomTextField
+                      fullWidth
+                      value={value}
+                      onChange={onChange}
+                      size="medium"
+                      placeholder="Jane Smith"
+                      error={Boolean(errors.tboRepName)}
+                      helperText={errors.tboRepName?.message}
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
+                  TBO Email Address
+                </Typography>
+                <Controller
+                  name="tboRepEmail"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <CustomTextField
+                      fullWidth
+                      value={value}
+                      onChange={onChange}
+                      size="medium"
+                      placeholder="janesmith@example.com"
+                      error={Boolean(errors.tboRepEmail)}
+                      helperText={errors.tboRepEmail?.message}
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
+                  TBO Phone Number
+                </Typography>
+                <Controller
+                  name="tboRepPhone"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field: { value, onChange } }) => (
+                    <CustomTextField
+                      fullWidth
+                      value={value}
+                      onChange={(e) => handlePhoneChange(e.target.value, onChange)}
+                      size="medium"
+                      placeholder="8100011111"
+                      error={Boolean(errors.tboRepPhone)}
+                      helperText={errors.tboRepPhone?.message}
+                      InputProps={{
+                        startAdornment: <InputAdornment position="start"></InputAdornment>,
+                      }}
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid item xs={12}>
                 <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
                   Additional Information (Optional)
                 </Typography>
@@ -603,9 +699,7 @@ const NewInterview = ({ open, close }: Props) => {
                   )}
                 />
               </Grid>
-
-
-</Grid>
+            </Grid>
           </Box>
         </DialogContent>
 

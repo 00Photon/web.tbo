@@ -6,10 +6,7 @@ import CustomChip from "@/@core/component/mui/chip";
 import EditAdmin from "./EditAdmin";
 import ViewAdmin from "./ViewAdmin";
 import { getAdmins, getAdminById, deleteAdmin } from "@/@core/services/adminService";
-import { Controller, useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
 import Box from "@mui/material/Box";
-import Grid from "@mui/material/Grid";
 import Paper from "@mui/material/Paper";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -19,7 +16,6 @@ import Checkbox from "@mui/material/Checkbox";
 import MenuItem from "@mui/material/MenuItem";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
-import Collapse from "@mui/material/Collapse";
 import Button from "@mui/material/Button";
 import TableContainer from "@mui/material/TableContainer";
 import Table from "@mui/material/Table";
@@ -34,13 +30,15 @@ import { Theme } from "@mui/material/styles";
 export type MockData = {
   id: number;
   name: string;
+  account_type?: string;
   email: string;
-  level: string;
   role: string;
   status: boolean;
   avatarColor?: string;
   avatar?: string | undefined;
   sx?: object;
+  created_at?: string;
+  lastLogin?: string;
 };
 
 export type AdminData = {
@@ -48,7 +46,6 @@ export type AdminData = {
   id: number;
   name: string;
   email: string;
-  level: string;
   role: string;
   status: boolean;
 };
@@ -71,6 +68,8 @@ const AdminsTable = () => {
 
   const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up("md"));
 
+  const toggleEditAdminModal = () => setEditAdminModal((prev) => !prev);
+
   useEffect(() => {
     const fetchAdmins = async () => {
       try {
@@ -87,12 +86,22 @@ const AdminsTable = () => {
     fetchAdmins();
   }, []);
 
-  const toggleEditAdminModal = () => setEditAdminModal(!editAdminModal);
-
   const setAdminView = async (admin: MockData) => {
     try {
-      const adminData = await getAdminById(String(admin.id));
-      setActiveAdmin(adminData);
+      const response = await getAdminById(String(admin.id));
+      const adminData = response.admin; // Extract nested admin object
+      const transformedData: MockData = {
+        id: adminData.id,
+        name: adminData.name || "N/A",
+        email: adminData.email || "N/A",
+        role: adminData.account_type || "ADMIN",
+        status: adminData.status === "active",
+        avatar: adminData.profile_image || undefined,
+        avatarColor: adminData.avatarColor || "primary",
+        created_at: adminData.created_at || "N/A",
+        lastLogin: adminData.updated_at || "N/A",
+      };
+      setActiveAdmin(transformedData);
       setViewAdminDrawer(true);
     } catch (error) {
       console.error("Error fetching admin by ID:", error);
@@ -187,25 +196,25 @@ const AdminsTable = () => {
               minWidth: 400,
             }}
           >
-            <CustomTextField
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              size="small"
-              placeholder="Name, Role, Level"
-              fullWidth
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment
-                    position="start"
-                    sx={{
-                      color: (theme) => theme.palette.primary.main,
-                    }}
-                  >
-                    <Icon icon="lets-icons:search-duotone" />
-                  </InputAdornment>
-                ),
-              }}
-            />
+<CustomTextField
+  value={value}
+  onChange={(e) => setValue(e.target.value)}
+  size="small"
+  placeholder="Name, Role"
+  fullWidth
+  InputProps={{
+    startAdornment: (
+      <InputAdornment
+        position="start"
+        sx={{
+          color: (theme) => theme.palette.primary.main,
+        }}
+      >
+        <Icon icon="lets-icons:search-duotone" />
+      </InputAdornment>
+    ),
+  }}
+/>
           </Box>
         </Box>
 
@@ -218,7 +227,7 @@ const AdminsTable = () => {
                 <TableCellStyled align="left" sx={{ minWidth: 50 }}>
                   <Checkbox size="small" />
                 </TableCellStyled>
-                <TableCellStyled align={"left"}>Admin ID</TableCellStyled>
+                <TableCellStyled align="left">S/N</TableCellStyled>
                 <TableCellStyled align="left" sx={{ minWidth: 150 }}>
                   Name
                 </TableCellStyled>
@@ -234,10 +243,10 @@ const AdminsTable = () => {
                   <TableCell align="left">
                     <Checkbox size="small" />
                   </TableCell>
-                  <TableCell>{item.id}</TableCell>
+                  <TableCell>{i + 1}</TableCell>
                   <TableCell>{item.name}</TableCell>
                   <TableCell>{item.email}</TableCell>
-                  <TableCell>{item.account_type}</TableCell>
+                  <TableCell>{item.role}</TableCell>
                   <TableCell
                     align="center"
                     sx={{
@@ -289,7 +298,7 @@ const AdminsTable = () => {
                           PaperProps={{ style: { minWidth: "8rem" } }}
                         >
                           <MenuItem
-                            onClick={() => setAdminView(item)}
+                            onClick={() => setAdminView(item as MockData)}
                             sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
                           >
                             <Icon icon="tabler:eye" fontSize={20} />
@@ -345,11 +354,11 @@ const AdminsTable = () => {
         </DialogActions>
       </Dialog>
 
-      <EditAdmin
+      {/* <EditAdmin
         open={editAdminModal}
         close={toggleEditAdminModal}
         activeAdmin={activeAdmin}
-      />
+      /> */}
 
       <ViewAdmin
         open={viewAdminDrawer}

@@ -14,8 +14,8 @@ import { Theme } from "@mui/material/styles";
 // * Tab Components Imports
 import { ClientJobTabs } from "./Tabs/data";
 import ClientsTable from "./Tabs/client/ClientsTable";
-import Jobs from "./Tabs/jobs/JobsTable";
-import Clients from "./Tabs/client/ClientList";
+// import Jobs from "./Tabs/jobs/JobsTable";
+// import Clients from "./Tabs/client/ClientList";
 
 export default function ClientProfilePage() {
   const [interview, setNewInterview] = useState<boolean>(false);

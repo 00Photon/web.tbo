@@ -137,14 +137,19 @@ const handleToggleActivation = async (client: ClientData) => {
       });
     }
 
-    setClients(prevClients => 
-      prevClients.map(c => 
-        c.id === client.id ? { 
-          ...c, 
-          status: updatedClient.status
-        } : c
-      )
-    );
+setClients(prevClients => 
+  prevClients.map(c => 
+    c.id === client.id ? { 
+      ...c, 
+      status: 
+        typeof updatedClient.status === 'string' && (updatedClient.status as string).toLowerCase() === 'active'
+          ? 'active'
+          : 'inactive'
+    } : c
+  )
+);
+
+
 
     const index = filteredClients.findIndex(c => c.id === client.id);
     handleRowOptionsClose(index);

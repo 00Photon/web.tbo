@@ -250,7 +250,7 @@ const TalentTable = () => {
                     <TableCell>
                       <Checkbox size="small" />
                     </TableCell>
-                    <TableCell>{item.id}</TableCell>
+                    <TableCell>{index + 1}</TableCell>
                     <TableCell>{item.name}</TableCell>
                     <TableCell>{item.email}</TableCell>
                     <TableCell align="center">{item.phone_number}</TableCell>

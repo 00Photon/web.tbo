@@ -244,14 +244,14 @@ const Interviews = () => {
         <Table>
           <TableHead sx={{ backgroundColor: "primary.light" }}>
             <TableRow>
-              <TableCell sx={{ fontWeight: "bold", color: "primary.contrastText" }}>Job</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "primary.contrastText" }}>Candidate</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "primary.contrastText" }}>Interview Date</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "primary.contrastText" }}>Time</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "primary.contrastText" }}>Location</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "primary.contrastText" }}>Interviewer</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "primary.contrastText" }}>Status</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "primary.contrastText" }}>Actions</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "primary.main" }}>Job</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "primary.main" }}>Candidate</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "primary.main" }}>Interview Date</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "primary.main" }}>Time</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "primary.main" }}>Location</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "primary.main" }}>Interviewer</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "primary.main" }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "primary.main" }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>

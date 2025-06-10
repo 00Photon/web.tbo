@@ -158,17 +158,18 @@ const Password = () => {
           </Stack>
 
           <Divider variant="middle" />
-          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", my: 4 }}>
-            <Button
-              type="submit"
-              variant="contained"
-              size="large"
-              disabled={isSubmitting}
-              sx={{ width: { xs: "fit-content", md: "30%" }, textTransform: "capitalize" }}
-            >
-              {isSubmitting ? "Saving..." : "Save Changes"}
-            </Button>
-          </Box>
+         <Box sx={{ display: "flex", justifyContent: "flex-start", alignItems: "center", my: 4 }}>
+          <Button
+            type="submit"
+            variant="contained"
+            size="large"
+            disabled={isSubmitting}
+            sx={{ width: { xs: "fit-content", md: "30%" }, textTransform: "capitalize" }}
+          >
+            {isSubmitting ? "Saving..." : "Save Changes"}
+          </Button>
+        </Box>
+
         </form>
       </Box>
 

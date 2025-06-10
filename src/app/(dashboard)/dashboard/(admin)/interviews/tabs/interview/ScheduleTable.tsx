@@ -146,9 +146,9 @@ const ScheduleTable = () => {
           <Table stickyHeader>
             <TableHead>
               <TableRow
-                sx={{ background: (theme) => theme.palette.secondary.dark }}
+                sx={{ background: (theme) => theme.palette.secondary.light }}
               >
-                <TableCellStyled align="left">
+                {/* <TableCellStyled align="left">
                   <Checkbox
                     size="small"
                     // name={"all-checked"}
@@ -171,9 +171,8 @@ const ScheduleTable = () => {
                 <TableCellStyled align="left">
                   Interview&nbsp;Date
                 </TableCellStyled>
-                {/* <TableCellStyled align="center">Status</TableCellStyled>
-                <TableCellStyled align="center">Comment</TableCellStyled> */}
-                <TableCellStyled align="left">Actions</TableCellStyled>
+         
+                <TableCellStyled align="left">Actions</TableCellStyled> */}
               </TableRow>
             </TableHead>
             <TableBody>
