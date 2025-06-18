@@ -72,11 +72,11 @@ const TalentCard = ({ talent, onClick }: { talent: Talent; onClick: (id: number)
     >
       <Box sx={{ position: "relative", px: 3, mt: 1 }}>
         {isAvailableNow ? (
-          <StyledBadge
-            overlap="circular"
-            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-            variant="dot"
-          >
+          // <StyledBadge
+          //   overlap="circular"
+          //   anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          //   variant="dot"
+          // >
             <Avatar
               src={talent.avatar}
               alt={talent.name}
@@ -87,7 +87,7 @@ const TalentCard = ({ talent, onClick }: { talent: Talent; onClick: (id: number)
                 boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
               }}
             />
-          </StyledBadge>
+          // </StyledBadge>
         ) : (
           <Avatar
             src={talent.avatar}
@@ -105,9 +105,13 @@ const TalentCard = ({ talent, onClick }: { talent: Talent; onClick: (id: number)
       <CardContent sx={{ pt: 2, px: 3, pb: 3 }}>
         <Box sx={{ mb: 1.5, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5, fontSize: "1.1rem", lineHeight: 1.2 }}>
-              {talent.name}
-            </Typography>
+           <Typography
+            variant="h6"
+            sx={{ fontWeight: 600, mb: 0.5, fontSize: "1.1rem", lineHeight: 1.2 }}
+          >
+            {talent.name?.split(" ")[0]} *****
+          </Typography>
+
 
             <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
               <Chip
@@ -136,7 +140,7 @@ const TalentCard = ({ talent, onClick }: { talent: Talent; onClick: (id: number)
             </Box>
 
             <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
-              <Rating value={talent.rating} precision={0.1} readOnly size="small" sx={{ mr: 1 }} />
+              {/* <Rating value={talent.rating} precision={0.1} readOnly size="small" sx={{ mr: 1 }} /> */}
               {/* <Typography variant="body2" color="text.secondary">
                 {talent.rating} ({talent.projectsCompleted} projects)
               </Typography> */}
@@ -171,7 +175,7 @@ const TalentCard = ({ talent, onClick }: { talent: Talent; onClick: (id: number)
             py: 1.25,
           }}
         >
-        Hire now
+        Open to hire
         </Button>
       </CardContent>
     </Card>

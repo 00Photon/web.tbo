@@ -52,14 +52,14 @@ interface Job {
   job_type: string;
   description: string;
   requirements: string;
-  skill: string;
+  skills: string[]; // Changed from 'skill: string'
   currency: string;
   minimum_salary: string;
   maximum_salary: string;
   salary_type?: string;
   location: string;
   application_deadline: string;
-  additional_info: string;
+  additional_info?: string;
   created_by: number;
   client_id: number;
   created_at: string;
@@ -106,7 +106,7 @@ const EditJobModal: React.FC<{
     job_type: "",
     description: "",
     requirements: "",
-    skill: "",
+    skills: [] as string[],
     currency: "",
     minimum_salary: 0,
     maximum_salary: 0,
@@ -117,6 +117,7 @@ const EditJobModal: React.FC<{
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [skillsInput, setSkillsInput] = useState("");
 
   useEffect(() => {
     if (job) {
@@ -125,7 +126,7 @@ const EditJobModal: React.FC<{
         job_type: job.job_type,
         description: job.description,
         requirements: job.requirements,
-        skill: job.skill,
+        skills: job.skills || [], // Fallback to empty array if skills is undefined
         currency: job.currency,
         minimum_salary: parseFloat(job.minimum_salary),
         maximum_salary: parseFloat(job.maximum_salary),
@@ -134,23 +135,60 @@ const EditJobModal: React.FC<{
         application_deadline: job.application_deadline.split("T")[0],
         additional_info: job.additional_info || "",
       });
+      setSkillsInput(job.skills?.join(", ") || ""); // Safely join skills or set empty string
+    } else {
+      // Reset form when job is null
+      setFormData({
+        title: "",
+        job_type: "",
+        description: "",
+        requirements: "",
+        skills: [],
+        currency: "",
+        minimum_salary: 0,
+        maximum_salary: 0,
+        salary_type: "",
+        location: "",
+        application_deadline: "",
+        additional_info: "",
+      });
+      setSkillsInput("");
     }
   }, [job]);
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }> | SelectChangeEvent<string>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name as string]: value }));
+    if (name === "skills") {
+      setSkillsInput(value as string);
+      setFormData((prev) => ({
+        ...prev,
+        skills: (value as string)
+          .split(",")
+          .map((skill) => skill.trim())
+          .filter((skill) => skill),
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name as string]: value }));
+    }
   };
 
   const handleSubmit = async () => {
     if (!job) return;
+    if (formData.skills.length === 0) {
+      setError("At least one skill is required.");
+      return;
+    }
     setLoading(true);
     setError(null);
 
     try {
       const updatedJob = await editJobClient(job.id, formData);
-      onJobUpdated(updatedJob.job);
+      onJobUpdated({
+        ...updatedJob.job,
+        skills: JSON.parse(updatedJob.job.skill || "[]"), // Parse skills, fallback to empty array
+      });
       close();
     } catch (err: any) {
       setError(err.message || "Failed to update job");
@@ -158,7 +196,6 @@ const EditJobModal: React.FC<{
       setLoading(false);
     }
   };
-
   return (
     <Dialog open={open} onClose={close} maxWidth="md" fullWidth>
       <DialogTitle>Edit Job</DialogTitle>
@@ -212,12 +249,13 @@ const EditJobModal: React.FC<{
             required
           />
           <TextField
-            label="Skills"
-            name="skill"
-            value={formData.skill}
+            label="Skills (comma-separated)"
+            name="skills"
+            value={skillsInput}
             onChange={handleChange}
             fullWidth
             required
+            helperText="Enter skills separated by commas (e.g., JavaScript, Python, React)"
           />
           <FormControl fullWidth>
             <InputLabel>Currency</InputLabel>
@@ -709,7 +747,7 @@ const JobListTable: React.FC = () => {
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
-      <PostJobModal open={openPostJobModal} close={handleCloseModal} />
+      <PostJobModal open={openPostJobModal} close={handleCloseModal} onJobCreated={() => {}} />
       <EditJobModal
         open={openEditJobModal}
         job={selectedJob}

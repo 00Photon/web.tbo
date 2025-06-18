@@ -1,5 +1,6 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import dayjs from "dayjs";
 
 export const search = yup.object().shape({
   name: yup.string(),
@@ -65,64 +66,62 @@ export const passwordSchema = yup.object().shape({
 });
 
 export const newJobSchema = yup.object().shape({
-  title: yup.string().required("Job title is required"),
-  type: yup.string().required("Job type is required"),
-  description: yup.string().required("Job description is required"),
-  requirement: yup.string().required("Job requirement is required"),
-  skill: yup.array().required("Please add at least one skill"),
-  location: yup.string().required("Job location is required"),
-  currency: yup.string().required("Job currency is required"),
- minSalary: yup
+  title: yup.string().max(255).required(),
+  type: yup
+    .mixed<"FULLTIME" | "PARTTIME" | "CONTRACT" | "INTERNSHIP" | "FREELANCE">()
+    .oneOf(["FULLTIME", "PARTTIME", "CONTRACT", "INTERNSHIP", "FREELANCE"])
+    .required(),
+  description: yup.string().required(),
+  requirement: yup.string().required(),
+  skills: yup
+    .array()
+    .of(yup.string().max(255).required())
+    .min(5)
+    .max(10)
+    .required(),
+  location: yup.string().max(255).required(),
+  currency: yup.mixed<"USD" | "EUR" | "GBP" | "NGN">().oneOf(["USD", "EUR", "GBP", "NGN"]).required(),
+  minSalary: yup.number().min(0).nullable().defined(),
+  maxSalary: yup.number().min(0).nullable().defined(),
+  salary_type: yup.mixed<"MONTHLY" | "ANNUALLY">().oneOf(["MONTHLY", "ANNUALLY"]).required(),
+  application_deadline: yup
     .string()
-    .required("Minimum salary is required")
-    .matches(/^\d+$/, "Minimum salary must be a valid number")
-    .test(
-      "minSalary-lte-maxSalary",
-      "Minimum salary must not be greater than maximum salary",
-      function (value) {
-        const { maxSalary } = this.parent;
-        if (!value || !maxSalary) return true; // Skip if either value is missing
-        return parseFloat(value) <= parseFloat(maxSalary);
-      }
+    .required()
+    .test("is-future-date", "Deadline must be in the future", (value) =>
+      value ? dayjs(value).isAfter(dayjs(), "day") : false
     ),
-  maxSalary: yup
-    .string()
-    .required("Maximum salary is required")
-    .matches(/^\d+$/, "Maximum salary must be a valid number"),
-  salary_type: yup.string().required("Salary type is required"),
-  application_deadline: yup.string().required("Job deadline is required"),
-  information: yup.string().required("Job information is required"),
-  client_id: yup.string().required(" Please select Company"),
+  information: yup.string().nullable().defined(),
+  client_id: yup.string().required(),
 });
+
 export const newJobSchema2 = yup.object().shape({
-  title: yup.string().required("Job title is required"),
-  type: yup.string().required("Job type is required"),
-  description: yup.string().required("Job description is required"),
-  requirement: yup.string().required("Job requirement is required"),
-  skill: yup.array().required("Please add at least one skill"),
-  location: yup.string().required("Job location is required"),
-  salary_type: yup.string().required("Salary type is required"),
-  currency: yup.string().required("Job currency is required"),
-  minSalary: yup
+  title: yup.string().max(255, "Title must be at most 255 characters").required(),
+  type: yup
+    .mixed<"FULLTIME" | "PARTTIME" | "INTERNSHIP" | "FREELANCE">()
+    .oneOf(["FULLTIME", "PARTTIME", "INTERNSHIP", "FREELANCE"])
+    .required(),
+  description: yup.string().required(),
+  requirement: yup.string().required(),
+  skills: yup
+    .array()
+    .of(yup.string().max(255).required())
+    .min(5)
+    .max(10)
+    .required(),
+  location: yup.string().max(255).required(),
+  currency: yup.mixed<"USD" | "EUR" | "GBP" | "NGN">().oneOf(["USD", "EUR", "GBP", "NGN"]).required(),
+  minSalary: yup.number().min(0).nullable().defined(),
+  maxSalary: yup.number().min(0).nullable().defined(),
+  salary_type: yup.mixed<"MONTHLY" | "ANNUALLY">().oneOf(["MONTHLY", "ANNUALLY"]).required(),
+  application_deadline: yup
     .string()
-    .required("Minimum salary is required")
-    .matches(/^\d+$/, "Minimum salary must be a valid number")
-    .test(
-      "minSalary-lte-maxSalary",
-      "Minimum salary must not be greater than maximum salary",
-      function (value) {
-        const { maxSalary } = this.parent;
-        if (!value || !maxSalary) return true; // Skip if either value is missing
-        return parseFloat(value) <= parseFloat(maxSalary);
-      }
+    .required()
+    .test("is-future-date", "Deadline must be in the future", (value) =>
+      value ? dayjs(value).isAfter(dayjs(), "day") : false
     ),
-  maxSalary: yup
-    .string()
-    .required("Maximum salary is required")
-    .matches(/^\d+$/, "Maximum salary must be a valid number"),
-  application_deadline: yup.string().required("Job deadline is required"),
-  information: yup.string().required("Job information is required"),
+  information: yup.string().nullable().defined(),
 });
+
 
 export const newJobSchemaClone = yup.object().shape({
   title: yup.string().required("Job title is required"),
@@ -188,3 +187,4 @@ export const AdminProfileSchema = yup.object().shape({
   role: yup.string().required("Role is required"),
   adminPrivileges: yup.string().required("adminPrivileges is required"),
 });
+

@@ -29,7 +29,7 @@ import { Theme } from "@mui/material/styles";
 import Link from "next/link";
 import CloseIcon from "@mui/icons-material/Close";
 import { fetchApplications } from "@/@core/services/jobService";
-import { ApplicationDetail } from "./ApplicationDetail"; // Import ApplicationDetail
+import { ApplicationDetail } from "./ApplicationDetail";
 
 // Export interfaces
 export interface Job {
@@ -110,9 +110,23 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({ jobId }) => {
         setLoading(true);
         const response = await fetchApplications();
         if (response.status) {
-          const jobApplications = response.applications.filter(
+          // Filter applications by jobId
+          let jobApplications = response.applications.filter(
             (app: Application) => app.job_id === jobId
           );
+
+          // Apply search filter if value is not empty
+          if (value.trim()) {
+            const searchTerm = value.trim().toLowerCase();
+            jobApplications = jobApplications.filter(
+              (app: Application) =>
+                app.user.name.toLowerCase().includes(searchTerm) ||
+                app.user.email.toLowerCase().includes(searchTerm) ||
+                app.job.title.toLowerCase().includes(searchTerm)
+            );
+          }
+
+          // Apply pagination
           const start = page * rowsPerPage;
           const end = start + rowsPerPage;
           setApplications(jobApplications.slice(start, end));
@@ -127,7 +141,7 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({ jobId }) => {
     };
 
     fetchData();
-  }, [jobId, page, rowsPerPage]);
+  }, [jobId, page, rowsPerPage, value]);
 
   const handleChangePage = (
     event: React.MouseEvent<HTMLButtonElement> | null,
@@ -304,7 +318,7 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({ jobId }) => {
               value={value}
               onChange={(e) => setValue(e.target.value)}
               size="small"
-              placeholder="Job title, company name, applicant"
+              placeholder="Job title, company name, email"
               fullWidth
               InputProps={{
                 startAdornment: (

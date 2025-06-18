@@ -12,19 +12,26 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import InterviewDetailsModal from '@/app/(dashboard)/dashboard/talent/interview-alerts/components/modal/InterviewDetailsModal';
-import { getInterviews } from '@/@core/services/jobVanciesService'; // Adjust path as needed
+import { getInterviews, getApplicationById } from '@/@core/services/jobVanciesService'; // Adjust path as needed
 
 interface Interview {
   image: string;
   name: string;
+  jobTitle: string;
   role: string;
   interviewStage: 'Upcoming' | 'In Progress' | 'Completed';
   date: string;
   time: string;
   location: string;
+  application_id: number;
 }
 
-const InterviewAlertsTable: React.FC = () => {
+// Define props interface for InterviewAlertsTable
+interface InterviewAlertsTableProps {
+  searchQuery: string;
+}
+
+const InterviewAlertsTable: React.FC<InterviewAlertsTableProps> = ({ searchQuery }) => {
   const [open, setOpen] = useState<boolean>(false);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
   const [interviews, setInterviews] = useState<Interview[]>([]);
@@ -46,20 +53,35 @@ const InterviewAlertsTable: React.FC = () => {
       try {
         const data = await getInterviews();
 
-        const mapped = data.map((item) => ({
-         
-          name: item.interviewer_name || 'Unknown',
-          role: item.interview_location || 'N/A',
-          interviewStage:
-            item.status === 'scheduled'
-              ? 'Upcoming'
-              : item.status === 'ongoing'
-              ? 'In Progress'
-              : 'Completed',
-          date: new Date(item.interview_date).toLocaleDateString(),
-          time: item.interview_time,
-          location: item.interview_location,
-        })) as Interview[];
+        // Map through interviews and fetch job title for each
+        const mapped = await Promise.all(
+          data.map(async (item) => {
+            let jobTitle = 'N/A';
+            try {
+              const application = await getApplicationById(item.application_id.toString());
+              jobTitle = application.job?.title || 'N/A';
+            } catch (err) {
+              console.error(`Failed to fetch job title for application_id ${item.application_id}:`, err);
+            }
+
+            return {
+              application_id: item.application_id,
+              name: item.interviewer_name || 'Unknown',
+              jobTitle,
+              role: item.interview_location || 'N/A',
+              interviewStage:
+                item.status === 'scheduled'
+                  ? 'Upcoming'
+                  : item.status === 'ongoing'
+                  ? 'In Progress'
+                  : 'Completed',
+              date: new Date(item.interview_date).toLocaleDateString(),
+              time: item.interview_time,
+              location: item.interview_location,
+              image: '',
+            };
+          })
+        ) as Interview[];
 
         setInterviews(mapped);
         setLoading(false);
@@ -72,7 +94,15 @@ const InterviewAlertsTable: React.FC = () => {
     fetchInterviews();
   }, []);
 
-  const headerFields: string[] = ['Company Name', 'Location', 'Interview Stage', 'Action'];
+  // Filter interviews based on searchQuery
+  const filteredInterviews = interviews.filter((interview) =>
+    [interview.name, interview.jobTitle, interview.location]
+      .join(' ')
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase())
+  );
+
+  const headerFields: string[] = ['Company Name', 'Job Title', 'Location', 'Interview Stage', 'Action'];
 
   const companyNameField = (image: string, name: string) => (
     <TableCell>
@@ -144,6 +174,10 @@ const InterviewAlertsTable: React.FC = () => {
           <Typography color="error" sx={{ padding: '20px' }}>
             {error}
           </Typography>
+        ) : filteredInterviews.length === 0 ? (
+          <Typography sx={{ padding: '20px' }}>
+            No interviews match your search.
+          </Typography>
         ) : (
           <Table sx={{ minWidth: 650 }}>
             <TableHead>
@@ -154,10 +188,11 @@ const InterviewAlertsTable: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {interviews.map((row, index) => (
+              {filteredInterviews.map((row, index) => (
                 <TableRow key={index}>
                   {companyNameField(row.image, row.name)}
-                  {textOnlyField(row.role)}
+                  {textOnlyField(row.jobTitle)}
+                  {textOnlyField(row.location)}
                   {interviewStageField(row.interviewStage)}
                   {buttonsField(row)}
                 </TableRow>

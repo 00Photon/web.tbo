@@ -68,15 +68,15 @@ export const fetchApplicationById = async (id: string) => {
 };
 
 export const fetchJobsClients = async () => {
-  const session = await getSession(); 
+  const session = await getSession();
   if (!session || !session.user) throw new Error("User is not authenticated");
 
-  const token = session.user.accessToken; 
+  const token = session.user.accessToken;
 
   const response = await fetch(`${API_BASE_URL}/client/jobs`, {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${token}`, 
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
   });
@@ -86,7 +86,42 @@ export const fetchJobsClients = async () => {
   }
 
   const data = await response.json();
-  return data;
+  return {
+    status: data.status,
+    jobs: data.jobs.map((job: any) => ({
+      ...job,
+      skills: JSON.parse(job.skill || "[]"), // Parse skill JSON string to array
+    })),
+    total: data.total || data.jobs.length,
+  };
+};
+
+export const fetchJobsClientsById = async (jobId: string) => {
+  const session = await getSession();
+  if (!session || !session.user) throw new Error("User is not authenticated");
+
+  const token = session.user.accessToken;
+
+  const response = await fetch(`${API_BASE_URL}/jobs/${jobId}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch job');
+  }
+
+  const data = await response.json();
+  return {
+    status: data.status,
+    job: {
+      ...data.job,
+      skills: JSON.parse(data.job.skill || "[]"), // Parse skill JSON string to array
+    },
+  };
 };
 
 export const fetchJobsclinetsById = async (id: string) => {
@@ -178,24 +213,25 @@ export const fetchJobsById = async (id: string) => {
 
 export const createJob = async (jobDetails: {
   title: string;
-  job_type: string; 
+  job_type: string;
   description: string;
   requirements: string;
-  skill: string;
+  skills: string[];
   currency: string;
-  minimum_salary: number;
-  maximum_salary: number;
+  minimum_salary: number | null;
+  maximum_salary: number | null;
   salary_type: string;
   location: string;
   application_deadline: string;
-  additional_info?: string;
+  additional_info?: string | null;
+  client_id: number;
 }) => {
   try {
     const session = await getSession();
     if (!session || !session.user) throw new Error("User is not authenticated");
-  
+
     const token = session.user.accessToken;
-  
+
     const response = await fetch(`${API_BASE_URL}/admin/jobs`, {
       method: "POST",
       headers: {
@@ -206,7 +242,6 @@ export const createJob = async (jobDetails: {
     });
 
     const responseText = await response.text();
-    console.log("Response Text: ", responseText);
 
     if (!response.ok) {
       throw new Error(`Error creating job: ${responseText}`);
@@ -229,7 +264,7 @@ export const createJobclient = async (jobDetails: {
   job_type: string; 
   description: string;
   requirements: string;
-  skill: string;
+  skills: string[];
   currency: string;
   minimum_salary: number;
   maximum_salary: number;
@@ -272,25 +307,35 @@ export const createJobclient = async (jobDetails: {
   }
 };
 
-export const editJobClient = async (jobId: number, jobDetails: {
-  title: string;
-  job_type: string; 
-  description: string;
-  requirements: string;
-  skill: string;
-  currency: string;
-  minimum_salary: number;
-  maximum_salary: number;
-  location: string;
-  salary_type: string;
-  application_deadline: string;
-  additional_info?: string;
-}) => {
+export const editJobClient = async (
+  jobId: number,
+  jobDetails: {
+    title: string;
+    job_type: string;
+    description: string;
+    requirements: string;
+    skills: string[]; // Changed from 'skill: string'
+    currency: string;
+    minimum_salary: number;
+    maximum_salary: number;
+    location: string;
+    salary_type: string;
+    application_deadline: string;
+    additional_info?: string;
+  }
+) => {
   try {
     const session = await getSession();
     if (!session || !session.user) throw new Error("User is not authenticated");
 
     const token = session.user.accessToken;
+
+    // Transform skills array to match backend expectation
+    const payload: typeof jobDetails & { skill: string; skills?: string[] } = {
+      ...jobDetails,
+      skill: JSON.stringify(jobDetails.skills), // Map skills to skill as JSON string
+    };
+   
 
     const response = await fetch(`${API_BASE_URL}/client/jobs/${jobId}`, {
       method: "PUT",
@@ -298,7 +343,7 @@ export const editJobClient = async (jobId: number, jobDetails: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(jobDetails),
+      body: JSON.stringify(payload),
     });
 
     const responseText = await response.text();
@@ -310,7 +355,13 @@ export const editJobClient = async (jobId: number, jobDetails: {
 
     try {
       const data = JSON.parse(responseText);
-      return data;
+      return {
+        ...data,
+        job: {
+          ...data.job,
+          skills: JSON.parse(data.job.skill || "[]"), // Parse skill JSON string to array
+        },
+      };
     } catch (error) {
       throw new Error("Failed to parse JSON response.");
     }

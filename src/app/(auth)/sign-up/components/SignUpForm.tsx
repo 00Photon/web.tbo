@@ -10,7 +10,9 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   Divider,
+  FormControlLabel,
   IconButton,
   InputAdornment,
   TextField,
@@ -32,6 +34,7 @@ interface RegistrationData {
   email: string;
   password: string;
   password_confirmation: string;
+  termsAccepted: boolean;
 }
 
 const registerUser = async (registrationData: RegistrationData): Promise<any> => {
@@ -40,7 +43,13 @@ const registerUser = async (registrationData: RegistrationData): Promise<any> =>
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(registrationData),
+    body: JSON.stringify({
+      name: registrationData.name,
+      account_type: registrationData.account_type,
+      email: registrationData.email,
+      password: registrationData.password,
+      password_confirmation: registrationData.password_confirmation,
+    }),
   });
 
   const responseData = await response.json();
@@ -148,7 +157,12 @@ const SignUpForm: React.FC = () => {
     },
   ];
 
-  const fieldData = [
+  const fieldData: {
+    label: string;
+    name: 'name' | 'email';
+    placeholder: string;
+    icon: React.ReactNode;
+  }[] = [
     {
       label: 'Full Name',
       name: 'name',
@@ -180,9 +194,10 @@ const SignUpForm: React.FC = () => {
     handleSubmit,
     formState: { errors },
     watch,
-  } = useForm();
+  } = useForm<RegistrationData>();
 
   const password = watch('password');
+  const termsAccepted = watch('termsAccepted');
 
   const mutation = useMutation({
     mutationFn: registerUser,
@@ -279,6 +294,7 @@ const SignUpForm: React.FC = () => {
               email: data.email,
               password: data.password,
               password_confirmation: data.password_confirmation,
+              termsAccepted: data.termsAccepted,
             });
           })}
         >
@@ -316,7 +332,7 @@ const SignUpForm: React.FC = () => {
                 }}
               />
               <p style={fieldErrorMessageStyle}>
-                {errors[field.name]?.message as string}
+                {(errors as Record<string, any>)[field.name]?.message as string}
               </p>
             </Box>
           ))}
@@ -410,11 +426,40 @@ const SignUpForm: React.FC = () => {
             </p>
           </Box>
 
+          {/* Terms and Conditions Checkbox */}
+          <Box sx={{ marginBottom: '14px' }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  {...register('termsAccepted', {
+                    required: 'You must agree to the Terms and Privacy Policy',
+                  })}
+                  sx={{ color: '#E61C31', '&.Mui-checked': { color: '#E61C31' } }}
+                />
+              }
+              label={
+                <Box sx={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span>I agree to the</span>
+                  <Link href="/terms" style={{ color: '#E61C31', fontWeight: 500 }}>
+                    Terms
+                  </Link>
+                  <span>and</span>
+                  <Link href="/policies" style={{ color: '#E61C31', fontWeight: 500 }}>
+                    Privacy Policy
+                  </Link>
+                </Box>
+              }
+            />
+            <p style={fieldErrorMessageStyle}>
+              {errors.termsAccepted?.message as string}
+            </p>
+          </Box>
+
           <Box>
             <Button
               type="submit"
               variant="contained"
-              {...(mutation.isPending || mutation.isSuccess) && { disabled: true }}
+              disabled={mutation.isPending || mutation.isSuccess || !termsAccepted}
               sx={{
                 textTransform: 'none',
                 width: '100%',
@@ -424,6 +469,26 @@ const SignUpForm: React.FC = () => {
             >
               Create Your Account
             </Button>
+            {/* <Box
+              sx={{
+                fontSize: '12px',
+                textAlign: 'center',
+                marginBottom: '20px',
+                display: 'flex',
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+                gap: '4px',
+              }}
+            >
+              <span>View our</span>
+              <Link href="/terms" style={{ color: '#E61C31', fontWeight: 500 }}>
+                Terms
+              </Link>
+              <span>|</span>
+              <Link href="/policies" style={{ color: '#E61C31', fontWeight: 500 }}>
+                Privacy Policy
+              </Link>
+            </Box> */}
           </Box>
         </form>
 

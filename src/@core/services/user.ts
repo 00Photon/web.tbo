@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from 'axios';
+import axios, { type AxiosProgressEvent } from 'axios'
 import { API_BASE_URL } from "@/@core/utils/constants"
 import { getSession } from 'next-auth/react';
 
@@ -109,21 +109,104 @@ export interface UpdateUserPayload {
   adminPrivileges?: string;
 }
 
-export const uploadFile = async (formData: FormData) => {
-  const session = await getSession();
-  const token = session?.user?.accessToken;
+export interface UploadProgressCallback {
+  (progress: number): void
+}
 
-  if (!token) throw new Error("Missing token");
+export const uploadFile = async (
+  formData: FormData, 
+  onProgress?: UploadProgressCallback
+) => {
+  const session = await getSession()
+  const token = session?.user?.accessToken
 
-  const response = await axios.post(`${API_BASE_URL}/upload-file`, formData, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  if (!token) throw new Error("Missing token")
 
-  return response.data; // Should include { url: "https://..." }
-};
+  try {
+    const response = await axios.post(`${API_BASE_URL}/upload-file`, formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        // Don't set Content-Type manually for multipart/form-data
+        // Let axios set it with the boundary
+      },
+      onUploadProgress: (progressEvent: AxiosProgressEvent) => {
+        if (progressEvent.total && onProgress) {
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          onProgress(progress)
+        }
+      },
+      // Add timeout to prevent hanging requests
+      timeout: 300000, // 5 minutes
+    })
+
+    return response.data // Should include { url: "https://..." }
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      // Handle specific CORS and network errors
+      if (error.code === 'ERR_NETWORK') {
+        throw new Error('Network error - please check your connection and try again')
+      }
+      if (error.response?.status === 413) {
+        throw new Error('File too large - please choose a smaller file')
+      }
+      if (error.response?.status === 415) {
+        throw new Error('Unsupported file type')
+      }
+      throw new Error(error.response?.data?.message || 'Upload failed')
+    }
+    throw error
+  }
+}
+
+// Alternative upload method using fetch (sometimes works better with CORS)
+export const uploadFileWithFetch = async (
+  formData: FormData,
+  onProgress?: UploadProgressCallback
+) => {
+  const session = await getSession()
+  const token = session?.user?.accessToken
+
+  if (!token) throw new Error("Missing token")
+
+  return new Promise<any>((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+
+    // Track upload progress
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable && onProgress) {
+        const progress = Math.round((event.loaded * 100) / event.total)
+        onProgress(progress)
+      }
+    })
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const response = JSON.parse(xhr.responseText)
+          resolve(response)
+        } catch (error) {
+          reject(new Error('Invalid response format'))
+        }
+      } else {
+        reject(new Error(`Upload failed with status: ${xhr.status}`))
+      }
+    })
+
+    xhr.addEventListener('error', () => {
+      reject(new Error('Network error occurred'))
+    })
+
+    xhr.addEventListener('timeout', () => {
+      reject(new Error('Upload timeout'))
+    })
+
+    xhr.open('POST', `${API_BASE_URL}/upload-file`)
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+    xhr.timeout = 300000 // 5 minutes
+
+    xhr.send(formData)
+  })
+}
 
 interface ResetRequestResponse {
   status: boolean;

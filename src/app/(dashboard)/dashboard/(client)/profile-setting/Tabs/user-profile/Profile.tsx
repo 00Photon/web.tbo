@@ -6,15 +6,18 @@ import {
   Grid,
   MenuItem,
   Button,
-  Checkbox,
   Divider,
   Snackbar,
   Alert,
   IconButton,
   Avatar,
+  FormControl,
+  InputLabel,
+  Select,
 } from '@mui/material';
 import { Edit, Save, Cancel, DeleteOutlineOutlined } from '@mui/icons-material';
 import CustomTextField from '@/@core/component/mui/text-field';
+import { SelectChangeEvent } from '@mui/material/Select';
 
 interface CompanyFormData {
   company_logo?: File | string;
@@ -29,8 +32,18 @@ interface CompanyFormData {
   contact_person: string;
   work_email: string;
   position_in_company: string;
-  company_phone_number: string;
+  country_code: string;
+  phone_number: string;
 }
+
+const countryCodes = [
+  { code: '+1', label: '+1 (USA/Canada)' },
+  { code: '+44', label: '+44 (UK)' },
+  { code: '+234', label: '+234 (Nigeria)' },
+  { code: '+91', label: '+91 (India)' },
+  { code: '+86', label: '+86 (China)' },
+  // Add more country codes as needed
+];
 
 const ClientProfile = () => {
   const [userId, setUserId] = useState<number | null>(null);
@@ -40,12 +53,12 @@ const ClientProfile = () => {
   const [isSavingImage, setIsSavingImage] = useState<boolean>(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [isTermsAgreed, setIsTermsAgreed] = useState<boolean>(false);
   const [formData, setFormData] = useState<CompanyFormData>({
     company_logo: '',
     company_name: '',
     company_email_address: '',
-    company_phone_number: '',
+    country_code: '',
+    phone_number: '',
     industry: '',
     number_of_employees: '',
     type_of_employer: '',
@@ -65,11 +78,15 @@ const ClientProfile = () => {
         const user = response?.user;
         if (user) {
           setUserId(user.id);
+          const phoneParts = user.company_phone_number
+            ? user.company_phone_number.match(/^(\+\d{1,3})(\d+)$/) || ['', '', user.company_phone_number]
+            : ['', '', ''];
           setFormData({
             company_logo: user.company_logo || '',
             company_name: user.company_name || '',
             company_email_address: user.company_email_address || '',
-            company_phone_number: user.company_phone_number || '',
+            country_code: phoneParts[1] || '',
+            phone_number: phoneParts[2] || '',
             industry: user.industry || '',
             number_of_employees: user.number_of_employees || '',
             type_of_employer: user.type_of_employer || '',
@@ -90,24 +107,31 @@ const ClientProfile = () => {
     fetchUser();
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+const handleChange = (
+  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent<string>
+) => {
+  const { name, value } = e.target as HTMLInputElement | { name?: string; value: unknown };
+  if (name) {
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }));
-  };
+  }
+};
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-  
+      setImageFile(file);
+      setTempImageUrl(URL.createObjectURL(file));
+
       const formData = new FormData();
-      formData.append('file', file); 
-  
+      formData.append('file', file);
+      setIsSavingImage(true);
       try {
         const uploaded = await uploadFile(formData);
         if (uploaded?.url) {
-          setFormData(prev => ({
+          setFormData((prev) => ({
             ...prev,
             company_logo: uploaded.url,
           }));
@@ -118,34 +142,78 @@ const ClientProfile = () => {
       } catch (err) {
         console.error('Logo upload failed:', err);
         setError('Failed to upload logo.');
+      } finally {
+        setIsSavingImage(false);
       }
     }
   };
-  
-  
-  
 
+  const validateForm = () => {
+    const errors: string[] = [];
+    
+    if (!formData.company_name.trim()) {
+      errors.push('Company name is required.');
+    }
+    if (!formData.company_email_address.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.company_email_address)) {
+      errors.push('A valid company email address is required.');
+    }
+    if (!formData.country_code) {
+      errors.push('Country code is required for the phone number.');
+    }
+    if (!formData.phone_number.trim() || !/^\d{7,15}$/.test(formData.phone_number)) {
+      errors.push('Phone number must be 7-15 digits long.');
+    }
+    if (!formData.industry) {
+      errors.push('Industry selection is required.');
+    }
+    if (!formData.number_of_employees) {
+      errors.push('Number of employees is required.');
+    }
+    if (!formData.type_of_employer) {
+      errors.push('Type of employer is required.');
+    }
+    if (!formData.company_address.trim()) {
+      errors.push('Company address is required.');
+    }
+    if (!formData.country.trim()) {
+      errors.push('Country is required.');
+    }
+    if (!formData.position_in_company.trim()) {
+      errors.push('Position in company is required.');
+    }
+
+    return errors;
+  };
 
   const saveCompanyInfo = async () => {
-    if (!userId) return setError('User ID is missing.');
-    if (!isTermsAgreed) return setError('You must agree to the terms and conditions.');
+    if (!userId) {
+      setError('User ID is missing.');
+      return;
+    }
+
+    const validationErrors = validateForm();
+    if (validationErrors.length > 0) {
+      setError(validationErrors.join(' '));
+      return;
+    }
+
     try {
-      await updateUser(userId, formData); // includes company_logo now
+      const fullPhoneNumber = `${formData.country_code}${formData.phone_number}`;
+      const updatedFormData = {
+        ...formData,
+        company_phone_number: fullPhoneNumber,
+      };
+      await updateUser(userId, updatedFormData);
       setIsEditing(false);
-      setIsTermsAgreed(false);
       setSuccess('Company information updated successfully!');
     } catch (err) {
       console.error('Failed to update company info:', err);
       setError('Failed to update profile. Please try again.');
     }
   };
-  
-
-
 
   const handleCancelEdit = () => {
     setIsEditing(false);
-    setIsTermsAgreed(false);
     setTempImageUrl(null);
     setImageFile(null);
   };
@@ -176,41 +244,29 @@ const ClientProfile = () => {
             borderRadius: 4,
             p: 4,
           }}>
-         <Avatar
-          src={formData.company_logo ? String(formData.company_logo) : undefined}
-          sx={{ width: 70, height: 70, mb: 2 }}
-          alt="Company Logo"
-        />
-
-
-
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <input
-              type="file"
-              ref={fileInputRef}
-              hidden
-              accept="image/jpeg,image/png,image/jpg,image/gif"
-              onChange={handleImageChange}
-              disabled={!isEditing}
+            <Avatar
+              src={tempImageUrl || (formData.company_logo ? String(formData.company_logo) : undefined)}
+              sx={{ width: 70, height: 70, mb: 2 }}
+              alt="Company Logo"
             />
-
-            <Button
-              variant="outlined"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={!isEditing}
-              sx={{ textTransform: 'none' }}
-            >
-              Upload
-            </Button>
-
-
-            {imageFile && (
-                <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
-                  Selected: {imageFile.name}
-                </Typography>
-              )}
-
-          </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <input
+                type="file"
+                ref={fileInputRef}
+                hidden
+                accept="image/jpeg,image/png,image/jpg,image/gif"
+                onChange={handleImageChange}
+                disabled={!isEditing}
+              />
+              <Button
+                variant="outlined"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={!isEditing}
+                sx={{ textTransform: 'none' }}
+              >
+                Upload
+              </Button>
+            </Box>
             {imageFile && (
               <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
                 Selected: {imageFile.name}
@@ -240,7 +296,7 @@ const ClientProfile = () => {
                 <IconButton onClick={handleCancelEdit} color="error" sx={{ mr: 1 }}>
                   <Cancel />
                 </IconButton>
-                <IconButton onClick={saveCompanyInfo} color="primary" >
+                <IconButton onClick={saveCompanyInfo} color="primary">
                   <Save />
                 </IconButton>
               </Box>
@@ -374,14 +430,14 @@ const ClientProfile = () => {
                 Website
               </Typography>
               <CustomTextField
-                  fullWidth
-                  name="company_website"
-                  value={formData.company_website}
-                  onChange={handleChange}
-                  size="medium"
-                  placeholder="https://www.company.com" // Updated placeholder
-                  disabled={!isEditing}
-                />
+                fullWidth
+                name="company_website"
+                value={formData.company_website}
+                onChange={handleChange}
+                size="medium"
+                placeholder="https://www.company.com"
+                disabled={!isEditing}
+              />
             </Grid>
             <Grid item xs={12} sm={6}>
               <Typography sx={{ fontWeight: 600, fontSize: '14px', mb: 1 }}>
@@ -443,15 +499,34 @@ const ClientProfile = () => {
               <Typography sx={{ fontWeight: 600, fontSize: '14px', mb: 1 }}>
                 Company Phone Number
               </Typography>
-              <CustomTextField
-                fullWidth
-                name="company_phone_number"
-                value={formData.company_phone_number}
-                onChange={handleChange}
-                size="medium"
-                placeholder="+1234567890"
-                disabled={!isEditing}
-              />
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <FormControl sx={{ minWidth: 120 }}>
+                  <InputLabel id="country-code-label">Country Code</InputLabel>
+                  <Select
+                    labelId="country-code-label"
+                    name="country_code"
+                    value={formData.country_code}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    label="Country Code"
+                  >
+                    {countryCodes.map((option) => (
+                      <MenuItem key={option.code} value={option.code}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <CustomTextField
+                  fullWidth
+                  name="phone_number"
+                  value={formData.phone_number}
+                  onChange={handleChange}
+                  size="medium"
+                  placeholder="1234567890"
+                  disabled={!isEditing}
+                />
+              </Box>
             </Grid>
           </Grid>
 
@@ -461,27 +536,16 @@ const ClientProfile = () => {
               <Box
                 sx={{
                   display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: { xs: 'center', sm: 'flex-start' },
-                  flexDirection: { xs: 'column', sm: 'row' },
+                  justifyContent: 'flex-end',
+                  alignItems: 'center',
                   gap: 3,
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Checkbox
-                    color="primary"
-                    checked={isTermsAgreed}
-                    onChange={(e) => setIsTermsAgreed(e.target.checked)}
-                  />
-                  <Typography sx={{ fontSize: '12px', width: { md: '70%' } }}>
-                    Warning: By clicking this box, you agree to our terms and conditions and privacy policy.
-                  </Typography>
-                </Box>
                 <Button
                   variant="contained"
                   size="large"
                   onClick={saveCompanyInfo}
-                  disabled={!isTermsAgreed || isSavingImage}
+                  disabled={isSavingImage}
                   sx={{
                     width: { xs: 'fit-content', md: '30%' },
                     textTransform: 'capitalize',

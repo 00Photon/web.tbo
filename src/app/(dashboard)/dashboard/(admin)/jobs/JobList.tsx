@@ -450,7 +450,7 @@ const JobListTable: React.FC = () => {
           jobId={selectedJobId ? selectedJobId.toString() : ""}
         />
       )}
-      <NewJob open={postJobModal} close={togglePostJobModal} />
+      <NewJob open={postJobModal} close={togglePostJobModal} onJobCreated={() => {}} />
       <Dialog
         open={deleteDialogOpen}
         onClose={handleCloseDeleteDialog}

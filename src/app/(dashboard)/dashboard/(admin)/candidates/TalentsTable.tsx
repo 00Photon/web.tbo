@@ -11,6 +11,7 @@ import {
   CardContent,
   InputAdornment,
   Checkbox,
+  Chip,
   IconButton,
   Typography,
   Button,
@@ -37,6 +38,7 @@ import {
   SelectChangeEvent,
 } from "@mui/material";
 import Icon from "@/@core/component/icon";
+import { styled } from '@mui/material/styles';
 
 const TalentTable = () => {
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
@@ -170,6 +172,42 @@ const TalentTable = () => {
   const handleFilterChange = (event: SelectChangeEvent<string>) => {
     setFilterStatus(event.target.value);
   };
+
+
+// Custom styled components
+const StyledDialog = styled(Dialog)(({ theme }) => ({
+  '& .MuiDialog-paper': {
+    borderRadius: '12px',
+    padding: theme.spacing(2),
+    boxShadow: theme.shadows[10],
+  },
+}));
+
+const StyledDialogTitle = styled(DialogTitle)(({ theme }) => ({
+  backgroundColor: theme.palette.primary.main,
+  color: theme.palette.common.white,
+  borderRadius: '8px 8px 0 0',
+  padding: theme.spacing(2),
+  margin: theme.spacing(-2, -2, 2, -2),
+}));
+
+const InfoItem = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(1.5),
+  borderBottom: `1px solid ${theme.palette.divider}`,
+  '&:last-child': {
+    borderBottom: 'none',
+  },
+}));
+
+const CustomChip = styled(Chip)(({ theme, color }) => ({
+  backgroundColor: color === 'success' 
+    ? theme.palette.success.light 
+    : theme.palette.error.light,
+  color: color === 'success'
+    ? theme.palette.success.dark
+    : theme.palette.error.dark,
+  fontWeight: 600,
+}));
 
   return (
     <Card sx={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0, my: 4, background: "#fff" }}>
@@ -317,48 +355,74 @@ const TalentTable = () => {
           </DialogActions>
         </Dialog>
 
-        {/* View Candidate Dialog */}
-        <Dialog
-          open={viewDialogOpen}
-          onClose={handleCloseViewDialog}
-          aria-labelledby="view-dialog-title"
-          maxWidth="sm"
-          fullWidth
+       <StyledDialog
+      open={viewDialogOpen}
+      onClose={handleCloseViewDialog}
+      aria-labelledby="view-dialog-title"
+      maxWidth="sm"
+      fullWidth
+    >
+      <StyledDialogTitle id="view-dialog-title">
+        Candidate Details
+      </StyledDialogTitle>
+      <DialogContent>
+        {candidateToView && (
+          <Box sx={{ mt: 2 }}>
+            <InfoItem>
+            
+            </InfoItem>
+            <InfoItem>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Name
+              </Typography>
+              <Typography variant="body1" fontWeight="medium">
+                {candidateToView.name}
+              </Typography>
+            </InfoItem>
+            <InfoItem>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Email
+              </Typography>
+              <Typography variant="body1" fontWeight="medium">
+                {candidateToView.email}
+              </Typography>
+            </InfoItem>
+            <InfoItem>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Phone
+              </Typography>
+              <Typography variant="body1" fontWeight="medium">
+                {candidateToView.phone_number}
+              </Typography>
+            </InfoItem>
+            <InfoItem>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Status
+              </Typography>
+              <CustomChip
+                label={candidateToView.status}
+                color={candidateToView.status.toLowerCase() === 'active' ? 'success' : 'error'}
+                size="small"
+              />
+            </InfoItem>
+          </Box>
+        )}
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button
+          onClick={handleCloseViewDialog}
+          variant="contained"
+          color="primary"
+          sx={{ 
+            borderRadius: '8px',
+            textTransform: 'none',
+            px: 4,
+          }}
         >
-          <DialogTitle id="view-dialog-title">Candidate Details</DialogTitle>
-          <DialogContent>
-            {candidateToView && (
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  <Typography variant="subtitle1">User ID</Typography>
-                  <Typography variant="body2" color="text.secondary">{candidateToView.id}</Typography>
-                </Grid>
-                <Grid item xs={12}>
-                  <Typography variant="subtitle1">Name</Typography>
-                  <Typography variant="body2" color="text.secondary">{candidateToView.name}</Typography>
-                </Grid>
-                <Grid item xs={12}>
-                  <Typography variant="subtitle1">Email</Typography>
-                  <Typography variant="body2" color="text.secondary">{candidateToView.email}</Typography>
-                </Grid>
-                <Grid item xs={12}>
-                  <Typography variant="subtitle1">Phone</Typography>
-                  <Typography variant="body2" color="text.secondary">{candidateToView.phone_number}</Typography>
-                </Grid>
-                <Grid item xs={12}>
-                  <Typography variant="subtitle1">Status</Typography>
-                  <CustomChip
-                    label={candidateToView.status}
-                    color={candidateToView.status.toLowerCase() === "active" ? "success" : "error"}
-                  />
-                </Grid>
-              </Grid>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseViewDialog} variant="contained">Close</Button>
-          </DialogActions>
-        </Dialog>
+          Close
+        </Button>
+      </DialogActions>
+    </StyledDialog>
       </CardContent>
     </Card>
   );

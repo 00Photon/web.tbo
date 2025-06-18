@@ -7,11 +7,6 @@ import {
   Stack,
   TextField,
   Typography,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  SelectChangeEvent,
 } from "@mui/material";
 import { Restore, Search, Person } from "@mui/icons-material";
 import JobCard from "./components/cards/job";
@@ -22,6 +17,12 @@ import { getJobs, saveJob } from "@/@core/services/jobVanciesService";
 import ApplicationFormModal from "./components/modals/application-form";
 import SavedJobsTab from "./components/saved-jobs";
 
+// Define JobFilterOption type if not imported from elsewhere
+type JobFilterOption = {
+  label: string;
+  checkState: boolean;
+};
+
 export default function TalentJobVacanciesPage() {
   const [activeTab, setActiveTab] = useState(0);
   const [openApplicationFormModal, setOpenApplicationFormModal] = useState(false);
@@ -31,10 +32,10 @@ export default function TalentJobVacanciesPage() {
   const [filters, setFilters] = useState({
     jobType: [] as string[],
     experience: [] as string[],
+    location: [] as string[],
   });
   const [searchParams, setSearchParams] = useState({
     titleOrCompany: "",
-    location: "" as "" | "Hybrid" | "Remote" | "Onsite",
   });
 
   const hoverTabStyle = {
@@ -77,19 +78,18 @@ export default function TalentJobVacanciesPage() {
     }));
   };
 
-  const handleSearch = (params: {
-    titleOrCompany: string;
-    location: "" | "Hybrid" | "Remote" | "Onsite";
-  }) => {
+  const handleSearch = (params: { titleOrCompany: string }) => {
     setSearchParams(params);
   };
 
   const handleReset = () => {
+    // Reset all filters and search parameters to their initial state
     setFilters({
       jobType: [],
       experience: [],
+      location: [],
     });
-    setSearchParams({ titleOrCompany: "", location: "" });
+    setSearchParams({ titleOrCompany: "" });
   };
 
   const jobTypeMap: { [key: string]: string } = {
@@ -128,8 +128,8 @@ export default function TalentJobVacanciesPage() {
         (jobExperience && filters.experience.includes(jobExperience));
 
       const matchesLocation =
-        !searchParams.location ||
-        job.location.toLowerCase().includes(searchParams.location.toLowerCase());
+        filters.location.length === 0 ||
+        filters.location.includes(job.location);
 
       const matchesTitleOrCompany =
         !searchParams.titleOrCompany ||
@@ -223,132 +223,39 @@ export default function TalentJobVacanciesPage() {
               }}
             >
               <Grid flexGrow={1} columnSpacing={3} rowSpacing={3} container>
-                {[
-                  {
-                    placeholder: "Job Title, Company name or Anything",
-                    xs: 12,
-                    lg: 6,
-                    value: searchParams.titleOrCompany,
-                    isSelect: false,
-                  },
-                  {
-                    label: "Location",
-                    xs: 12,
-                    sm: 6,
-                    lg: 3,
-                    value: searchParams.location,
-                    isSelect: true,
-                  },
-                ].map((item, index) => (
-                  <Grid key={index} xs={item.xs} sm={item.sm} lg={item.lg} item>
-                    {item.isSelect ? (
-                      <FormControl fullWidth sx={{ minWidth: "150px" }}>
-                        <InputLabel
-                          sx={{
-                            color: "#6B7280",
-                            "&.Mui-focused": { color: "#E61C31" },
-                          }}
-                        >
-                          Location
-                        </InputLabel>
-                        <Select
-                          value={item.value}
-                          onChange={(e: SelectChangeEvent<string>) =>
-                            setSearchParams((prev) => ({
-                              ...prev,
-                              location: e.target.value as "" | "Hybrid" | "Remote" | "Onsite",
-                            }))
-                          }
-                          sx={{
-                            height: "40px",
-                            borderRadius: "4px",
-                            "& .MuiOutlinedInput-notchedOutline": {
-                              borderColor: "#D1D5DB",
-                            },
-                            "&:hover .MuiOutlinedInput-notchedOutline": {
-                              borderColor: "#9CA3AF",
-                            },
-                            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                              borderColor: "#E61C31",
-                            },
-                            "& .MuiSelect-icon": {
-                              color: "#6B7280",
-                            },
-                          }}
-                        >
-                          <MenuItem
-                            value=""
-                            sx={{
-                              "&.Mui-selected": { backgroundColor: "#F3F4F6" },
-                              "&:hover": { backgroundColor: "#E5E7EB" },
-                            }}
-                          >
-                            Any
-                          </MenuItem>
-                          <MenuItem
-                            value="Hybrid"
-                            sx={{
-                              "&.Mui-selected": { backgroundColor: "#F3F4F6" },
-                              "&:hover": { backgroundColor: "#E5E7EB" },
-                            }}
-                          >
-                            Hybrid
-                          </MenuItem>
-                          <MenuItem
-                            value="Remote"
-                            sx={{
-                              "&.Mui-selected": { backgroundColor: "#F3F4F6" },
-                              "&:hover": { backgroundColor: "#E5E7EB" },
-                            }}
-                          >
-                            Remote
-                          </MenuItem>
-                          <MenuItem
-                            value="Onsite"
-                            sx={{
-                              "&.Mui-selected": { backgroundColor: "#F3F4F6" },
-                              "&:hover": { backgroundColor: "#E5E7EB" },
-                            }}
-                          >
-                            Onsite
-                          </MenuItem>
-                        </Select>
-                      </FormControl>
-                    ) : (
-                      <TextField
-                        placeholder={item.placeholder}
-                        value={item.value}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          setSearchParams((prev) => ({
-                            ...prev,
-                            titleOrCompany: e.target.value,
-                          }))
-                        }
-                        InputProps={{
-                          startAdornment: <Search sx={{ color: "#6B7280", mr: 1 }} />,
-                          sx: {
-                            height: "40px",
-                            borderRadius: "4px",
-                            "& .MuiOutlinedInput-notchedOutline": {
-                              borderColor: "#D1D5DB",
-                            },
-                            "&:hover .MuiOutlinedInput-notchedOutline": {
-                              borderColor: "#9CA3AF",
-                            },
-                            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                              borderColor: "#E61C31",
-                            },
-                            "& input": {
-                              padding: "8px 12px",
-                            },
-                          },
-                        }}
-                        fullWidth
-                        variant="outlined"
-                      />
-                    )}
-                  </Grid>
-                ))}
+                <Grid xs={12} lg={6} item>
+                  <TextField
+                    placeholder="Job Title, Company name or Anything"
+                    value={searchParams.titleOrCompany}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setSearchParams((prev) => ({
+                        ...prev,
+                        titleOrCompany: e.target.value,
+                      }))
+                    }
+                    InputProps={{
+                      startAdornment: <Search sx={{ color: "#6B7280", mr: 1 }} />,
+                      sx: {
+                        height: "40px",
+                        borderRadius: "4px",
+                        "& .MuiOutlinedInput-notchedOutline": {
+                          borderColor: "#D1D5DB",
+                        },
+                        "&:hover .MuiOutlinedInput-notchedOutline": {
+                          borderColor: "#9CA3AF",
+                        },
+                        "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                          borderColor: "#E61C31",
+                        },
+                        "& input": {
+                          padding: "8px 12px",
+                        },
+                      },
+                    }}
+                    fullWidth
+                    variant="outlined"
+                  />
+                </Grid>
               </Grid>
               <Box
                 sx={{
@@ -408,8 +315,8 @@ export default function TalentJobVacanciesPage() {
                     { label: "Contract", checkState: false },
                     { label: "Internship", checkState: false },
                     { label: "Freelance", checkState: false },
-                  ]}
-                  onFilterChange={(selected) => handleFilterChange("jobType", selected)}
+                  ] as JobFilterOption[]}
+                  onFilterChange={(selected: string[]) => handleFilterChange("jobType", selected)}
                 />
                 <JobFilter
                   title={"Experience"}
@@ -417,8 +324,17 @@ export default function TalentJobVacanciesPage() {
                     { label: "0-1year", checkState: false },
                     { label: "2-5 Years", checkState: false },
                     { label: "5years and above", checkState: false },
-                  ]}
-                  onFilterChange={(selected) => handleFilterChange("experience", selected)}
+                  ] as JobFilterOption[]}
+                  onFilterChange={(selected: string[]) => handleFilterChange("experience", selected)}
+                />
+                <JobFilter
+                  title={"Location"}
+                  options={[
+                    { label: "Hybrid", checkState: false },
+                    { label: "Remote", checkState: false },
+                    { label: "Onsite", checkState: false },
+                  ] as JobFilterOption[]}
+                  onFilterChange={(selected: string[]) => handleFilterChange("location", selected)}
                 />
               </Box>
             </Grid>
@@ -428,25 +344,25 @@ export default function TalentJobVacanciesPage() {
                   filteredJobs.map((job) => (
                     <Grid key={job.id} xs={12} lg={6} item>
                       <JobCard
-                      id={job.id}
-                      logo={job.client?.company_logo ?? "/icons/default-logo.png"}
-                      name={job.client?.company_name ?? "Unknown Company"}
-                      location={job.location}
-                      title={job.title}
-                      commitment={job.job_type}
-                      salary={`${job.currency} ${job.minimum_salary} - ${job.maximum_salary}`}
-                      description={job.description}
-                      noOfApplied={job.applicant_count.toString()}
-                      postedAt={new Date(job.created_at).toLocaleDateString()}
-                      daysLeft={Math.ceil(
-                        (new Date(job.application_deadline).getTime() - new Date().getTime()) /
-                          (1000 * 60 * 60 * 24)
-                      ).toString()}
-                      setOpenApplicationFormModal={(jobId: number) => {
-                        setSelectedJobId(jobId);
-                        setOpenApplicationFormModal(true);
-                      }}
-                    />
+                        id={job.id}
+                        logo={job.client?.company_logo ?? "/icons/default-logo.png"}
+                        name={job.client?.company_name ?? "Unknown Company"}
+                        location={job.location}
+                        title={job.title}
+                        commitment={job.job_type}
+                        salary={`${job.currency} ${job.minimum_salary} - ${job.maximum_salary}`}
+                        description={job.description}
+                        noOfApplied={job.applicant_count.toString()}
+                        postedAt={new Date(job.created_at).toLocaleDateString()}
+                        daysLeft={Math.ceil(
+                          (new Date(job.application_deadline).getTime() - new Date().getTime()) /
+                            (1000 * 60 * 60 * 24)
+                        ).toString()}
+                        setOpenApplicationFormModal={(jobId: number) => {
+                          setSelectedJobId(jobId);
+                          setOpenApplicationFormModal(true);
+                        }}
+                      />
                     </Grid>
                   ))
                 ) : (

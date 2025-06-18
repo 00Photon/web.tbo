@@ -24,6 +24,7 @@ const interviewSchema = baseInterviewSchema.shape({
     .string()
     .required("Phone number is required")
     .matches(/^\+234\d{10}$/, "Phone number must start with +234 followed by 10 digits"),
+  information: yup.string().optional(), // Explicitly mark as optional
 });
 
 // *Third Party Imports

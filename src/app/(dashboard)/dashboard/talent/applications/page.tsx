@@ -1,5 +1,5 @@
 'use client';
-import { Stack, Typography } from '@mui/material';
+import { Stack, Typography, TextField } from '@mui/material';
 import JobApplicationsTable from './components/table';
 import JobApplicationsPanel from './components/panel';
 import PaginationControl from './components/pagination-control';
@@ -11,11 +11,16 @@ export default function TalentApplicationsPage() {
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>(''); // State for search query
 
   const handleWithdrawSuccess = () => {
-    // Optional: Refresh job applications table or update state
     console.log('Withdrawal successful, refreshing data...');
     // Example: queryClient.invalidateQueries('jobApplications');
+  };
+
+  // Handle search input change
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value);
   };
 
   return (
@@ -34,10 +39,22 @@ export default function TalentApplicationsPage() {
         )}
       </Stack>
       <Stack gap={2}>
-        <JobApplicationsPanel />
+        {/* Search Input */}
+        {/* <TextField
+          label="Search Applications"
+          variant="outlined"
+          value={searchQuery}
+          onChange={handleSearchChange}
+          placeholder="Search by job title, company, or status..."
+          sx={{ mb: 2 }}
+        /> */}
+        {/* Pass searchQuery and setSearchQuery to JobApplicationsPanel */}
+        <JobApplicationsPanel searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
         <Stack gap={1}>
           <PaginationControl />
+          {/* Pass searchQuery to JobApplicationsTable for filtering */}
           <JobApplicationsTable
+            searchQuery={searchQuery}
             setOpenWithdrawModal={(jobId?: number) => {
               console.log('Selected job ID:', jobId);
               if (jobId !== undefined) {
@@ -53,8 +70,8 @@ export default function TalentApplicationsPage() {
         message={`Are you sure you want to withdraw your application? \n \n The Job will be deleted from your list and a notification would be sent to the Job Poster`}
         buttonOneText="No, Cancel"
         buttonTwoText="Yes, Continue"
-        jobId={selectedJobId ?? undefined} // Pass jobId
-        onWithdrawSuccess={handleWithdrawSuccess} // Optional callback
+        jobId={selectedJobId ?? undefined}
+        onWithdrawSuccess={handleWithdrawSuccess}
         open={openWithdrawModal}
         closeFn={() => {
           setOpenWithdrawModal(false);
@@ -71,7 +88,6 @@ export default function TalentApplicationsPage() {
         buttonTwoText="Yes, Continue"
         buttonOneClick={() => setOpenDeleteModal(false)}
         buttonTwoClick={() => {
-          // Implement delete logic if needed
           console.log('Delete action triggered');
         }}
       />

@@ -11,12 +11,15 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { getAppliedJobs } from "@/@core/services/jobVanciesService";
-import { AppliedJob } from "@/@core/services/types/job"; 
+import { getAppliedJobs } from '@/@core/services/jobVanciesService';
+import { AppliedJob } from '@/@core/services/types/job';
 
-const JobApplicationsTable: React.FC<{
-  setOpenWithdrawModal: () => void;
-}> = ({ setOpenWithdrawModal }) => {
+interface JobApplicationsTableProps {
+  searchQuery: string;
+  setOpenWithdrawModal: (jobId?: number) => void;
+}
+
+const JobApplicationsTable: React.FC<JobApplicationsTableProps> = ({ searchQuery, setOpenWithdrawModal }) => {
   const [appliedJobs, setAppliedJobs] = useState<AppliedJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,8 +31,8 @@ const JobApplicationsTable: React.FC<{
         setAppliedJobs(jobs);
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching jobs:", error);
-        setError("Failed to load applied jobs.");
+        console.error('Error fetching jobs:', error);
+        setError('Failed to load applied jobs.');
         setLoading(false);
       }
     };
@@ -37,12 +40,19 @@ const JobApplicationsTable: React.FC<{
     fetchAppliedJobs();
   }, []);
 
+  // Filter jobs based on searchQuery
+  const filteredJobs = appliedJobs.filter((job) =>
+    job.job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (job.job.client.company_name ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    job.status.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const headerFields = [
     'Company Name',
     'Role Applied For',
     'Date of Application',
     'Application Status',
-    // 'Action',
+    'Action',
   ];
 
   const companyNameField = (name: string) => (
@@ -85,7 +95,7 @@ const JobApplicationsTable: React.FC<{
   const viewButtonField = (jobId: number) => (
     <TableCell>
       <Button
-        onClick={() => setOpenWithdrawModal()}
+        onClick={() => setOpenWithdrawModal(jobId)}
         variant="contained"
         sx={{ textTransform: 'none' }}
       >
@@ -101,7 +111,7 @@ const JobApplicationsTable: React.FC<{
 
   if (loading) return <Typography>Loading...</Typography>;
   if (error) return <Typography color="error">{error}</Typography>;
-  if (!appliedJobs.length) return <Typography>No applied jobs found.</Typography>;
+  if (!filteredJobs.length) return <Typography>No applied jobs found.</Typography>;
 
   return (
     <TableContainer sx={{ backgroundColor: 'white', padding: '20px' }}>
@@ -114,13 +124,13 @@ const JobApplicationsTable: React.FC<{
           </TableRow>
         </TableHead>
         <TableBody>
-          {appliedJobs.map((job) => (
+          {filteredJobs.map((job) => (
             <TableRow key={job.id}>
-              {companyNameField(job.job.client.company_name ?? "Unknown")}
+              {companyNameField(job.job.client.company_name ?? 'Unknown')}
               {textOnlyField(job.job.title)}
               {textOnlyField(formatDate(job.created_at))}
               {applicationStatusField(job.status)}
-              {/* {viewButtonField(job.job_id)} */}
+              {viewButtonField(job.job_id)}
             </TableRow>
           ))}
         </TableBody>

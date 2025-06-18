@@ -2,7 +2,7 @@ import { useState } from "react";
 import Icon from "@/@core/component/icon";
 import CustomTextField from "@/@core/component/mui/text-field";
 import { newJobSchema2 } from "@/@core/formSchema";
-import { Controller, useForm, SubmitHandler, useWatch } from "react-hook-form";
+import { Controller, useForm, SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
@@ -17,56 +17,56 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import MenuItem from "@mui/material/MenuItem";
 import Chip from "@mui/material/Chip";
-import { Autocomplete, IconButton, InputAdornment } from "@mui/material";
-import { Close as CloseIcon } from "@mui/icons-material";
+import { Autocomplete, InputAdornment } from "@mui/material";
+import CircularProgress from "@mui/material/CircularProgress";
 import { createJobclient } from "@/@core/services/jobService";
 
 interface Props {
   open: boolean;
   close: () => void;
+  onJobCreated: () => void;
 }
 
 interface IFormInput {
   title: string;
-  type: string;
+  type: "FULLTIME" | "PARTTIME" | "INTERNSHIP" | "FREELANCE";
   description: string;
   requirement: string;
-  skill: string[];
+  skills: string[];
   location: string;
-  currency: string;
-  minSalary: string;
-  maxSalary: string;
-  salary_type: string;
+  currency: "USD" | "EUR" | "GBP" | "NGN";
+  minSalary: number | null;
+  maxSalary: number | null;
+  salary_type: "MONTHLY" | "ANNUALLY";
   application_deadline: string;
-  information: string;
+  information: string | null;
 }
 
-const defaultValues = {
+const defaultValues: IFormInput = {
   title: "",
-  type: "",
+  type: "FULLTIME", 
   description: "",
   requirement: "",
-  skill: [],
+  skills: [],
   location: "",
-  salary_type: "",
-  currency: "",
-  minSalary: "",
-  maxSalary: "",
+  salary_type: "MONTHLY",
+  currency: "NGN", 
+  minSalary: null,
+  maxSalary: null,
   application_deadline: "",
-  information: "",
+  information: null,
 };
 
-const availableSkills = [
-  "DEVELOPER",
-  "DESIGNER",
-  "MARKETER",
-  "MANAGER",
-  "WRITER",
-];
+const currencyMap = {
+  NGN: "₦",
+  EUR: "€",
+  USD: "$",
+  GBP: "£",
+};
 
-const NewJob = ({ open, close }: Props) => {
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string | null>("");
+const NewJob = ({ open, close, onJobCreated }: Props) => {
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState<boolean>(false);
 
   const {
     control,
@@ -75,65 +75,61 @@ const NewJob = ({ open, close }: Props) => {
     formState: { errors, isSubmitting },
     watch,
   } = useForm<IFormInput>({
-    defaultValues: defaultValues,
+    defaultValues,
     mode: "onChange",
-    resolver: yupResolver(newJobSchema2),
+  resolver: yupResolver<IFormInput>(newJobSchema2),
   });
 
-  const selectedCurrency = watch("currency"); // Watch the currency field
+  const selectedCurrency = watch("currency");
 
-  const handleRemoveSkill = (skill: string) => {
-    setSelectedSkills((prev) => prev.filter((s) => s !== skill));
-  };
-
-  const submitForm: SubmitHandler<IFormInput> = (values) => {
+  const submitForm: SubmitHandler<IFormInput> = async (values) => {
+    setSubmitting(true);
     const jobData = {
-      title: values.title,
-      job_type: values.type,
-      description: values.description,
-      requirements: values.requirement,
-      skill: values.skill.join(", "),
-      currency: values.currency,
-      salary_type: values.salary_type,
-      minimum_salary: parseInt(values.minSalary),
-      maximum_salary: parseInt(values.maxSalary),
-      location: values.location,
-      application_deadline: dayjs(selectedDate).format("YYYY-MM-DD"),
-      additional_info: values.information,
-    };
+        title: values.title,
+        job_type: values.type, // This should be "FULLTIME", "PARTTIME", "INTERNSHIP", or "FREELANCE"
+        description: values.description,
+        requirements: values.requirement,
+        skills: values.skills,
+        currency: values.currency,
+        salary_type: values.salary_type,
+        minimum_salary: values.minSalary !== null ? values.minSalary : 0,
+        maximum_salary: values.maxSalary !== null ? values.maxSalary : 0,
+        location: values.location,
+        application_deadline: values.application_deadline,
+        additional_info: values.information ?? undefined,
+      };
 
-    createJobclient(jobData)
-      .then((response) => {
-        console.log("Job created:", response);
-        toast.success("Job created successfully!", {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
-        reset();
-        close();
-      })
-      .catch((error) => {
-        console.error("Error creating job:", error);
-        toast.error("Failed to create job. Please try again.", {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
+    try {
+      const response = await createJobclient(jobData);
+      toast.success("Job created successfully!", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
       });
-  };
-
-  const currencyMap = {
-    NGN: "₦",
-    EUR: "€",
-    USD: "$",
-    GBP: "£",
+      reset(defaultValues);
+      close();
+      onJobCreated();
+    } catch (error: any) {
+      console.error("Error creating job:", error);
+      if (error.message.includes("Error creating job")) {
+        try {
+          const errorData = JSON.parse(error.message.replace("Error creating job: ", ""));
+          const errorMessages = Object.values(errorData.errors || {}).flat().join(", ");
+          toast.error(`Failed to create job: ${errorMessages}`);
+        } catch {
+          toast.error(error.message);
+        }
+      } else if (error.message.includes("not authenticated")) {
+        toast.error("You must be logged in to create a job");
+      } else {
+        toast.error("Failed to create job. Please try again.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -175,12 +171,8 @@ const NewJob = ({ open, close }: Props) => {
               px: (theme) => [`${theme.spacing(4)} !important`],
               m: (theme) => theme.spacing(3),
               borderRadius: "10px",
-              overflowY: "scroll",
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
-              "&::-webkit-scrollbar": {
-                display: "none",
-              },
+              overflowY: "auto",
+              maxHeight: "70vh",
             }}
           >
             <Box sx={{ mb: 4 }}>
@@ -195,14 +187,12 @@ const NewJob = ({ open, close }: Props) => {
                   <Controller
                     name="title"
                     control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
+                    render={({ field }) => (
                       <CustomTextField
+                        {...field}
                         fullWidth
-                        value={value}
-                        onChange={onChange}
                         size="medium"
-                        placeholder="Front Desk..."
+                        placeholder="e.g., Front Desk Officer"
                         error={Boolean(errors.title)}
                         helperText={errors.title?.message}
                       />
@@ -217,15 +207,13 @@ const NewJob = ({ open, close }: Props) => {
                   <Controller
                     name="type"
                     control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
+                    render={({ field }) => (
                       <CustomTextField
+                        {...field}
                         fullWidth
-                        value={value}
-                        onChange={onChange}
-                        size="medium"
                         select
-                        placeholder="ABC Holdings..."
+                        size="medium"
+                        placeholder="Select Job Type"
                         error={Boolean(errors.type)}
                         helperText={errors.type?.message}
                       >
@@ -238,31 +226,20 @@ const NewJob = ({ open, close }: Props) => {
                   />
                 </Grid>
 
-                <Grid item xs={12} md={12}>
+                <Grid item xs={12}>
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Description
                   </Typography>
                   <Controller
                     name="description"
                     control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
+                    render={({ field }) => (
                       <CustomTextField
+                        {...field}
                         fullWidth
                         multiline
-                        rows={5}
-                        value={value}
-                        onChange={onChange}
+                        rows={4}
                         size="medium"
-                        InputProps={{
-                          disableUnderline: true,
-                          sx: {
-                            "& textarea": {
-                              overflowY: "auto",
-                              resize: "none",
-                            },
-                          },
-                        }}
                         placeholder="Enter job description..."
                         error={Boolean(errors.description)}
                         helperText={errors.description?.message}
@@ -271,31 +248,20 @@ const NewJob = ({ open, close }: Props) => {
                   />
                 </Grid>
 
-                <Grid item xs={12} md={12}>
+                <Grid item xs={12}>
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Requirements
                   </Typography>
                   <Controller
                     name="requirement"
                     control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
+                    render={({ field }) => (
                       <CustomTextField
+                        {...field}
                         fullWidth
                         multiline
-                        rows={5}
-                        value={value}
-                        onChange={onChange}
+                        rows={4}
                         size="medium"
-                        InputProps={{
-                          disableUnderline: true,
-                          sx: {
-                            "& textarea": {
-                              overflowY: "auto",
-                              resize: "none",
-                            },
-                          },
-                        }}
                         placeholder="Enter job requirements..."
                         error={Boolean(errors.requirement)}
                         helperText={errors.requirement?.message}
@@ -304,138 +270,112 @@ const NewJob = ({ open, close }: Props) => {
                   />
                 </Grid>
 
-                <Grid item xs={12} md={12}>
+                <Grid item xs={12}>
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
-                    Skills
+                    Skills (5–10 required)
                   </Typography>
                   <Controller
-                    name="skill"
+                    name="skills"
                     control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
+                    render={({ field }) => (
                       <Autocomplete
+                        {...field}
                         multiple
                         freeSolo
-                        options={availableSkills}
-                        value={value}
+                        options={[]}
+                        value={field.value || []}
                         onChange={(event, newValue) => {
-                          onChange(newValue);
-                          setSelectedSkills(newValue);
+                          if (newValue.length <= 10) {
+                            field.onChange(newValue);
+                          } else {
+                            toast.error("Maximum 10 skills allowed");
+                          }
                         }}
-                        renderTags={(value: string[], getTagProps) =>
-                          value.map((option, index) => {
-                            const tagProps = getTagProps({ index });
-                            const { key, ...restProps } = tagProps;
-                            return (
-                              <Chip
-                                key={key}
-                                variant="outlined"
-                                label={option}
-                                {...restProps}
-                                sx={{ margin: 0.5 }}
-                              />
-                            );
-                          })
-                        }
                         renderInput={(params) => (
                           <CustomTextField
                             {...params}
                             fullWidth
                             size="medium"
-                            placeholder="Select or add job skills..."
+                            placeholder="Type a skill and press Enter..."
+                            error={Boolean(errors.skills)}
+                            helperText={errors.skills?.message || "Add 5–10 skills"}
                             InputProps={{
                               ...params.InputProps,
-                              disableUnderline: true,
-                              sx: {
-                                "& textarea": {
-                                  overflow: "hidden",
-                                  resize: "none",
-                                },
+                              onKeyDown: (event) => {
+                                if (event.key === "Enter" && field.value.length >= 10) {
+                                  event.preventDefault();
+                                  toast.error("Maximum 10 skills allowed");
+                                }
                               },
                             }}
-                            error={Boolean(errors.skill)}
-                            helperText={errors.skill?.message}
                           />
                         )}
+                        renderTags={(value, getTagProps) =>
+                          value.map((option, index) => (
+                            <Chip
+                              label={option}
+                              {...getTagProps({ index })}
+                              sx={{ margin: 0.5 }}
+                            />
+                          ))
+                        }
                       />
                     )}
                   />
-                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 2 }}>
-                    {selectedSkills.map((skill) => (
-                      <Chip
-                        key={skill}
-                        label={skill}
-                        onDelete={() => handleRemoveSkill(skill)}
-                        deleteIcon={
-                          <IconButton>
-                            <CloseIcon fontSize="small" />
-                          </IconButton>
-                        }
-                      />
-                    ))}
-                  </Box>
                 </Grid>
 
-                <Grid item xs={12} md={12}>
+                <Grid item xs={12} md={6}>
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Salary Type
                   </Typography>
                   <Controller
                     name="salary_type"
                     control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
+                    render={({ field }) => (
                       <CustomTextField
+                        {...field}
                         fullWidth
                         select
-                        value={value}
-                        onChange={onChange}
                         size="medium"
+                        placeholder="Select Salary Type"
                         error={Boolean(errors.salary_type)}
                         helperText={errors.salary_type?.message}
                       >
-                        <MenuItem value="MONTHLY">MONTHLY</MenuItem>
-                        <MenuItem value="ANNUALLY">ANNUALLY</MenuItem>
+                        <MenuItem value="MONTHLY">Monthly</MenuItem>
+                        <MenuItem value="ANNUALLY">Annually</MenuItem>
                       </CustomTextField>
                     )}
                   />
                 </Grid>
 
-                <Grid item xs={2} md={2}>
+                <Grid item xs={12} md={6}>
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Currency
                   </Typography>
                   <Controller
                     name="currency"
                     control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
+                    render={({ field }) => (
                       <CustomTextField
+                        {...field}
                         fullWidth
                         select
-                        value={value}
-                        onChange={onChange}
                         size="medium"
+                        placeholder="Select Currency"
                         error={Boolean(errors.currency)}
                         helperText={errors.currency?.message}
                         SelectProps={{
-                          renderValue: (selected) => currencyMap[String(selected) as keyof typeof currencyMap] || String(selected),
+                          renderValue: (value) =>
+                            String(currencyMap[value as keyof typeof currencyMap] || value),
                           MenuProps: {
                             PaperProps: {
-                              style: {
-                                maxHeight: 300,
-                              },
+                              style: { maxHeight: 300 },
                             },
                             disableScrollLock: true,
                           },
                         }}
                       >
-                        {[
-                          { code: "NGN", symbol: "₦" },
-                          { code: "EUR", symbol: "€" },
-                          { code: "USD", symbol: "$" },
-                          { code: "GBP", symbol: "£" },
-                        ].map(({ code, symbol }) => (
+                        {Object.entries(currencyMap).map(([code, symbol]) => (
                           <MenuItem key={code} value={code}>
                             {symbol} ({code})
                           </MenuItem>
@@ -445,21 +385,20 @@ const NewJob = ({ open, close }: Props) => {
                   />
                 </Grid>
 
-                <Grid item xs={12} md={5}>
+                <Grid item xs={12} md={6}>
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
-                    Minimum
+                    Minimum Salary (Optional)
                   </Typography>
                   <Controller
                     name="minSalary"
                     control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
+                    render={({ field }) => (
                       <CustomTextField
+                        {...field}
                         fullWidth
-                        value={value}
-                        onChange={onChange}
+                        type="number"
                         size="medium"
-                        placeholder="1"
+                        placeholder="e.g., 50000"
                         error={Boolean(errors.minSalary)}
                         helperText={errors.minSalary?.message}
                         InputProps={{
@@ -469,26 +408,26 @@ const NewJob = ({ open, close }: Props) => {
                             </InputAdornment>
                           ),
                         }}
+                        onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
                       />
                     )}
                   />
                 </Grid>
 
-                <Grid item xs={12} md={5}>
+                <Grid item xs={12} md={6}>
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
-                    Maximum
+                    Maximum Salary (Optional)
                   </Typography>
                   <Controller
                     name="maxSalary"
                     control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
+                    render={({ field }) => (
                       <CustomTextField
+                        {...field}
                         fullWidth
-                        value={value}
-                        onChange={onChange}
+                        type="number"
                         size="medium"
-                        placeholder="999999"
+                        placeholder="e.g., 100000"
                         error={Boolean(errors.maxSalary)}
                         helperText={errors.maxSalary?.message}
                         InputProps={{
@@ -498,6 +437,7 @@ const NewJob = ({ open, close }: Props) => {
                             </InputAdornment>
                           ),
                         }}
+                        onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
                       />
                     )}
                   />
@@ -510,14 +450,12 @@ const NewJob = ({ open, close }: Props) => {
                   <Controller
                     name="location"
                     control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
+                    render={({ field }) => (
                       <CustomTextField
+                        {...field}
                         fullWidth
-                        value={value}
-                        onChange={onChange}
                         size="medium"
-                        placeholder="South Gate, CA Allen FL"
+                        placeholder="e.g., South Gate, CA"
                         error={Boolean(errors.location)}
                         helperText={errors.location?.message}
                       />
@@ -532,17 +470,21 @@ const NewJob = ({ open, close }: Props) => {
                   <Controller
                     name="application_deadline"
                     control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
+                    render={({ field }) => (
                       <DatePicker
                         disablePast
-                        value={value ? dayjs(value) : null}
+                        value={field.value ? dayjs(field.value) : null}
                         onChange={(newDate) => {
-                          const formattedDate = newDate
-                            ? newDate.format("YYYY-MM-DD")
-                            : null;
-                          onChange(formattedDate);
+                          const formattedDate = newDate ? newDate.format("YYYY-MM-DD") : "";
+                          field.onChange(formattedDate);
                           setSelectedDate(formattedDate);
+                        }}
+                        slotProps={{
+                          textField: {
+                            fullWidth: true,
+                            error: Boolean(errors.application_deadline),
+                            helperText: errors.application_deadline?.message,
+                          },
                         }}
                       />
                     )}
@@ -551,29 +493,18 @@ const NewJob = ({ open, close }: Props) => {
 
                 <Grid item xs={12}>
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
-                    Additional Information
+                    Additional Information (Optional)
                   </Typography>
                   <Controller
                     name="information"
                     control={control}
-                    rules={{ required: true }}
-                    render={({ field: { value, onChange } }) => (
+                    render={({ field }) => (
                       <CustomTextField
+                        {...field}
                         fullWidth
                         multiline
-                        rows={5}
-                        value={value}
-                        onChange={onChange}
+                        rows={4}
                         size="medium"
-                        InputProps={{
-                          disableUnderline: true,
-                          sx: {
-                            "& textarea": {
-                              overflowY: "auto",
-                              resize: "none",
-                            },
-                          },
-                        }}
                         placeholder="Any additional information..."
                         error={Boolean(errors.information)}
                         helperText={errors.information?.message}
@@ -583,25 +514,32 @@ const NewJob = ({ open, close }: Props) => {
                 </Grid>
               </Grid>
             </Box>
-
-            <DialogActions
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                gap: 2,
-              }}
-            >
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={isSubmitting}
-                sx={{ textTransform: "capitalize", width: "30%" }}
-              >
-                Post
-              </Button>
-            </DialogActions>
           </DialogContent>
+
+          <DialogActions
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              gap: 2,
+              pb: 4,
+            }}
+          >
+            <Button
+              variant="outlined"
+              onClick={close}
+              sx={{ textTransform: "capitalize", width: "30%" }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={isSubmitting || submitting}
+              sx={{ textTransform: "capitalize", width: "30%" }}
+            >
+              {submitting ? <CircularProgress size={24} color="inherit" /> : "Post Job"}
+            </Button>
+          </DialogActions>
         </form>
       </Dialog>
     </div>

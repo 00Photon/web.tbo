@@ -1,143 +1,393 @@
-import { Box, Button, Typography } from '@mui/material';
-import Image from 'next/image';
+"use client"
+
+import type React from "react"
+import { useState } from "react"
+import {
+  Box,
+  Typography,
+  Button,
+  IconButton,
+  Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Chip,
+  Tooltip,
+  CircularProgress,
+  Alert,
+} from "@mui/material"
+import {
+  CloudUpload,
+  Delete,
+  Visibility,
+  PictureAsPdf,
+  Description,
+  Image as ImageIcon,
+  Download,
+  OpenInNew,
+} from "@mui/icons-material"
+import {
+  getCloudinaryThumbnail,
+  parseCloudinaryUrl,
+  getPdfViewerUrl,
+  canPreviewFile,
+} from "@/@core/utils/cloudinary-helpers"
+
+interface FileData {
+  url: string
+  name: string
+  type: string
+}
 
 interface DocumentUploadProps {
-  label: string;
-  accept?: string;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  previewUrl?: string;
-  onRemove?: () => void;
-  disabled?: boolean;
+  label: string
+  accept: string
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void
+  fileData: FileData | null
+  onRemove: () => void
+  description?: string
 }
 
 const DocumentUpload: React.FC<DocumentUploadProps> = ({
   label,
-  accept = 'application/pdf',
+  accept,
   onChange,
-  previewUrl,
+  fileData,
   onRemove,
-  disabled,
+  description,
 }) => {
-  // Check if the file is an image (common extensions)
-  const isImage = previewUrl?.match(/\.(jpeg|jpg|gif|png|svg|webp|bmp)$/i);
-  
-  // Check if the file is a PDF
-  const isPDF = previewUrl?.match(/\.pdf$/i) || accept.includes('pdf');
-  
-  // Extract file name from URL
-  const fileName = previewUrl?.split('/').pop()?.split('?')[0] || 'uploaded file';
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const [previewError, setPreviewError] = useState<string | null>(null)
+
+  const getFileIcon = (type: string) => {
+    if (type.startsWith("image/")) {
+      return <ImageIcon />
+    } else if (type === "application/pdf") {
+      return <PictureAsPdf />
+    } else {
+      return <Description />
+    }
+  }
+
+  const formatFileName = (name: string, maxLength = 25) => {
+    if (name.length <= maxLength) return name
+    const extension = name.split(".").pop()
+    const nameWithoutExt = name.substring(0, name.lastIndexOf("."))
+    const truncated = nameWithoutExt.substring(0, maxLength - extension!.length - 4)
+    return `${truncated}...${extension}`
+  }
+
+  const handlePreview = () => {
+    if (!fileData) return
+
+    setPreviewError(null)
+    setPreviewLoading(true)
+    setPreviewOpen(true)
+
+    // Small delay to show loading state
+    setTimeout(() => {
+      setPreviewLoading(false)
+    }, 500)
+  }
+
+  const handleDownload = () => {
+    if (!fileData) return
+
+    // Create a temporary link to force download
+    const link = document.createElement("a")
+    link.href = fileData.url
+    link.download = fileData.name
+    link.target = "_blank"
+    link.rel = "noopener noreferrer"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const handleOpenInNewTab = () => {
+    if (!fileData) return
+    window.open(fileData.url, "_blank", "noopener,noreferrer")
+  }
+
+  const renderThumbnail = () => {
+    if (!fileData) return null
+
+    const urlInfo = parseCloudinaryUrl(fileData.url)
+
+    if (fileData.type.startsWith("image/")) {
+      // For images, try to display thumbnail
+      let thumbnailUrl = fileData.url
+
+      if (urlInfo.isCloudinary) {
+        // Try to get image thumbnail, but fallback to original if it fails
+        thumbnailUrl = getCloudinaryThumbnail(fileData.url, fileData.type)
+      }
+
+      return (
+        <Box
+          sx={{
+            width: "100%",
+            height: "120px",
+            borderRadius: "8px",
+            overflow: "hidden",
+            mb: 2,
+            cursor: "pointer",
+            border: "1px solid #e0e0e0",
+          }}
+          onClick={handlePreview}
+        >
+          <img
+            src={thumbnailUrl || "/placeholder.svg"}
+            alt={fileData.name}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+            onError={(e) => {
+              // Fallback to placeholder if thumbnail fails
+              e.currentTarget.src = "/placeholder.svg?height=120&width=200&text=Image"
+            }}
+          />
+        </Box>
+      )
+    } else {
+      // For PDFs and documents, show icon-based thumbnail
+      return (
+        <Box
+          sx={{
+            width: "100%",
+            height: "120px",
+            borderRadius: "8px",
+            mb: 2,
+            cursor: "pointer",
+            border: "1px solid #e0e0e0",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: fileData.type === "application/pdf" ? "#ffebee" : "#e3f2fd",
+            color: fileData.type === "application/pdf" ? "#d32f2f" : "#1976d2",
+          }}
+          onClick={handlePreview}
+        >
+          {getFileIcon(fileData.type)}
+          <Typography variant="caption" sx={{ mt: 1, fontWeight: 500 }}>
+            {fileData.type === "application/pdf" ? "PDF" : "DOC"}
+          </Typography>
+        </Box>
+      )
+    }
+  }
+
+  const renderPreviewContent = () => {
+    if (!fileData) return null
+
+    if (previewLoading) {
+      return (
+        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "400px" }}>
+          <CircularProgress />
+        </Box>
+      )
+    }
+
+    if (previewError) {
+      return (
+        <Box sx={{ p: 2 }}>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {previewError}
+          </Alert>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button variant="outlined" onClick={handleDownload} startIcon={<Download />}>
+              Download File
+            </Button>
+            <Button variant="outlined" onClick={handleOpenInNewTab} startIcon={<OpenInNew />}>
+              Open in New Tab
+            </Button>
+          </Box>
+        </Box>
+      )
+    }
+
+    if (fileData.type.startsWith("image/")) {
+      return (
+        <img
+          src={fileData.url || "/placeholder.svg"}
+          alt={fileData.name}
+          style={{
+            maxWidth: "100%",
+            maxHeight: "70vh",
+            objectFit: "contain",
+          }}
+          onError={() => setPreviewError("Failed to load image preview")}
+        />
+      )
+    } else if (fileData.type === "application/pdf") {
+      // Use Google Docs viewer for PDF preview
+      const pdfViewerUrl = getPdfViewerUrl(fileData.url)
+
+      return (
+        <Box sx={{ width: "100%", height: "600px" }}>
+          <iframe
+            src={pdfViewerUrl}
+            width="100%"
+            height="100%"
+            style={{ border: "none" }}
+            title={fileData.name}
+            onError={() => {
+              setPreviewError("Cannot preview this PDF file. Try downloading or opening in a new tab.")
+            }}
+          />
+        </Box>
+      )
+    } else {
+      // For other document types, show message with options
+      return (
+        <Box sx={{ p: 4, textAlign: "center" }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Preview not available
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 3, color: "text.secondary" }}>
+            This file type cannot be previewed directly. You can download it or open it in a new tab.
+          </Typography>
+          <Box sx={{ display: "flex", justifyContent: "center", gap: 2 }}>
+            <Button variant="contained" onClick={handleDownload} startIcon={<Download />}>
+              Download File
+            </Button>
+            <Button variant="outlined" onClick={handleOpenInNewTab} startIcon={<OpenInNew />}>
+              Open in New Tab
+            </Button>
+          </Box>
+        </Box>
+      )
+    }
+  }
 
   return (
     <Box>
-      <Typography sx={{ fontWeight: 600, fontSize: 12, mb: 1 }}>{label}</Typography>
+      <Typography sx={{ fontWeight: 600, color: "#39353D", fontSize: "14px", mb: 1 }}>{label}</Typography>
+      {description && <Typography sx={{ fontSize: "12px", color: "#666", mb: 2 }}>{description}</Typography>}
 
-      {previewUrl ? (
-        <Box sx={{ mb: 1 }}>
-          {/* Preview section */}
-          <Box sx={{ 
-            mb: 2, 
-            border: '1px solid #eee', 
-            p: 2, 
-            borderRadius: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            minHeight: 100,
-            justifyContent: 'center'
-          }}>
-            {isImage ? (
-              <img 
-                src={previewUrl} 
-                alt="Upload preview" 
-                style={{ 
-                  maxWidth: '100%', 
-                  maxHeight: '200px',
-                  display: 'block',
-                }} 
-              />
-            ) : isPDF ? (
-              <Box sx={{ textAlign: 'center' }}>
-                <Image 
-                  src="/images.png" // You'll need a PDF icon in your public folder
-                  width={48} 
-                  height={48} 
-                  alt="PDF icon" 
-                />
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                  {fileName}
+      <Paper
+        sx={{
+          border: "2px dashed #D0D5DD",
+          borderRadius: "12px",
+          padding: "20px",
+          textAlign: "center",
+          backgroundColor: fileData ? "#f8f9fa" : "transparent",
+          transition: "all 0.2s ease-in-out",
+          "&:hover": {
+            borderColor: fileData ? "#D0D5DD" : "#1976d2",
+            backgroundColor: fileData ? "#f8f9fa" : "#f5f5f5",
+          },
+        }}
+      >
+        {fileData ? (
+          <Box>
+            {/* File Preview Section */}
+            <Box sx={{ mb: 2 }}>{renderThumbnail()}</Box>
+
+            {/* File Info */}
+            <Box sx={{ mb: 2 }}>
+              <Tooltip title={fileData.name}>
+                <Typography
+                  sx={{
+                    fontSize: "14px",
+                    fontWeight: 500,
+                    color: "#333",
+                    mb: 0.5,
+                  }}
+                >
+                  {formatFileName(fileData.name)}
                 </Typography>
-              </Box>
-            ) : (
-              <Box sx={{ textAlign: 'center' }}>
-                <Image 
-                  src="/icons/document-icon.svg" // You'll need a generic document icon
-                  width={48} 
-                  height={48} 
-                  alt="Document icon" 
+              </Tooltip>
+              <Box sx={{ display: "flex", justifyContent: "center", gap: 1, flexWrap: "wrap" }}>
+                <Chip
+                  label={fileData.type === "application/pdf" ? "PDF" : fileData.type.split("/")[1]?.toUpperCase()}
+                  size="small"
+                  sx={{ fontSize: "10px", height: "20px" }}
                 />
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                  {fileName}
-                </Typography>
+                {parseCloudinaryUrl(fileData.url).isCloudinary && (
+                  <Chip label="Cloudinary" size="small" color="primary" sx={{ fontSize: "10px", height: "20px" }} />
+                )}
+                {canPreviewFile(fileData.type, fileData.url) && (
+                  <Chip label="Previewable" size="small" color="success" sx={{ fontSize: "10px", height: "20px" }} />
+                )}
               </Box>
-            )}
+            </Box>
+
+            {/* Action Buttons */}
+            <Box sx={{ display: "flex", justifyContent: "center", gap: 1, flexWrap: "wrap" }}>
+              {canPreviewFile(fileData.type, fileData.url) && (
+                <Button size="small" startIcon={<Visibility />} onClick={handlePreview} sx={{ textTransform: "none" }}>
+                  Preview
+                </Button>
+              )}
+              <Button
+                size="small"
+                startIcon={<OpenInNew />}
+                onClick={handleOpenInNewTab}
+                sx={{ textTransform: "none" }}
+              >
+                Open
+              </Button>
+              <Button size="small" startIcon={<Download />} onClick={handleDownload} sx={{ textTransform: "none" }}>
+                Download
+              </Button>
+              <IconButton size="small" onClick={onRemove} color="error">
+                <Delete />
+              </IconButton>
+            </Box>
           </Box>
-          
-          {/* Action buttons */}
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              size="small"
-              variant="outlined"
-              color="primary"
-              component="a"
-              href={previewUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              sx={{ textTransform: 'none' }}
-            >
-              {isImage ? 'View Image' : 'View Document'}
-            </Button>
-            <Button 
-              size="small" 
-              variant="outlined" 
-              color="error" 
-              onClick={onRemove}
-            >
-              Remove
-            </Button>
+        ) : (
+          <Box>
+            <CloudUpload sx={{ fontSize: 48, color: "#D0D5DD", mb: 2 }} />
+            <Typography sx={{ fontSize: "14px", color: "#666", mb: 2 }}>Click to upload or drag and drop</Typography>
+            <input
+              type="file"
+              accept={accept}
+              onChange={onChange}
+              style={{ display: "none" }}
+              id={`file-input-${label}`}
+            />
+            <label htmlFor={`file-input-${label}`}>
+              <Button component="span" variant="outlined" startIcon={<CloudUpload />} sx={{ textTransform: "none" }}>
+                Choose File
+              </Button>
+            </label>
           </Box>
-        </Box>
-      ) : (
-        <Box
-          sx={{
-            border: '1px dashed #D0D5DD',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: '30px',
-            rowGap: 3,
-            textAlign: 'center',
-          }}
-        >
-          <Image src="/icons/cloud_upload.svg" width={56} height={56} alt="Cloud Upload Icon" />
-          <Typography sx={{ fontSize: 13 }}>
-            <span style={{ color: '#E61C31', fontWeight: 600 }}>Click to upload</span> or drag and drop
-          </Typography>
-          <Typography sx={{ fontSize: 11 }}>
-            {accept.includes('image') ? 'PDF or Image (max. 10MB)' : 'PDF (max. 10MB)'}
-          </Typography>
-          <Button
-            variant="contained"
-            component="label"
-            disabled={disabled}
-            sx={{ textTransform: 'none', fontSize: 13, fontWeight: 500, mt: 1 }}
-          >
-            Browse Files
-            <input type="file" accept={accept} onChange={onChange} hidden disabled={disabled} />
+        )}
+      </Paper>
+
+      {/* Preview Dialog */}
+      <Dialog
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: { minHeight: "500px" },
+        }}
+      >
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {fileData && getFileIcon(fileData.type)}
+          {fileData?.name}
+        </DialogTitle>
+        <DialogContent sx={{ p: 1 }}>{renderPreviewContent()}</DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPreviewOpen(false)}>Close</Button>
+          <Button onClick={handleDownload} variant="outlined" startIcon={<Download />}>
+            Download
           </Button>
-        </Box>
-      )}
+          <Button onClick={handleOpenInNewTab} variant="outlined" startIcon={<OpenInNew />}>
+            Open in New Tab
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
-  );
-};
+  )
+}
 
-export default DocumentUpload;
+export default DocumentUpload
