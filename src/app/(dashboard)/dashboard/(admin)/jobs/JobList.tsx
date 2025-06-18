@@ -190,6 +190,27 @@ const JobListTable: React.FC = () => {
     }
   };
 
+const loadJobs = async () => {
+  try {
+    setLoading(true);
+    const response = await fetchJobs();
+    console.log("Fetched data:", response);
+    if (response && Array.isArray(response.jobs)) {
+      setJobs(response.jobs);
+      setFilteredJobs(response.jobs);
+    } else {
+      setJobs([]);
+      setFilteredJobs([]);
+    }
+  } catch (err) {
+    setError("Failed to load jobs. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
   const handleRowOptionsClick = (event: React.MouseEvent<HTMLButtonElement>, jobId: number) => {
     setAnchorEl((prev) => ({
       ...prev,
@@ -450,7 +471,14 @@ const JobListTable: React.FC = () => {
           jobId={selectedJobId ? selectedJobId.toString() : ""}
         />
       )}
-      <NewJob open={postJobModal} close={togglePostJobModal} onJobCreated={() => {}} />
+    <NewJob 
+        open={postJobModal} 
+        close={togglePostJobModal} 
+        onJobCreated={() => {
+          // This will be called after successful job creation
+          loadJobs(); // Call the function that fetches jobs
+        }} 
+      />
       <Dialog
         open={deleteDialogOpen}
         onClose={handleCloseDeleteDialog}

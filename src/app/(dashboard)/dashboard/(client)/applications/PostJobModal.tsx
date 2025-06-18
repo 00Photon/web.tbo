@@ -387,7 +387,7 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
 
                 <Grid item xs={12} md={6}>
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
-                    Minimum Salary (Optional)
+                    Minimum Salary
                   </Typography>
                   <Controller
                     name="minSalary"
@@ -416,7 +416,7 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
 
                 <Grid item xs={12} md={6}>
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
-                    Maximum Salary (Optional)
+                    Maximum Salary
                   </Typography>
                   <Controller
                     name="maxSalary"

@@ -1,5 +1,5 @@
 "use client";
-import Terms from "../component/Terms";
+import Terms from "../component/privacy";
 
 const page = () => {
   return (

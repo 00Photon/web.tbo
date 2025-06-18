@@ -465,6 +465,26 @@ const JobListTable: React.FC = () => {
     setOpenEditJobModal(false);
     setSelectedJob(null);
   };
+  const loadJobs = async () => {
+  try {
+    setLoading(true);
+    const response = await fetchJobsClients();
+    if (response.status) {
+      setJobs(response.jobs);
+      setTotalJobs(response.total || response.jobs.length);
+      setAnchorEl(Array(response.jobs.length).fill(null));
+    }
+  } catch (error) {
+    console.error("Error fetching jobs:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+// Update your useEffect to use this function
+useEffect(() => {
+  loadJobs();
+}, []);
 
   const handleJobUpdated = (updatedJob: Job) => {
     setJobs((prevJobs) =>
@@ -747,7 +767,10 @@ const JobListTable: React.FC = () => {
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
-      <PostJobModal open={openPostJobModal} close={handleCloseModal} onJobCreated={() => {}} />
+      <PostJobModal open={openPostJobModal} close={handleCloseModal} onJobCreated={() => {
+      // This will be called after successful job creation
+      loadJobs(); // Call the function that fetches jobs
+    }}  />
       <EditJobModal
         open={openEditJobModal}
         job={selectedJob}
@@ -823,6 +846,3 @@ export const JobDetail: React.FC<{ jobId: string }> = ({ jobId }) => {
 };
 
 export default JobListTable;
-// The setLoading function is already implemented as a useState setter in the component above.
-// The placeholder function here is unnecessary and should be removed.
-// No additional implementation is needed.

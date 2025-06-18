@@ -8,20 +8,20 @@ const Inbox = () => {
   const [notifications, setNotifications] = useState([
     {
       id: 1,
-      message: "You have been scheduled for an interview with Google.",
-      time: "2 hours ago",
+      message: "",
+      time: "",
       unread: true,
     },
     {
       id: 2,
-      message: "Your application for Amazon has been reviewed.",
-      time: "1 day ago",
+      message: "",
+      time: "",
       unread: false,
     },
     {
       id: 3,
-      message: "Congratulations! You have been offered a job at Microsoft.",
-      time: "3 days ago",
+      message: "",
+      time: "",
       unread: true,
     },
   ]);
