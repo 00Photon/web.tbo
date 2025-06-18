@@ -14,6 +14,11 @@ import {
   FormControl,
   InputLabel,
   Select,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 import { Edit, Save, Cancel, DeleteOutlineOutlined } from '@mui/icons-material';
 import CustomTextField from '@/@core/component/mui/text-field';
@@ -37,12 +42,7 @@ interface CompanyFormData {
 }
 
 const countryCodes = [
-  { code: '+1', label: '+1 (USA/Canada)' },
-  { code: '+44', label: '+44 (UK)' },
   { code: '+234', label: '+234 (Nigeria)' },
-  { code: '+91', label: '+91 (India)' },
-  { code: '+86', label: '+86 (China)' },
-  // Add more country codes as needed
 ];
 
 const ClientProfile = () => {
@@ -53,11 +53,12 @@ const ClientProfile = () => {
   const [isSavingImage, setIsSavingImage] = useState<boolean>(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [openConfirmDialog, setOpenConfirmDialog] = useState<boolean>(false);
   const [formData, setFormData] = useState<CompanyFormData>({
     company_logo: '',
     company_name: '',
     company_email_address: '',
-    country_code: '',
+    country_code: '+234',
     phone_number: '',
     industry: '',
     number_of_employees: '',
@@ -79,13 +80,13 @@ const ClientProfile = () => {
         if (user) {
           setUserId(user.id);
           const phoneParts = user.company_phone_number
-            ? user.company_phone_number.match(/^(\+\d{1,3})(\d+)$/) || ['', '', user.company_phone_number]
-            : ['', '', ''];
+            ? user.company_phone_number.match(/^(\+\d{1,3})(\d+)$/) || ['', '+234', '']
+            : ['', '+234', ''];
           setFormData({
             company_logo: user.company_logo || '',
             company_name: user.company_name || '',
             company_email_address: user.company_email_address || '',
-            country_code: phoneParts[1] || '',
+            country_code: phoneParts[1] || '+234',
             phone_number: phoneParts[2] || '',
             industry: user.industry || '',
             number_of_employees: user.number_of_employees || '',
@@ -107,17 +108,17 @@ const ClientProfile = () => {
     fetchUser();
   }, []);
 
-const handleChange = (
-  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent<string>
-) => {
-  const { name, value } = e.target as HTMLInputElement | { name?: string; value: unknown };
-  if (name) {
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  }
-};
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent<string>
+  ) => {
+    const { name, value } = e.target as HTMLInputElement | { name?: string; value: unknown };
+    if (name) {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+  };
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -151,6 +152,9 @@ const handleChange = (
   const validateForm = () => {
     const errors: string[] = [];
     
+    if (!formData.company_logo) {
+      errors.push('Company logo is required.');
+    }
     if (!formData.company_name.trim()) {
       errors.push('Company name is required.');
     }
@@ -185,15 +189,19 @@ const handleChange = (
     return errors;
   };
 
-  const saveCompanyInfo = async () => {
-    if (!userId) {
-      setError('User ID is missing.');
-      return;
-    }
-
+  const handleSaveClick = () => {
     const validationErrors = validateForm();
     if (validationErrors.length > 0) {
       setError(validationErrors.join(' '));
+      return;
+    }
+    setOpenConfirmDialog(true);
+  };
+
+  const saveCompanyInfo = async () => {
+    if (!userId) {
+      setError('User ID is missing.');
+      setOpenConfirmDialog(false);
       return;
     }
 
@@ -206,9 +214,11 @@ const handleChange = (
       await updateUser(userId, updatedFormData);
       setIsEditing(false);
       setSuccess('Company information updated successfully!');
+      setOpenConfirmDialog(false);
     } catch (err) {
       console.error('Failed to update company info:', err);
       setError('Failed to update profile. Please try again.');
+      setOpenConfirmDialog(false);
     }
   };
 
@@ -224,6 +234,10 @@ const handleChange = (
 
   const handleCloseSuccess = () => {
     setSuccess(null);
+  };
+
+  const handleCloseConfirmDialog = () => {
+    setOpenConfirmDialog(false);
   };
 
   return (
@@ -296,7 +310,7 @@ const handleChange = (
                 <IconButton onClick={handleCancelEdit} color="error" sx={{ mr: 1 }}>
                   <Cancel />
                 </IconButton>
-                <IconButton onClick={saveCompanyInfo} color="primary">
+                <IconButton onClick={handleSaveClick} color="primary">
                   <Save />
                 </IconButton>
               </Box>
@@ -449,7 +463,7 @@ const handleChange = (
                 value={formData.country}
                 onChange={handleChange}
                 size="medium"
-                placeholder="USA"
+                placeholder="Nigeria"
                 disabled={!isEditing}
               />
             </Grid>
@@ -544,7 +558,7 @@ const handleChange = (
                 <Button
                   variant="contained"
                   size="large"
-                  onClick={saveCompanyInfo}
+                  onClick={handleSaveClick}
                   disabled={isSavingImage}
                   sx={{
                     width: { xs: 'fit-content', md: '30%' },
@@ -559,6 +573,26 @@ const handleChange = (
           )}
         </Grid>
       </Grid>
+
+      <Dialog
+        open={openConfirmDialog}
+        onClose={handleCloseConfirmDialog}
+        aria-labelledby="confirm-dialog-title"
+        aria-describedby="confirm-dialog-description"
+      >
+        <DialogTitle id="confirm-dialog-title">Confirm Save</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="confirm-dialog-description">
+            Are you sure you want to save the changes to your company profile?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseConfirmDialog}>Cancel</Button>
+          <Button onClick={saveCompanyInfo} autoFocus variant="contained">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar open={!!error} autoHideDuration={6000} onClose={handleCloseError}>
         <Alert onClose={handleCloseError} severity="error">

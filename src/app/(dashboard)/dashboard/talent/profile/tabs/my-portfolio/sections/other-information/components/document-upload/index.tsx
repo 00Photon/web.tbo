@@ -309,9 +309,9 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
                   size="small"
                   sx={{ fontSize: "10px", height: "20px" }}
                 />
-                {parseCloudinaryUrl(fileData.url).isCloudinary && (
+                {/* {parseCloudinaryUrl(fileData.url).isCloudinary && (
                   <Chip label="Cloudinary" size="small" color="primary" sx={{ fontSize: "10px", height: "20px" }} />
-                )}
+                )} */}
                 {canPreviewFile(fileData.type, fileData.url) && (
                   <Chip label="Previewable" size="small" color="success" sx={{ fontSize: "10px", height: "20px" }} />
                 )}

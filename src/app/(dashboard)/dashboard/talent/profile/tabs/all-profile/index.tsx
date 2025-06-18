@@ -241,7 +241,7 @@ const AllProfile = () => {
   return (
     <Box sx={{ p: 3 }}>
       {/* Header Section */}
-      <Paper sx={{ p: 3, mb: 3, background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", color: "white" }}>
+      <Paper sx={{ p: 3, mb: 3, background: "linear-gradient(135deg,rgb(234, 102, 102) 0%,rgb(134, 1, 1) 100%)", color: "white" }}>
         <Grid container spacing={3} alignItems="center">
           <Grid item>
             <Avatar
