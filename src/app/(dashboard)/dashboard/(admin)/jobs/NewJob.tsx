@@ -33,7 +33,7 @@ interface IFormInput {
   description: string;
   requirement: string;
   skills: string[];
-  location: string;
+  location: "Hybrid" | "Remote" | "Onsite";
   currency: "USD" | "EUR" | "GBP" | "NGN";
   minSalary: number;
   maxSalary: number;
@@ -56,7 +56,7 @@ const defaultValues: IFormInput = {
   description: "",
   requirement: "",
   skills: [],
-  location: "",
+  location: "Hybrid", // Set a default value (or "" if you want to force selection)
   salary_type: "MONTHLY",
   currency: "NGN",
   minSalary: undefined as any,
@@ -558,25 +558,30 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
                   />
                 </Grid>
 
-                <Grid item xs={12} md={6}>
-                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
-                    Location
-                  </Typography>
-                  <Controller
-                    name="location"
-                    control={control}
-                    render={({ field }) => (
-                      <CustomTextField
-                        {...field}
-                        fullWidth
-                        size="medium"
-                        placeholder="e.g., South Gate, CA"
-                        error={Boolean(errors.location)}
-                        helperText={errors.location?.message}
-                      />
-                    )}
-                  />
-                </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
+                  Location
+                </Typography>
+                <Controller
+                  name="location"
+                  control={control}
+                  render={({ field }) => (
+                    <CustomTextField
+                      {...field}
+                      fullWidth
+                      select
+                      size="medium"
+                      placeholder="Select Location"
+                      error={Boolean(errors.location)}
+                      helperText={errors.location?.message}
+                    >
+                      <MenuItem value="Hybrid">Hybrid</MenuItem>
+                      <MenuItem value="Remote">Remote</MenuItem>
+                      <MenuItem value="Onsite">Onsite</MenuItem>
+                    </CustomTextField>
+                  )}
+                />
+              </Grid>
 
                 <Grid item xs={12} md={6}>
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>

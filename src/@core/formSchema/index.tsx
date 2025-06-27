@@ -79,7 +79,10 @@ export const newJobSchema = yup.object().shape({
     .min(5)
     .max(10)
     .required(),
-  location: yup.string().max(255).required(),
+ location: yup
+    .string()
+    .oneOf(["Hybrid", "Remote", "Onsite"], "Please select a valid location")
+    .required("Location is required"), // Updated validation
   currency: yup
     .mixed<"USD" | "EUR" | "GBP" | "NGN">()
     .oneOf(["USD", "EUR", "GBP", "NGN"])
@@ -126,7 +129,10 @@ export const newJobSchema2 = yup.object().shape({
     .min(5)
     .max(10)
     .required(),
-  location: yup.string().max(255).required(),
+ location: yup
+    .string()
+    .oneOf(["Hybrid", "Remote", "Onsite"], "Please select a valid location")
+    .required("Location is required"), // Updated validation
   currency: yup.mixed<"USD" | "EUR" | "GBP" | "NGN">().oneOf(["USD", "EUR", "GBP", "NGN"]).required(),
   minSalary: yup.number().min(0).defined(),
   maxSalary: yup
