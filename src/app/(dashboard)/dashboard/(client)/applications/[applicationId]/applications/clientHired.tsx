@@ -87,7 +87,7 @@ interface ApplicationTableProps {
   jobId: number;
 }
 
-const ApplicationTable: React.FC<ApplicationTableProps> = ({ jobId }) => {
+const ClientHired: React.FC<ApplicationTableProps> = ({ jobId }) => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [openFilter, setOpenFilter] = useState<boolean>(false);
   const [value, setValue] = useState<string>("");
@@ -110,9 +110,9 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({ jobId }) => {
         setLoading(true);
         const response = await fetchApplications();
         if (response.status) {
-          // Filter applications by jobId
+          // Filter applications by jobId and status === INTERVIEWED
           let jobApplications = response.applications.filter(
-            (app: Application) => app.job_id === jobId
+            (app: Application) => app.job_id === jobId && app.status === "HIRED"
           );
 
           // Apply search filter if value is not empty
@@ -318,7 +318,7 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({ jobId }) => {
               value={value}
               onChange={(e) => setValue(e.target.value)}
               size="small"
-              placeholder="Job title , email"
+              placeholder="Job title, company name, email"
               fullWidth
               InputProps={{
                 startAdornment: (
@@ -342,7 +342,7 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({ jobId }) => {
               }}
             >
               {smallScreen && (
-                <Typography sx={{ fontSize: ".857rem" }}>Filter</Typography>
+                <Typography sx={{raphy>
               )}
               <Icon icon="basil:filter-outline" />
             </Button> */}
@@ -360,7 +360,7 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({ jobId }) => {
                     onChange={handleAllChecked}
                   />
                 </TableCellStyled>
-                <TableCellStyled align="left">S/N</TableCellStyled>
+               <TableCellStyled align="left">S/N</TableCellStyled>
                 <TableCellStyled align="left" sx={{ minWidth: 150 }}>
                   Name
                 </TableCellStyled>
@@ -381,20 +381,20 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({ jobId }) => {
               ) : applications.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} align="center">
-                    No applications found for this job
+                    No Hired Talent found for this job
                   </TableCell>
                 </TableRow>
               ) : (
                 applications.map((item, i) => (
                   <TableRow key={item.id}>
-                    <TableCell align="left">
-                      <Checkbox
-                        size="small"
-                        checked={checked.includes(item.id)}
-                        onChange={() => handleRowChecked(item.id)}
-                      />
-                    </TableCell>
-                    <TableCell>{page * rowsPerPage + i + 1}</TableCell>
+                            <TableCell align="left">
+                                <Checkbox
+                                          size="small"
+                                          checked={checked.includes(item.id)}
+                                          onChange={() => handleRowChecked(item.id)}
+                                        />
+                                </TableCell>
+                            <TableCell>{page * rowsPerPage + i + 1}</TableCell>
                     <TableCell>{item.user.name}</TableCell>
                     <TableCell>{item.user.email}</TableCell>
                     <TableCell align="center">{item.job.title}</TableCell>
@@ -532,4 +532,4 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({ jobId }) => {
   );
 };
 
-export default ApplicationTable;
+export default ClientHired;

@@ -318,7 +318,7 @@ export default function TalentJobVacanciesPage() {
                   ] as JobFilterOption[]}
                   onFilterChange={(selected: string[]) => handleFilterChange("jobType", selected)}
                 />
-                <JobFilter
+                {/* <JobFilter
                   title={"Experience"}
                   options={[
                     { label: "0-1year", checkState: false },
@@ -326,7 +326,7 @@ export default function TalentJobVacanciesPage() {
                     { label: "5years and above", checkState: false },
                   ] as JobFilterOption[]}
                   onFilterChange={(selected: string[]) => handleFilterChange("experience", selected)}
-                />
+                /> */}
                 <JobFilter
                   title={"Location"}
                   options={[

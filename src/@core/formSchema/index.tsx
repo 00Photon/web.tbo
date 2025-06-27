@@ -80,10 +80,26 @@ export const newJobSchema = yup.object().shape({
     .max(10)
     .required(),
   location: yup.string().max(255).required(),
-  currency: yup.mixed<"USD" | "EUR" | "GBP" | "NGN">().oneOf(["USD", "EUR", "GBP", "NGN"]).required(),
-  minSalary: yup.number().min(0).nullable().defined(),
-  maxSalary: yup.number().min(0).nullable().defined(),
-  salary_type: yup.mixed<"MONTHLY" | "ANNUALLY">().oneOf(["MONTHLY", "ANNUALLY"]).required(),
+  currency: yup
+    .mixed<"USD" | "EUR" | "GBP" | "NGN">()
+    .oneOf(["USD", "EUR", "GBP", "NGN"])
+    .required(),
+  minSalary: yup.number().min(0).defined(),
+  maxSalary: yup
+    .number()
+    .min(0)
+    .defined()
+    .test("max-greater-than-min", "Maximum salary must be greater than minimum salary", function (value) {
+      const { minSalary } = this.parent;
+      if (value != null && minSalary != null) {
+        return value > minSalary;
+      }
+      return true; // Skip this test if either value is missing; let other validators handle it
+    }),
+  salary_type: yup
+    .mixed<"MONTHLY" | "ANNUALLY">()
+    .oneOf(["MONTHLY", "ANNUALLY"])
+    .required(),
   application_deadline: yup
     .string()
     .required()
@@ -93,6 +109,8 @@ export const newJobSchema = yup.object().shape({
   information: yup.string().nullable().defined(),
   client_id: yup.string().required(),
 });
+
+
 
 export const newJobSchema2 = yup.object().shape({
   title: yup.string().max(255, "Title must be at most 255 characters").required(),
@@ -110,8 +128,18 @@ export const newJobSchema2 = yup.object().shape({
     .required(),
   location: yup.string().max(255).required(),
   currency: yup.mixed<"USD" | "EUR" | "GBP" | "NGN">().oneOf(["USD", "EUR", "GBP", "NGN"]).required(),
-  minSalary: yup.number().min(0).nullable().defined(),
-  maxSalary: yup.number().min(0).nullable().defined(),
+  minSalary: yup.number().min(0).defined(),
+  maxSalary: yup
+    .number()
+    .min(0)
+    .defined()
+    .test("max-greater-than-min", "Maximum salary must be greater than minimum salary", function (value) {
+      const { minSalary } = this.parent;
+      if (value != null && minSalary != null) {
+        return value > minSalary;
+      }
+      return true; // Skip this test if either value is missing; let other validators handle it
+    }),
   salary_type: yup.mixed<"MONTHLY" | "ANNUALLY">().oneOf(["MONTHLY", "ANNUALLY"]).required(),
   application_deadline: yup
     .string()

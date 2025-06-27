@@ -23,6 +23,7 @@ import {
 import { Edit, Save, Cancel, DeleteOutlineOutlined } from '@mui/icons-material';
 import CustomTextField from '@/@core/component/mui/text-field';
 import { SelectChangeEvent } from '@mui/material/Select';
+import { countryCodes } from '@/@core/utils/data'; // Imported countryCodes
 
 interface CompanyFormData {
   company_logo?: File | string;
@@ -40,10 +41,6 @@ interface CompanyFormData {
   country_code: string;
   phone_number: string;
 }
-
-const countryCodes = [
-  { code: '+234', label: '+234 (Nigeria)' },
-];
 
 const ClientProfile = () => {
   const [userId, setUserId] = useState<number | null>(null);
@@ -178,6 +175,9 @@ const ClientProfile = () => {
     }
     if (!formData.company_address.trim()) {
       errors.push('Company address is required.');
+    }
+    if (formData.company_website && !/^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/.test(formData.company_website)) {
+      errors.push('Please enter a valid domain name (e.g., company.com).');
     }
     if (!formData.country.trim()) {
       errors.push('Country is required.');
@@ -449,7 +449,7 @@ const ClientProfile = () => {
                 value={formData.company_website}
                 onChange={handleChange}
                 size="medium"
-                placeholder="https://www.company.com"
+                placeholder="company.com"
                 disabled={!isEditing}
               />
             </Grid>
@@ -526,7 +526,7 @@ const ClientProfile = () => {
                   >
                     {countryCodes.map((option) => (
                       <MenuItem key={option.code} value={option.code}>
-                        {option.label}
+                        {`${option.code} (${option.country})`}
                       </MenuItem>
                     ))}
                   </Select>

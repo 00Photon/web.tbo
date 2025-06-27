@@ -2,15 +2,9 @@ import axios from "axios";
 import { getSession } from "next-auth/react";
 import { API_BASE_URL } from "@/@core/utils/constants";
 import {
-
   AppliedJob,
   JobsApiResponse,
-
 } from "./types/job"; // Adjust path based on your structure
-
-
-
-
 
 interface SavedJob {
   id: number;
@@ -186,6 +180,7 @@ export interface Interview {
   application_id: number;
   user_id: number;
   interview_date: string;
+  interviewer_role:string;
   interview_time: string;
   interview_location: string;
   interviewer_name: string;
@@ -194,6 +189,7 @@ export interface Interview {
   interviewer_phone: string;
   status: string;
   created_at: string;
+  address : string;
   updated_at: string;
   job: any | null; // If job might be populated later, you can refine this type
 }

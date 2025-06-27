@@ -1,21 +1,51 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Modal, Box, Typography, Button, Divider, IconButton, Tabs, Tab, CircularProgress, Grid, Snackbar, Alert, TextField } from '@mui/material';
+import {
+  Modal,
+  Box,
+  Typography,
+  Button,
+  Divider,
+  IconButton,
+  Tabs,
+  Tab,
+  CircularProgress,
+  Grid,
+  Snackbar,
+  Alert,
+  TextField,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+} from '@mui/material';
 import { ClientData, editClient } from '@/@core/services/ClientService';
 import CloseIcon from '@mui/icons-material/Close';
+
+// Define dropdown options to match client side
+const industryOptions = ['consultancy', 'technology', 'travel', 'logistic', 'education'];
+const employeeOptions = ['10-50', '50-100', '100-200', '200+'];
+const employerOptions = ['private', 'public', 'government', 'other'];
+const countryCodes = [{ code: '+234', label: '+234 (Nigeria)' }];
 
 interface ModalProps {
   open: boolean;
   onClose: () => void;
   client: ClientData | null;
-  onClientUpdate?: (updatedClient: ClientData) => void; // Optional callback to update parent state
+  onClientUpdate?: (updatedClient: ClientData) => void;
 }
 
 const ClientModal: React.FC<ModalProps> = ({ open, onClose, client, onClientUpdate }) => {
   const [activeTab, setActiveTab] = useState<'company' | 'contact' | 'account'>('company');
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
   const [formData, setFormData] = useState<Partial<ClientData>>({});
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
@@ -28,6 +58,9 @@ const ClientModal: React.FC<ModalProps> = ({ open, onClose, client, onClientUpda
   // Initialize form data when entering edit mode
   const handleEdit = () => {
     setIsEditing(true);
+    const phoneParts = client.company_phone_number
+      ? client.company_phone_number.match(/^(\+\d{1,3})(\d+)$/) || ['', '+234', '']
+      : ['', '+234', ''];
     setFormData({
       company_name: client.company_name || '',
       industry: client.industry || '',
@@ -37,7 +70,8 @@ const ClientModal: React.FC<ModalProps> = ({ open, onClose, client, onClientUpda
       name: client.name || '',
       email: client.email || '',
       company_email_address: client.company_email_address || '',
-      phone_number: client.phone_number || '',
+      phone_number: phoneParts[2] || '',
+      country_code: phoneParts[1] || '+234',
       company_phone_number: client.company_phone_number || '',
       company_website: client.company_website || '',
       type_of_employer: client.type_of_employer || '',
@@ -46,21 +80,57 @@ const ClientModal: React.FC<ModalProps> = ({ open, onClose, client, onClientUpda
     });
   };
 
-  const handleSave = async () => {
+  // Validation function to match client side
+  const validateForm = () => {
+    const errors: string[] = [];
+    if (!formData.company_name?.trim()) errors.push('Company name is required.');
+    if (!formData.company_email_address?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.company_email_address)) {
+      errors.push('A valid company email address is required.');
+    }
+    if (!formData.country_code) errors.push('Country code is required.');
+    if (!formData.phone_number?.trim() || !/^\d{7,15}$/.test(formData.phone_number)) {
+      errors.push('Phone number must be 7-15 digits long.');
+    }
+    if (!formData.industry) errors.push('Industry selection is required.');
+    if (!formData.number_of_employees) errors.push('Number of employees is required.');
+    if (!formData.type_of_employer) errors.push('Type of employer is required.');
+    if (!formData.company_address?.trim()) errors.push('Company address is required.');
+    if (!formData.country?.trim()) errors.push('Country is required.');
+    if (!formData.position_in_company?.trim()) errors.push('Position in company is required.');
+    return errors;
+  };
+
+  const handleSave = () => {
+    const validationErrors = validateForm();
+    if (validationErrors.length > 0) {
+      setSnackbar({
+        open: true,
+        message: validationErrors.join(' '),
+        severity: 'error',
+      });
+      return;
+    }
+    setOpenConfirmDialog(true);
+  };
+
+  const confirmSave = async () => {
     try {
       setIsLoading(true);
-      const updatedClient = await editClient(client.id, formData);
+      const updatedFormData = {
+        ...formData,
+        company_phone_number: `${formData.country_code}${formData.phone_number}`,
+      };
+      const updatedClient = await editClient(client.id, updatedFormData);
       setSnackbar({
         open: true,
         message: 'Client updated successfully',
         severity: 'success',
       });
-      // Call parent callback to update client list if provided
       if (onClientUpdate) {
         onClientUpdate(updatedClient);
       }
       setIsEditing(false);
-      setTimeout(onClose, 1500); // Close modal after success
+      setTimeout(onClose, 1500);
     } catch (error) {
       setSnackbar({
         open: true,
@@ -69,6 +139,7 @@ const ClientModal: React.FC<ModalProps> = ({ open, onClose, client, onClientUpda
       });
     } finally {
       setIsLoading(false);
+      setOpenConfirmDialog(false);
     }
   };
 
@@ -77,9 +148,9 @@ const ClientModal: React.FC<ModalProps> = ({ open, onClose, client, onClientUpda
     setFormData({});
   };
 
-  const handleInputChange = (field: keyof ClientData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
+const handleInputChange = (field: keyof ClientData, value: string | number) => {
+  setFormData((prev) => ({ ...prev, [field]: String(value) }));
+};
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: 'company' | 'contact' | 'account') => {
     setIsLoading(true);
@@ -93,12 +164,14 @@ const ClientModal: React.FC<ModalProps> = ({ open, onClose, client, onClientUpda
     setSnackbar({ ...snackbar, open: false });
   };
 
-  // Helper to render "Not Available" for missing fields
+  const handleCloseConfirmDialog = () => {
+    setOpenConfirmDialog(false);
+  };
+
   const renderField = (value: string | number | undefined | null) => {
     return value ? value.toString() : 'Not Available';
   };
 
-  // Helper to render editable field
   const renderEditableField = (label: string, field: keyof ClientData, value: string | undefined | null) => {
     return isEditing ? (
       <TextField
@@ -117,6 +190,72 @@ const ClientModal: React.FC<ModalProps> = ({ open, onClose, client, onClientUpda
         </Typography>
         <Typography variant="body1" sx={{ color: 'text.primary', mb: 2 }}>
           {renderField(value)}
+        </Typography>
+      </>
+    );
+  };
+
+  const renderEditableSelect = (label: string, field: keyof ClientData, value: string | undefined | null, options: string[]) => {
+  return isEditing ? (
+    <FormControl fullWidth size="small" sx={{ mb: 2 }} disabled={isLoading}>
+      <InputLabel>{label}</InputLabel>
+      <Select
+        label={label}
+        value={formData[field] || ''}
+        onChange={(e) => handleInputChange(field, e.target.value)}
+      >
+        {options.map((option) => (
+          <MenuItem key={option} value={option}>
+            {option.charAt(0).toUpperCase() + option.slice(1)}
+          </MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+  ) : (
+    <>
+      <Typography variant="subtitle2" color="text.secondary">
+        {label}
+      </Typography>
+      <Typography variant="body1" sx={{ color: 'text.primary', mb: 2 }}>
+        {renderField(value)}
+      </Typography>
+    </>
+  );
+};
+
+  const renderPhoneNumberField = () => {
+    return isEditing ? (
+      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+        <FormControl sx={{ minWidth: 120 }} size="small" disabled={isLoading}>
+          <InputLabel>Country Code</InputLabel>
+          <Select
+            label="Country Code"
+            value={formData.country_code || '+234'}
+            onChange={(e) => handleInputChange('country_code', e.target.value)}
+          >
+            {countryCodes.map((option) => (
+              <MenuItem key={option.code} value={option.code}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <TextField
+          label="Phone Number"
+          value={formData.phone_number || ''}
+          onChange={(e) => handleInputChange('phone_number', e.target.value)}
+          fullWidth
+          size="small"
+          disabled={isLoading}
+        />
+      </Box>
+    ) : (
+      <>
+        <Typography variant="subtitle2" color="text.secondary">
+          Phone Number
+        </Typography>
+        <Typography variant="body1" sx={{ color: 'text.primary', mb: 2 }}>
+          {renderField(client.company_phone_number)}
         </Typography>
       </>
     );
@@ -147,18 +286,7 @@ const ClientModal: React.FC<ModalProps> = ({ open, onClose, client, onClientUpda
       >
         {/* Header */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography id="client-modal-title" variant="h5" component="h2" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
-            {isEditing ? (
-              <TextField
-                value={formData.company_name || client.company_name || ''}
-                onChange={(e) => handleInputChange('company_name', e.target.value)}
-                size="small"
-                disabled={isLoading}
-              />
-            ) : (
-              renderField(client.company_name)
-            )}
-          </Typography>
+         
           <IconButton
             onClick={onClose}
             aria-label="close"
@@ -186,6 +314,7 @@ const ClientModal: React.FC<ModalProps> = ({ open, onClose, client, onClientUpda
             '& .Mui-selected': { color: 'primary.main', fontWeight: 'bold' },
           }}
         >
+          
           <Tab label="Company Info" value="company" />
           <Tab label="Contact Info" value="contact" />
           <Tab label="Account Details" value="account" />
@@ -201,11 +330,14 @@ const ClientModal: React.FC<ModalProps> = ({ open, onClose, client, onClientUpda
             <Grid container spacing={2} id="client-modal-description">
               {activeTab === 'company' && (
                 <>
-                  <Grid item xs={12}>
-                    {renderEditableField('Industry', 'industry', client.industry)}
+                 <Grid item xs={12}>
+                    {renderEditableField('Company Name', 'company_name', client.company_name)}
                   </Grid>
                   <Grid item xs={12}>
-                    {renderEditableField('Employees', 'number_of_employees', client.number_of_employees)}
+                    {renderEditableSelect('Industry', 'industry', client.industry, industryOptions)}
+                  </Grid>
+                  <Grid item xs={12}>
+                    {renderEditableSelect('Employees', 'number_of_employees', client.number_of_employees, employeeOptions)}
                   </Grid>
                   <Grid item xs={12}>
                     {renderEditableField('Address', 'company_address', client.company_address)}
@@ -213,8 +345,8 @@ const ClientModal: React.FC<ModalProps> = ({ open, onClose, client, onClientUpda
                   <Grid item xs={12}>
                     {renderEditableField('Country', 'country', client.country)}
                   </Grid>
-                   <Grid item xs={12}>
-                    {renderEditableField('Phone Number', 'company_phone_number', client.company_phone_number)}
+                  <Grid item xs={12}>
+                    {renderPhoneNumberField()}
                   </Grid>
                 </>
               )}
@@ -232,7 +364,6 @@ const ClientModal: React.FC<ModalProps> = ({ open, onClose, client, onClientUpda
                   <Grid item xs={12}>
                     {renderEditableField('Phone Number', 'phone_number', client.phone_number)}
                   </Grid>
-                  
                   <Grid item xs={12}>
                     {isEditing ? (
                       <TextField
@@ -271,17 +402,15 @@ const ClientModal: React.FC<ModalProps> = ({ open, onClose, client, onClientUpda
               {activeTab === 'account' && (
                 <>
                   <Grid item xs={12}>
-                    {renderEditableField('Type of Employer', 'type_of_employer', client.type_of_employer)}
+                    {renderEditableSelect('Type of Employer', 'type_of_employer', client.type_of_employer, employerOptions)}
                   </Grid>
                   <Grid item xs={12}>
                     {renderEditableField('Position in Company', 'position_in_company', client.position_in_company)}
                   </Grid>
+                  {/* <Grid item xs={12}>
+                    {renderEditableField('Status', 'status', client.status)}
+                  </Grid> */}
                 </>
-              )}
-              {activeTab === 'account' && (
-                <Grid item xs={12}>
-                  {renderEditableField('Status', 'status', client.status)}
-                </Grid>
               )}
             </Grid>
           )}
@@ -332,6 +461,27 @@ const ClientModal: React.FC<ModalProps> = ({ open, onClose, client, onClientUpda
             </>
           )}
         </Box>
+
+        {/* Confirmation Dialog */}
+        <Dialog
+          open={openConfirmDialog}
+          onClose={handleCloseConfirmDialog}
+          aria-labelledby="confirm-dialog-title"
+          aria-describedby="confirm-dialog-description"
+        >
+          <DialogTitle id="confirm-dialog-title">Confirm Save</DialogTitle>
+          <DialogContent>
+            <DialogContentText id="confirm-dialog-description">
+              Are you sure you want to save the changes to the client profile?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseConfirmDialog}>Cancel</Button>
+            <Button onClick={confirmSave} autoFocus variant="contained">
+              Confirm
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         {/* Snackbar for Success/Error Messages */}
         <Snackbar

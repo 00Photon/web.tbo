@@ -241,9 +241,9 @@ const JobApplicationsTable = ({ params }: { params: { id?: string } }) => {
                   "Not provided"
                 )}
               </Typography>
-              <Typography>
+           <Typography>
                 <strong>Project Screenshots:</strong>
-                {selectedApplication.user.project_screenshots.length > 0 ? (
+                {selectedApplication.user.project_screenshots && selectedApplication.user.project_screenshots.length > 0 ? (
                   <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
                     {selectedApplication.user.project_screenshots.map((screenshot, index) => (
                       <Link key={index} href={screenshot} target="_blank" rel="noopener">
@@ -275,14 +275,13 @@ const JobApplicationsTable = ({ params }: { params: { id?: string } }) => {
               <Typography><strong>Job Type:</strong> {selectedApplication.job.job_type}</Typography>
               <Typography><strong>Description:</strong> {selectedApplication.job.description}</Typography>
               <Typography><strong>Requirements:</strong> {selectedApplication.job.requirements}</Typography>
-              <Typography><strong>Skill:</strong> {selectedApplication.job.skill}</Typography>
               <Typography>
                 <strong>Salary:</strong> {selectedApplication.job.currency} {selectedApplication.job.minimum_salary} - {selectedApplication.job.maximum_salary}
               </Typography>
               <Typography><strong>Location:</strong> {selectedApplication.job.location}</Typography>
               <Typography><strong>Application Deadline:</strong> {selectedApplication.job.application_deadline}</Typography>
               <Typography><strong>Additional Info:</strong> {selectedApplication.job.additional_info}</Typography>
-              <Typography><strong>Application Status:</strong> {selectedApplication.status}</Typography>
+            
             </Box>
           )}
         </DialogContent>

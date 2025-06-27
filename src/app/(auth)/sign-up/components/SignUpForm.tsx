@@ -440,11 +440,11 @@ const SignUpForm: React.FC = () => {
               label={
                 <Box sx={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <span>I agree to the</span>
-                  <Link href="/terms" style={{ color: '#E61C31', fontWeight: 500 }}>
+                  <Link href="/terms"  target="_blank" style={{ color: '#E61C31', fontWeight: 500 }}>
                     Terms
                   </Link>
                   <span>and</span>
-                  <Link href="/policies" style={{ color: '#E61C31', fontWeight: 500 }}>
+                  <Link href="/policies"  target="_blank" style={{ color: '#E61C31', fontWeight: 500 }}>
                     Privacy Policy
                   </Link>
                 </Box>
@@ -507,7 +507,7 @@ const SignUpForm: React.FC = () => {
             marginTop: '20px',
           }}
         >
-          <Divider sx={{ width: '45%' }} />
+          {/* <Divider sx={{ width: '45%' }} />
           <Box
             sx={{
               fontSize: '11.2px',
@@ -517,10 +517,10 @@ const SignUpForm: React.FC = () => {
           >
             Or
           </Box>
-          <Divider sx={{ width: '45%' }} />
+          <Divider sx={{ width: '45%' }} /> */}
         </Box>
 
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        {/* <Box sx={{ display: 'flex', justifyContent: 'center' }}>
           {oAuthOptions.map((option, index) => (
             <Box
               key={index}
@@ -554,7 +554,7 @@ const SignUpForm: React.FC = () => {
               </Box>
             </Box>
           ))}
-        </Box>
+        </Box> */}
 
         {showSuccess && (
           <Alert

@@ -5,6 +5,7 @@ import axios, { AxiosResponse } from "axios";
 interface InterviewData {
   application_id: number;
   user_id: number;
+  job_id: number; // Added to match formattedData
   interview_date: string;
   interview_time: string;
   interview_location: string;
@@ -13,6 +14,10 @@ interface InterviewData {
   interviewer_role: string;
   interviewer_email: string;
   interviewer_phone: string;
+  tbo_rep_name: string; // Added
+  tbo_rep_email: string; // Added
+  tbo_rep_phone: string; // Added
+  address?: string; // Optional, but may not be needed if interview_location is used
   status: string;
 }
 

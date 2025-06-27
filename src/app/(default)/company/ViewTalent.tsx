@@ -20,7 +20,7 @@ type Talent = {
   skills: string[];
   hourlyRate: number;
   avatar: string;
-  niche: string;
+  designation: string;
   rating: number;
   projectsCompleted: number;
   availability: string;
@@ -114,8 +114,8 @@ const TalentCard = ({ talent, onClick }: { talent: Talent; onClick: (id: number)
 
 
             <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
-              <Chip
-                label={talent.niche}
+             <Chip
+                label={talent.designation}
                 size="small"
                 sx={{
                   borderRadius: "6px",
@@ -198,7 +198,7 @@ const TalentGrid = () => {
           skills: user.skills || [],
           hourlyRate: user.hourly_rate || 50,
           avatar: user.profile_image || "/placeholder.jpg",
-          niche: user.niche || "General",
+          designation: user.designation || "General",
           rating: user.rating || 4.5,
           projectsCompleted: user.projects_completed || 0,
           availability: user.availability || "Available Now"

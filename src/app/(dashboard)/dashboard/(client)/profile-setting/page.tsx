@@ -73,7 +73,7 @@ export default function ClientProfilePage() {
             </Box>
           ))}
         </Box>
-        {activeTab === 0 && (
+        {/* {activeTab === 0 && (
           <Button
             size="small"
             sx={{
@@ -90,7 +90,7 @@ export default function ClientProfilePage() {
             <Icon icon="solar:pen-2-linear" />
             Edit Profile
           </Button>
-        )}
+        )} */}
       </Box>
 
       <section>

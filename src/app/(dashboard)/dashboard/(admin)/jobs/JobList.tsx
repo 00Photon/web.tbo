@@ -26,6 +26,8 @@ import TableBody from "@mui/material/TableBody";
 import TablePagination from "@mui/material/TablePagination";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { Theme } from "@mui/material/styles";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { fetchJobs, activateJob, rejectJob, deleteJob } from "@/@core/services/jobService";
 import JobDialog from "./JobDialog";
 import NewJob from "./NewJob";
@@ -61,26 +63,41 @@ const JobListTable: React.FC = () => {
 
   const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up("md"));
 
-  useEffect(() => {
-    const loadJobs = async () => {
-      try {
-        setLoading(true);
-        const response = await fetchJobs();
-        console.log("Fetched data:", response);
-        if (response && Array.isArray(response.jobs)) {
-          setJobs(response.jobs);
-          setFilteredJobs(response.jobs);
-        } else {
-          setJobs([]);
-          setFilteredJobs([]);
-        }
-      } catch (err) {
-        setError("Failed to load jobs. Please try again.");
-      } finally {
-        setLoading(false);
+  const loadJobs = async () => {
+    try {
+      setLoading(true);
+      const response = await fetchJobs();
+      if (response && Array.isArray(response.jobs)) {
+        setJobs(response.jobs);
+        setFilteredJobs(response.jobs);
+      } else {
+        setJobs([]);
+        setFilteredJobs([]);
+        toast.error("No jobs found", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
       }
-    };
+    } catch (err) {
+      setError("Failed to load jobs. Please try again.");
+      toast.error("Failed to load jobs. Please try again.", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadJobs();
   }, []);
 
@@ -141,12 +158,26 @@ const JobListTable: React.FC = () => {
     if (jobToDelete !== null) {
       try {
         await deleteJob(jobToDelete);
-        console.log("Job deleted:", jobToDelete);
+        toast.success("Job deleted successfully!", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
         const updatedJobs = jobs.filter((job) => job.id !== jobToDelete);
         setJobs(updatedJobs);
         setFilteredJobs(updatedJobs);
       } catch (error) {
-        console.error("Failed to delete job:", error instanceof Error ? error.message : error);
+        toast.error("Failed to delete job. Please try again.", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
       }
     }
     handleCloseDeleteDialog();
@@ -155,61 +186,60 @@ const JobListTable: React.FC = () => {
   const handleApproveJob = async (jobId: number) => {
     try {
       const result = await activateJob(jobId);
-      console.log("Job approved:", result);
+      toast.success("Job approved successfully!", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
       const updatedJobs = jobs.map((job) =>
         job.id === jobId ? { ...job, status: "active" } : job
       );
       setJobs(updatedJobs);
       setFilteredJobs(updatedJobs);
       handleRowOptionsClose(jobId);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error("Failed to approve job:", error.message);
-      } else {
-        console.error("Failed to approve job: Unknown error");
-      }
+    } catch (error) {
+      toast.error("Failed to approve job. Please try again.", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     }
   };
 
   const handleRejectJob = async (jobId: number) => {
     try {
       const result = await rejectJob(jobId);
-      console.log("Job rejected:", result);
+      toast.success("Job rejected successfully!", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
       const updatedJobs = jobs.map((job) =>
         job.id === jobId ? { ...job, status: "rejected" } : job
       );
       setJobs(updatedJobs);
       setFilteredJobs(updatedJobs);
       handleRowOptionsClose(jobId);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error("Failed to reject job:", error.message);
-      } else {
-        console.error("Failed to reject job: Unknown error");
-      }
+    } catch (error) {
+      toast.error("Failed to reject job. Please try again.", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     }
   };
-
-const loadJobs = async () => {
-  try {
-    setLoading(true);
-    const response = await fetchJobs();
-    console.log("Fetched data:", response);
-    if (response && Array.isArray(response.jobs)) {
-      setJobs(response.jobs);
-      setFilteredJobs(response.jobs);
-    } else {
-      setJobs([]);
-      setFilteredJobs([]);
-    }
-  } catch (err) {
-    setError("Failed to load jobs. Please try again.");
-  } finally {
-    setLoading(false);
-  }
-};
-
-
 
   const handleRowOptionsClick = (event: React.MouseEvent<HTMLButtonElement>, jobId: number) => {
     setAnchorEl((prev) => ({
@@ -228,277 +258,288 @@ const loadJobs = async () => {
   const toggleFilter = () => setOpenFilter(!openFilter);
 
   return (
-    <Card
-      sx={{
-        borderBottomLeftRadius: 0,
-        borderBottomRightRadius: 0,
-        my: (theme) => theme.spacing(4),
-        background: "#fff",
-      }}
-    >
-      <CardContent sx={{ p: { xs: 2, md: 4 } }}>
-        <CardHeader title="Job List" />
-        <Collapse
-          easing={"ease-in-out"}
-          in={openFilter}
-          timeout={500}
-          unmountOnExit
-          sx={{ mb: 3, boxShadow: 2 }}
-        >
-          <Paper sx={{ px: 3, py: 3 }}>
-            <Typography sx={{ mb: 3, fontSize: { xs: "1rem", sm: "1.25rem" } }}>
-              Filter
-            </Typography>
-            <Grid container spacing={3}>
-              <Grid item xs={6} sm={3}>
-                <CustomTextField
-                  select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  size="small"
-                  fullWidth
-                  label="Job Status"
-                >
-                  <MenuItem value="all">All</MenuItem>
-                  <MenuItem value="active">Active</MenuItem>
-                  <MenuItem value="pending">Pending</MenuItem>
-                  <MenuItem value="rejected">Rejected</MenuItem>
-                </CustomTextField>
-              </Grid>
-            </Grid>
-          </Paper>
-        </Collapse>
-        <Box sx={{ my: 3, mx: 1 }}>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 4,
-            }}
+    <div>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
+      <Card
+        sx={{
+          borderBottomLeftRadius: 0,
+          borderBottomRightRadius: 0,
+          my: (theme) => theme.spacing(4),
+          background: "#fff",
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2, md: 4 } }}>
+          <CardHeader title="Job List" />
+          <Collapse
+            easing={"ease-in-out"}
+            in={openFilter}
+            timeout={500}
+            unmountOnExit
+            sx={{ mb: 3, boxShadow: 2 }}
           >
-            <CustomTextField
-              fullWidth
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              size="small"
-              placeholder="Job title, company name, applicant"
-              sx={{ maxWidth: 400 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment
-                    position="start"
-                    sx={{
-                      color: (theme) => theme.palette.primary.main,
-                    }}
+            <Paper sx={{ px: 3, py: 3 }}>
+              <Typography sx={{ mb: 3, fontSize: { xs: "1rem", sm: "1.25rem" } }}>
+                Filter
+              </Typography>
+              <Grid container spacing={3}>
+                <Grid item xs={6} sm={3}>
+                  <CustomTextField
+                    select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    size="small"
+                    fullWidth
+                    label="Job Status"
                   >
-                    <Icon icon="lets-icons:search-duotone" />
-                  </InputAdornment>
-                ),
+                    <MenuItem value="all">All</MenuItem>
+                    <MenuItem value="active">Active</MenuItem>
+                    <MenuItem value="pending">Pending</MenuItem>
+                    <MenuItem value="rejected">Rejected</MenuItem>
+                  </CustomTextField>
+                </Grid>
+              </Grid>
+            </Paper>
+          </Collapse>
+          <Box sx={{ my: 3, mx: 1 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 4,
               }}
-            />
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 2 }}>
-              <Button
-                onClick={toggleFilter}
-                variant={openFilter ? "contained" : "outlined"}
-                size="medium"
-                sx={{
-                  textTransform: "capitalize",
-                  width: "fit-content",
-                  minWidth: { md: 80 },
+            >
+              <CustomTextField
+                fullWidth
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                size="small"
+                placeholder="Job title, company name, applicant"
+                sx={{ maxWidth: 400 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment
+                      position="start"
+                      sx={{
+                        color: (theme) => theme.palette.primary.main,
+                      }}
+                    >
+                      <Icon icon="lets-icons:search-duotone" />
+                    </InputAdornment>
+                  ),
                 }}
-              >
-                {smallScreen && <Typography sx={{ fontSize: ".857rem" }}>Filter</Typography>}
-                <Icon icon="basil:filter-outline" />
-              </Button>
-              <Button
-                variant="contained"
-                size="medium"
-                sx={{
-                  textTransform: "capitalize",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 2,
-                  width: "fit-content",
-                  minWidth: { md: 120 },
-                }}
-                onClick={togglePostJobModal}
-              >
-                <Icon icon="fa6-solid:user-pen" fontSize="1.257rem" />
-                {smallScreen && <Typography sx={{ fontSize: ".857rem" }}>Post Job</Typography>}
-              </Button>
+              />
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 2 }}>
+                <Button
+                  onClick={toggleFilter}
+                  variant={openFilter ? "contained" : "outlined"}
+                  size="medium"
+                  sx={{
+                    textTransform: "capitalize",
+                    width: "fit-content",
+                    minWidth: { md: 80 },
+                  }}
+                >
+                  {smallScreen && <Typography sx={{ fontSize: ".857rem" }}>Filter</Typography>}
+                  <Icon icon="basil:filter-outline" />
+                </Button>
+                <Button
+                  variant="contained"
+                  size="medium"
+                  sx={{
+                    textTransform: "capitalize",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    width: "fit-content",
+                    minWidth: { md: 120 },
+                  }}
+                  onClick={togglePostJobModal}
+                >
+                  <Icon icon="fa6-solid:user-pen" fontSize="1.257rem" />
+                  {smallScreen && <Typography sx={{ fontSize: ".857rem" }}>Post Job</Typography>}
+                </Button>
+              </Box>
             </Box>
           </Box>
-        </Box>
-        <TableContainer component={Paper}>
-          <Table stickyHeader aria-label="sticky table">
-            <TableHead>
-              <TableRow sx={{ background: (theme) => theme.palette.secondary.dark }}>
-                <TableCellStyled align={"left"}>Job ID</TableCellStyled>
-                <TableCellStyled align={"left"}>Title</TableCellStyled>
-                <TableCellStyled align={"left"}>Applications</TableCellStyled>
-                <TableCellStyled align={"left"}>Posting Date</TableCellStyled>
-                <TableCellStyled align={"left"}>Application Deadline</TableCellStyled>
-                <TableCellStyled align={"left"}>Status</TableCellStyled>
-                <TableCellStyled align={"left"}>Actions</TableCellStyled>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredJobs.length > 0 ? (
-                filteredJobs
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((job, i) => (
-                    <TableRow key={job.id}>
-                      <TableCell>{i + 1}</TableCell>
-                      <TableCell>{job.title}</TableCell>
-                      <TableCell>{job.applicant_count}</TableCell>
-                      <TableCell>{new Date(job.created_at).toISOString().split("T")[0]}</TableCell>
-                      <TableCell>{job.application_deadline}</TableCell>
-                      <TableCell
-                        align="center"
-                        sx={{
-                          textTransform: "capitalize",
-                          fontWeight: "semibold",
-                        }}
-                      >
-                        {job.status === "active" ? (
-                          <CustomChip
-                            label="Active"
-                            color="success"
-                            skin="light"
-                            size="small"
-                            sx={{ width: "100%", borderRadius: "5px" }}
-                          />
-                        ) : job.status === "pending" ? (
-                          <CustomChip
-                            label="Pending"
-                            color="warning"
-                            skin="light"
-                            size="small"
-                            sx={{ width: "100%", borderRadius: "5px" }}
-                          />
-                        ) : job.status === "rejected" ? (
-                          <CustomChip
-                            label="Rejected"
-                            color="error"
-                            skin="light"
-                            size="small"
-                            sx={{ width: "100%", borderRadius: "5px" }}
-                          />
-                        ) : null}
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ alignSelf: "end" }}>
-                          <Avatar sx={{ background: "transparent" }}>
-                            <IconButton size="small" onClick={(event) => handleRowOptionsClick(event, job.id)}>
-                              <Icon icon="tabler:dots-vertical" />
-                            </IconButton>
-                            <Menu
-                              keepMounted
-                              disableScrollLock
-                              anchorEl={anchorEl[job.id]}
-                              open={Boolean(anchorEl[job.id])}
-                              onBlur={() => handleRowOptionsClose(job.id)}
-                              anchorOrigin={{
-                                vertical: "bottom",
-                                horizontal: "right",
-                              }}
-                              transformOrigin={{
-                                vertical: "top",
-                                horizontal: "right",
-                              }}
-                              PaperProps={{ style: { minWidth: "8rem" } }}
-                            >
-                              <Link href={`/dashboard/jobs/application/${job.applications[0]?.id}`}>
+          <TableContainer component={Paper}>
+            <Table stickyHeader aria-label="sticky table">
+              <TableHead>
+                <TableRow sx={{ background: (theme) => theme.palette.secondary.dark }}>
+                  <TableCellStyled align={"left"}>Job ID</TableCellStyled>
+                  <TableCellStyled align={"left"}>Title</TableCellStyled>
+                  <TableCellStyled align={"left"}>Applications</TableCellStyled>
+                  <TableCellStyled align={"left"}>Posting Date</TableCellStyled>
+                  <TableCellStyled align={"left"}>Application Deadline</TableCellStyled>
+                  <TableCellStyled align={"left"}>Status</TableCellStyled>
+                  <TableCellStyled align={"left"}>Actions</TableCellStyled>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredJobs.length > 0 ? (
+                  filteredJobs
+                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                    .map((job, i) => (
+                      <TableRow key={job.id}>
+                        <TableCell>{i + 1}</TableCell>
+                        <TableCell>{job.title}</TableCell>
+                        <TableCell>{job.applicant_count}</TableCell>
+                        <TableCell>{new Date(job.created_at).toISOString().split("T")[0]}</TableCell>
+                        <TableCell>{job.application_deadline}</TableCell>
+                        <TableCell
+                          align="center"
+                          sx={{
+                            textTransform: "capitalize",
+                            fontWeight: "semibold",
+                          }}
+                        >
+                          {job.status === "active" ? (
+                            <CustomChip
+                              label="Active"
+                              color="success"
+                              skin="light"
+                              size="small"
+                              sx={{ width: "100%", borderRadius: "5px" }}
+                            />
+                          ) : job.status === "pending" ? (
+                            <CustomChip
+                              label="Pending"
+                              color="warning"
+                              skin="light"
+                              size="small"
+                              sx={{ width: "100%", borderRadius: "5px" }}
+                            />
+                          ) : job.status === "rejected" ? (
+                            <CustomChip
+                              label="Rejected"
+                              color="error"
+                              skin="light"
+                              size="small"
+                              sx={{ width: "100%", borderRadius: "5px" }}
+                            />
+                          ) : null}
+                        </TableCell>
+                        <TableCell>
+                          <Box sx={{ alignSelf: "end" }}>
+                            <Avatar sx={{ background: "transparent" }}>
+                              <IconButton size="small" onClick={(event) => handleRowOptionsClick(event, job.id)}>
+                                <Icon icon="tabler:dots-vertical" />
+                              </IconButton>
+                              <Menu
+                                keepMounted
+                                disableScrollLock
+                                anchorEl={anchorEl[job.id]}
+                                open={Boolean(anchorEl[job.id])}
+                                onBlur={() => handleRowOptionsClose(job.id)}
+                                anchorOrigin={{
+                                  vertical: "bottom",
+                                  horizontal: "right",
+                                }}
+                                transformOrigin={{
+                                  vertical: "top",
+                                  horizontal: "right",
+                                }}
+                                PaperProps={{ style: { minWidth: "8rem" } }}
+                              >
+                                <Link href={`/dashboard/jobs/application/${job.applications[0]?.id}`}>
+                                  <MenuItem
+                                    sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
+                                    onClick={() => handleRowOptionsClose(job.id)}
+                                  >
+                                    <Icon icon="tabler:eye" fontSize={20} />
+                                    View
+                                  </MenuItem>
+                                </Link>
                                 <MenuItem
                                   sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                                  onClick={() => handleRowOptionsClose(job.id)}
+                                  onClick={() => handleApproveJob(job.id)}
                                 >
-                                  <Icon icon="tabler:eye" fontSize={20} />
-                                  View
+                                  <Icon icon="tabler:check" fontSize={20} />
+                                  Approve
                                 </MenuItem>
-                              </Link>
-                              <MenuItem
-                                sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                                onClick={() => handleApproveJob(job.id)}
-                              >
-                                <Icon icon="tabler:check" fontSize={20} />
-                                Approve
-                              </MenuItem>
-                              <MenuItem
-                                sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                                onClick={() => handleRejectJob(job.id)}
-                              >
-                                <Icon icon="tabler:x" fontSize={20} />
-                                Reject
-                              </MenuItem>
-                              <MenuItem
-                                sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
-                                onClick={() => handleOpenDeleteDialog(job.id)}
-                              >
-                                <Icon icon="fluent:delete-24-regular" fontSize={20} />
-                                Delete
-                              </MenuItem>
-                            </Menu>
-                          </Avatar>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} align="center">
-                    No jobs available
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </CardContent>
-      <TablePagination
-        component="div"
-        count={filteredJobs.length}
-        page={page}
-        onPageChange={handleChangePage}
-        rowsPerPage={rowsPerPage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-      />
-      {viewJobModal && (
-        <JobDialog
-          open={viewJobModal}
-          close={() => toggleViewJobModal(null)}
-          jobId={selectedJobId ? selectedJobId.toString() : ""}
+                                <MenuItem
+                                  sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
+                                  onClick={() => handleRejectJob(job.id)}
+                                >
+                                  <Icon icon="tabler:x" fontSize={20} />
+                                  Reject
+                                </MenuItem>
+                                <MenuItem
+                                  sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
+                                  onClick={() => handleOpenDeleteDialog(job.id)}
+                                >
+                                  <Icon icon="fluent:delete-24-regular" fontSize={20} />
+                                  Delete
+                                </MenuItem>
+                              </Menu>
+                            </Avatar>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center">
+                      No jobs available
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </CardContent>
+        <TablePagination
+          component="div"
+          count={filteredJobs.length}
+          page={page}
+          onPageChange={handleChangePage}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
         />
-      )}
-    <NewJob 
-        open={postJobModal} 
-        close={togglePostJobModal} 
-        onJobCreated={() => {
-          // This will be called after successful job creation
-          loadJobs(); // Call the function that fetches jobs
-        }} 
-      />
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={handleCloseDeleteDialog}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-      >
-        <DialogTitle id="alert-dialog-title">Confirm Delete</DialogTitle>
-        <DialogContent>
-          <Typography>Are you sure you want to delete this job? This action cannot be undone.</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDeleteDialog} color="primary">
-            Cancel
-          </Button>
-          <Button onClick={handleConfirmDelete} color="error" autoFocus>
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Card>
+        {viewJobModal && (
+          <JobDialog
+            open={viewJobModal}
+            close={() => toggleViewJobModal(null)}
+            jobId={selectedJobId ? selectedJobId.toString() : ""}
+          />
+        )}
+        <NewJob
+          open={postJobModal}
+          close={togglePostJobModal}
+          onJobCreated={loadJobs}
+        />
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={handleCloseDeleteDialog}
+          aria-labelledby="alert-dialog-title"
+          aria-describedby="alert-dialog-description"
+        >
+          <DialogTitle id="alert-dialog-title">Confirm Delete</DialogTitle>
+          <DialogContent>
+            <Typography>Are you sure you want to delete this job? This action cannot be undone.</Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDeleteDialog} color="primary">
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmDelete} color="error" autoFocus>
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Card>
+    </div>
   );
 };
 

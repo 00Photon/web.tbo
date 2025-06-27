@@ -87,7 +87,7 @@ interface ApplicationTableProps {
   jobId: number;
 }
 
-const ApplicationTable: React.FC<ApplicationTableProps> = ({ jobId }) => {
+const ClientShortlisted: React.FC<ApplicationTableProps> = ({ jobId }) => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [openFilter, setOpenFilter] = useState<boolean>(false);
   const [value, setValue] = useState<string>("");
@@ -110,9 +110,9 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({ jobId }) => {
         setLoading(true);
         const response = await fetchApplications();
         if (response.status) {
-          // Filter applications by jobId
+
           let jobApplications = response.applications.filter(
-            (app: Application) => app.job_id === jobId
+            (app: Application) => app.job_id === jobId && app.status === "INTERVIEWED"
           );
 
           // Apply search filter if value is not empty
@@ -342,7 +342,7 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({ jobId }) => {
               }}
             >
               {smallScreen && (
-                <Typography sx={{ fontSize: ".857rem" }}>Filter</Typography>
+                <Typography sx={{raphy>
               )}
               <Icon icon="basil:filter-outline" />
             </Button> */}
@@ -381,12 +381,12 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({ jobId }) => {
               ) : applications.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} align="center">
-                    No applications found for this job
+                    No Shortlisted Talent found for this job
                   </TableCell>
                 </TableRow>
               ) : (
                 applications.map((item, i) => (
-                  <TableRow key={item.id}>
+                 <TableRow key={item.id}>
                     <TableCell align="left">
                       <Checkbox
                         size="small"
@@ -532,4 +532,4 @@ const ApplicationTable: React.FC<ApplicationTableProps> = ({ jobId }) => {
   );
 };
 
-export default ApplicationTable;
+export default ClientShortlisted;

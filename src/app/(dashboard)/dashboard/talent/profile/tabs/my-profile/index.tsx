@@ -9,17 +9,25 @@ import {
   TextField,
   Typography,
   Snackbar,
-  Alert
+  Alert,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl
 } from "@mui/material";
 import { Edit, DeleteOutlineOutlined, Save } from "@mui/icons-material";
+import {countryCodes} from "@/@core/utils/data"
+
 
 const MyProfileTab = () => {
   const [userId, setUserId] = useState<number | null>(null);
   const [editable, setEditable] = useState(false);
+  const [selectedCountryCode, setSelectedCountryCode] = useState('+1'); // Default to +1
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone_number: '',
+    designation: '',
     profile_image: '',
     account_type: 'TALENT' as const
   });
@@ -33,13 +41,25 @@ const MyProfileTab = () => {
       try {
         const response = await getCurrentUser();
         const user = response?.user;
-        
+
         if (user) {
           setUserId(user.id);
+          // Extract country code from phone number if it exists
+          let phone = user.phone_number || '';
+          let code = '+1'; // Default
+          for (const country of countryCodes) {
+            if (phone.startsWith(country.code)) {
+              code = country.code;
+              phone = phone.slice(country.code.length); // Remove country code from phone
+              break;
+            }
+          }
+          setSelectedCountryCode(code);
           setFormData({
             name: user.name || '',
             email: user.email || '',
-            phone_number: user.phone_number || '',
+            designation: user.designation || '',
+            phone_number: phone,
             profile_image: user.profile_image || '',
             account_type: user.account_type || 'TALENT'
           });
@@ -59,11 +79,13 @@ const MyProfileTab = () => {
     }));
   };
 
+  const handleCountryCodeChange = (e: any) => {
+    setSelectedCountryCode(e.target.value);
+  };
+
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-
-      // Create a preview URL
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
@@ -82,10 +104,8 @@ const MyProfileTab = () => {
             ...prev,
             profile_image: uploaded.url,
           }));
-          setTempImageUrl(null); // Clear preview since we have the final URL
+          setTempImageUrl(null);
           setSuccess('Profile image uploaded successfully!');
-
-          // Update the user with the new profile image
           if (userId) {
             await updateUser(userId, { profile_image: uploaded.url });
           }
@@ -102,8 +122,10 @@ const MyProfileTab = () => {
   const savePersonalInfo = async () => {
     if (!userId) return;
     try {
-      const { profile_image, ...personalInfo } = formData;
-      await updateUser(userId, personalInfo);
+      const { profile_image, phone_number, ...personalInfo } = formData;
+      // Combine country code with phone number
+      const fullPhoneNumber = `${selectedCountryCode}${phone_number}`.replace(/\s/g, '');
+      await updateUser(userId, { ...personalInfo, phone_number: fullPhoneNumber });
       setEditable(false);
       setSuccess("Personal information updated successfully!");
     } catch (error) {
@@ -161,7 +183,7 @@ const MyProfileTab = () => {
               borderRadius: '16px',
               padding: '20px'
             }}>
-              <Avatar 
+             <Avatar 
                 src={tempImageUrl || formData.profile_image} 
                 sx={{ width: '70px', height: '70px', mb: '10px' }} 
               />
@@ -257,11 +279,40 @@ const MyProfileTab = () => {
             </Grid>
             <Grid item xs={12} sm={6}>
               <Typography sx={{ fontSize: '12px', fontWeight: 500, mb: '5px' }}>Phone Number</Typography>
+              <Box sx={{ display: 'flex', gap: '10px' }}>
+                <FormControl sx={{ minWidth: 100 }} disabled={!editable}>
+                  <InputLabel sx={{ fontSize: '12px' }}>Country Code</InputLabel>
+                  <Select
+                    value={selectedCountryCode}
+                    onChange={handleCountryCodeChange}
+                    label="Country Code"
+                    sx={{ height: '50px', fontSize: '12px' }}
+                  >
+                    {countryCodes.map((country) => (
+                      <MenuItem key={country.code} value={country.code}>
+                        {`${country.country} (${country.code})`}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <TextField
+                  name="phone_number"
+                  value={formData.phone_number}
+                  onChange={handleChange}
+                  placeholder="Enter Phone Number"
+                  disabled={!editable}
+                  fullWidth
+                  inputProps={{ style: { fontSize: '12px' } }}
+                />
+              </Box>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography sx={{ fontSize: '12px', fontWeight: 500, mb: '5px' }}>Designation</Typography>
               <TextField
-                name="phone_number"
-                value={formData.phone_number}
+                name="designation"
+                value={formData.designation}
                 onChange={handleChange}
-                placeholder="Enter Phone Number"
+                placeholder="Eg, Frontend Engineer"
                 disabled={!editable}
                 fullWidth
                 inputProps={{ style: { fontSize: '12px' } }}

@@ -52,7 +52,7 @@ interface Job {
   job_type: string;
   description: string;
   requirements: string;
-  skills: string[]; // Changed from 'skill: string'
+  skills: string[];
   currency: string;
   minimum_salary: string;
   maximum_salary: string;
@@ -126,7 +126,7 @@ const EditJobModal: React.FC<{
         job_type: job.job_type,
         description: job.description,
         requirements: job.requirements,
-        skills: job.skills || [], // Fallback to empty array if skills is undefined
+        skills: job.skills || [],
         currency: job.currency,
         minimum_salary: parseFloat(job.minimum_salary),
         maximum_salary: parseFloat(job.maximum_salary),
@@ -135,9 +135,8 @@ const EditJobModal: React.FC<{
         application_deadline: job.application_deadline.split("T")[0],
         additional_info: job.additional_info || "",
       });
-      setSkillsInput(job.skills?.join(", ") || ""); // Safely join skills or set empty string
+      setSkillsInput(job.skills?.join(", ") || "");
     } else {
-      // Reset form when job is null
       setFormData({
         title: "",
         job_type: "",
@@ -187,7 +186,7 @@ const EditJobModal: React.FC<{
       const updatedJob = await editJobClient(job.id, formData);
       onJobUpdated({
         ...updatedJob.job,
-        skills: JSON.parse(updatedJob.job.skill || "[]"), // Parse skills, fallback to empty array
+        skills: JSON.parse(updatedJob.job.skill || "[]"),
       });
       close();
     } catch (err: any) {
@@ -351,7 +350,7 @@ const JobListTable: React.FC = () => {
   const [openFilter, setOpenFilter] = useState<boolean>(false);
   const [value, setValue] = useState<string>("");
   const [status, setStatus] = useState<string>("");
-  const [jobType, setJobType] = useState<string>(""); // New state for job type filter
+  const [jobType, setJobType] = useState<string>("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [anchorEl, setAnchorEl] = useState<(HTMLElement | null)[]>([]);
@@ -388,17 +387,14 @@ const JobListTable: React.FC = () => {
   const filteredJobs = useMemo(() => {
     let result = jobs;
 
-    // Filter by status
     if (status && status !== "0") {
       result = result.filter((job) => job.status.toLowerCase() === status.toLowerCase());
     }
 
-    // Filter by job type
     if (jobType && jobType !== "0") {
       result = result.filter((job) => job.job_type.toLowerCase() === jobType.toLowerCase());
     }
 
-    // Search filter
     if (value) {
       const searchTerm = value.toLowerCase();
       result = result.filter(
@@ -465,26 +461,26 @@ const JobListTable: React.FC = () => {
     setOpenEditJobModal(false);
     setSelectedJob(null);
   };
-  const loadJobs = async () => {
-  try {
-    setLoading(true);
-    const response = await fetchJobsClients();
-    if (response.status) {
-      setJobs(response.jobs);
-      setTotalJobs(response.total || response.jobs.length);
-      setAnchorEl(Array(response.jobs.length).fill(null));
-    }
-  } catch (error) {
-    console.error("Error fetching jobs:", error);
-  } finally {
-    setLoading(false);
-  }
-};
 
-// Update your useEffect to use this function
-useEffect(() => {
-  loadJobs();
-}, []);
+  const loadJobs = async () => {
+    try {
+      setLoading(true);
+      const response = await fetchJobsClients();
+      if (response.status) {
+        setJobs(response.jobs);
+        setTotalJobs(response.total || response.jobs.length);
+        setAnchorEl(Array(response.jobs.length).fill(null));
+      }
+    } catch (error) {
+      console.error("Error fetching jobs:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadJobs();
+  }, []);
 
   const handleJobUpdated = (updatedJob: Job) => {
     setJobs((prevJobs) =>
@@ -656,7 +652,7 @@ useEffect(() => {
           <Table stickyHeader aria-label="sticky table">
             <TableHead>
               <TableRow sx={{ background: (theme) => theme.palette.secondary.dark }}>
-                <TableCellStyled align="left">Job ID</TableCellStyled>
+                <TableCellStyled align="left">S/N</TableCellStyled>
                 <TableCellStyled align="left">Title</TableCellStyled>
                 <TableCellStyled align="left">Applications</TableCellStyled>
                 <TableCellStyled align="left">Posting Date</TableCellStyled>
@@ -681,7 +677,7 @@ useEffect(() => {
               ) : (
                 paginatedJobs.map((item, i) => (
                   <TableRow key={item.id}>
-                    <TableCell>{i + 1 + page * rowsPerPage}</TableCell>
+                    <TableCell>{page * rowsPerPage + i + 1}</TableCell>
                     <TableCell>{item.title}</TableCell>
                     <TableCell>{item.applicant_count}</TableCell>
                     <TableCell>
@@ -768,9 +764,8 @@ useEffect(() => {
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
       <PostJobModal open={openPostJobModal} close={handleCloseModal} onJobCreated={() => {
-      // This will be called after successful job creation
-      loadJobs(); // Call the function that fetches jobs
-    }}  />
+        loadJobs();
+      }} />
       <EditJobModal
         open={openEditJobModal}
         job={selectedJob}

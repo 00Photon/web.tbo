@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Box,
   Typography,
@@ -16,6 +16,7 @@ import {
   Tooltip,
   CircularProgress,
   Alert,
+  LinearProgress,
 } from "@mui/material"
 import {
   CloudUpload,
@@ -60,6 +61,8 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewLoading, setPreviewLoading] = useState(false)
   const [previewError, setPreviewError] = useState<string | null>(null)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [isUploading, setIsUploading] = useState(false)
 
   const getFileIcon = (type: string) => {
     if (type.startsWith("image/")) {
@@ -86,7 +89,6 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
     setPreviewLoading(true)
     setPreviewOpen(true)
 
-    // Small delay to show loading state
     setTimeout(() => {
       setPreviewLoading(false)
     }, 500)
@@ -95,7 +97,6 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
   const handleDownload = () => {
     if (!fileData) return
 
-    // Create a temporary link to force download
     const link = document.createElement("a")
     link.href = fileData.url
     link.download = fileData.name
@@ -111,17 +112,42 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
     window.open(fileData.url, "_blank", "noopener,noreferrer")
   }
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      setIsUploading(true)
+      setUploadProgress(0)
+
+      // Simulate upload progress (replace with actual upload logic)
+      let progress = 0
+      const interval = setInterval(() => {
+        progress += 10
+        setUploadProgress(progress)
+        if (progress >= 100) {
+          clearInterval(interval)
+          setIsUploading(false)
+          onChange(event) // Call the original onChange handler after "upload" completes
+        }
+      }, 200)
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      // Cleanup on component unmount
+      setUploadProgress(0)
+      setIsUploading(false)
+    }
+  }, [])
+
   const renderThumbnail = () => {
     if (!fileData) return null
 
     const urlInfo = parseCloudinaryUrl(fileData.url)
 
     if (fileData.type.startsWith("image/")) {
-      // For images, try to display thumbnail
       let thumbnailUrl = fileData.url
 
       if (urlInfo.isCloudinary) {
-        // Try to get image thumbnail, but fallback to original if it fails
         thumbnailUrl = getCloudinaryThumbnail(fileData.url, fileData.type)
       }
 
@@ -147,14 +173,12 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
               objectFit: "cover",
             }}
             onError={(e) => {
-              // Fallback to placeholder if thumbnail fails
               e.currentTarget.src = "/placeholder.svg?height=120&width=200&text=Image"
             }}
           />
         </Box>
       )
     } else {
-      // For PDFs and documents, show icon-based thumbnail
       return (
         <Box
           sx={{
@@ -203,9 +227,9 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
             <Button variant="outlined" onClick={handleDownload} startIcon={<Download />}>
               Download File
             </Button>
-            <Button variant="outlined" onClick={handleOpenInNewTab} startIcon={<OpenInNew />}>
+            {/* <Button variant="outlined" onClick={handleOpenInNewTab} startIcon={<OpenInNew />}>
               Open in New Tab
-            </Button>
+            </Button> */}
           </Box>
         </Box>
       )
@@ -225,7 +249,6 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
         />
       )
     } else if (fileData.type === "application/pdf") {
-      // Use Google Docs viewer for PDF preview
       const pdfViewerUrl = getPdfViewerUrl(fileData.url)
 
       return (
@@ -243,7 +266,6 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
         </Box>
       )
     } else {
-      // For other document types, show message with options
       return (
         <Box sx={{ p: 4, textAlign: "center" }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
@@ -256,9 +278,9 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
             <Button variant="contained" onClick={handleDownload} startIcon={<Download />}>
               Download File
             </Button>
-            <Button variant="outlined" onClick={handleOpenInNewTab} startIcon={<OpenInNew />}>
+            {/* <Button variant="outlined" onClick={handleOpenInNewTab} startIcon={<OpenInNew />}>
               Open in New Tab
-            </Button>
+            </Button> */}
           </Box>
         </Box>
       )
@@ -284,12 +306,16 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
           },
         }}
       >
-        {fileData ? (
+        {isUploading ? (
+          <Box sx={{ width: "100%", textAlign: "center" }}>
+            <Typography sx={{ fontSize: "14px", color: "#666", mb: 2 }}>
+              Uploading {uploadProgress}%
+            </Typography>
+            <LinearProgress variant="determinate" value={uploadProgress} sx={{ mb: 2 }} />
+          </Box>
+        ) : fileData ? (
           <Box>
-            {/* File Preview Section */}
             <Box sx={{ mb: 2 }}>{renderThumbnail()}</Box>
-
-            {/* File Info */}
             <Box sx={{ mb: 2 }}>
               <Tooltip title={fileData.name}>
                 <Typography
@@ -309,30 +335,25 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
                   size="small"
                   sx={{ fontSize: "10px", height: "20px" }}
                 />
-                {/* {parseCloudinaryUrl(fileData.url).isCloudinary && (
-                  <Chip label="Cloudinary" size="small" color="primary" sx={{ fontSize: "10px", height: "20px" }} />
-                )} */}
                 {canPreviewFile(fileData.type, fileData.url) && (
                   <Chip label="Previewable" size="small" color="success" sx={{ fontSize: "10px", height: "20px" }} />
                 )}
               </Box>
             </Box>
-
-            {/* Action Buttons */}
             <Box sx={{ display: "flex", justifyContent: "center", gap: 1, flexWrap: "wrap" }}>
               {canPreviewFile(fileData.type, fileData.url) && (
                 <Button size="small" startIcon={<Visibility />} onClick={handlePreview} sx={{ textTransform: "none" }}>
                   Preview
                 </Button>
               )}
-              <Button
+              {/* <Button
                 size="small"
                 startIcon={<OpenInNew />}
                 onClick={handleOpenInNewTab}
                 sx={{ textTransform: "none" }}
               >
                 Open
-              </Button>
+              </Button> */}
               <Button size="small" startIcon={<Download />} onClick={handleDownload} sx={{ textTransform: "none" }}>
                 Download
               </Button>
@@ -348,7 +369,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
             <input
               type="file"
               accept={accept}
-              onChange={onChange}
+              onChange={handleFileChange}
               style={{ display: "none" }}
               id={`file-input-${label}`}
             />
@@ -361,7 +382,6 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
         )}
       </Paper>
 
-      {/* Preview Dialog */}
       <Dialog
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}
@@ -381,9 +401,9 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
           <Button onClick={handleDownload} variant="outlined" startIcon={<Download />}>
             Download
           </Button>
-          <Button onClick={handleOpenInNewTab} variant="outlined" startIcon={<OpenInNew />}>
+          {/* <Button onClick={handleOpenInNewTab} variant="outlined" startIcon={<OpenInNew />}>
             Open in New Tab
-          </Button>
+          </Button> */}
         </DialogActions>
       </Dialog>
     </Box>

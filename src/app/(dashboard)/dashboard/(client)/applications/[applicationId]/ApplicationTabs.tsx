@@ -19,8 +19,8 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 
 import ApplicationTable from "./applications/ApplicationTable";
-import ShortListedTable from "./applications/ShortListedTable";
-import HiredTable from "./applications/HiredTable";
+import ClientShortlisted from "./applications/clientShortlisted";
+import ClientHired from "./applications/clientHired";
 import { sendApplicationToAdmin, getAppliedJob } from "@/@core/services/jobVanciesService";
 
 const TabList = styled(MuiTabList)(({ theme }) => ({
@@ -100,7 +100,7 @@ const ApplicationTabs = ({ tab, applicationId }: TabProps) => {
         .filter(
           (app: any) =>
             app.job_id === parseInt(applicationId, 10) &&
-            app.status === "SHORTLISTED"
+            app.status === "INTERVIEWED"
         )
         .map((app: any) => ({
           id: app.id,
@@ -153,9 +153,10 @@ const ApplicationTabs = ({ tab, applicationId }: TabProps) => {
   }, [tab]);
 
   const tabContentList = {
+
     all: <ApplicationTable jobId={parseInt(applicationId, 10)} />,
-    shortlisted: <ShortListedTable />,
-    hired: <HiredTable />,
+    shortlisted: <ClientShortlisted jobId={parseInt(applicationId, 10)}/>,
+    hired: <ClientHired jobId={parseInt(applicationId, 10)}  />,
   };
 
   return (

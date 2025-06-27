@@ -9,6 +9,7 @@ export interface CurrentUser {
   account_type: string;
   company_logo?: string;
   company_name?: string;
+  designation? :string;
   company_email_address?: string;
   industry?: string;
   number_of_employees?: string;
@@ -80,6 +81,7 @@ export const changePassword = async (data: { current_password: string, password:
 export interface UpdateUserPayload {
   name: string;
   email: string;
+  designation:String;
   account_type: 'TALENT' | 'EMPLOYER';
   phone_number: string;
   cv_upload?: string;
@@ -355,6 +357,7 @@ export const getCurrentUser = async (): Promise<any> => {
 
   return data;
 };
+
 export const getAllUser = async (): Promise<any> => {
   
   const res = await fetch(`${API_BASE_URL}/users`, {

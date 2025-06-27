@@ -8,16 +8,14 @@ interface JobFilterProps {
 }
 
 const JobFilter: React.FC<JobFilterProps> = ({ title, options, onFilterChange }) => {
-  // Initialize state with options that are initially checked
+  // Initialize state with the first checked option or empty array
   const [selectedOptions, setSelectedOptions] = useState<string[]>(
-    options?.filter((opt) => opt.checkState).map((opt) => opt.label) || []
+    options?.filter((opt) => opt.checkState).map((opt) => opt.label).slice(0, 1) || []
   );
 
-  // Handle checkbox change
+  // Handle checkbox change to allow only one selection
   const handleCheckboxChange = (label: string, checked: boolean) => {
-    const updatedOptions = checked
-      ? [...selectedOptions, label]
-      : selectedOptions.filter((opt) => opt !== label);
+    const updatedOptions = checked ? [label] : [];
     setSelectedOptions(updatedOptions);
     onFilterChange(updatedOptions); // Notify parent
   };

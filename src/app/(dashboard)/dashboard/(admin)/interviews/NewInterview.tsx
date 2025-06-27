@@ -1,4 +1,3 @@
-
 // *React Imports
 import { useState, useEffect } from "react";
 
@@ -11,21 +10,6 @@ import CustomTextField from "@/@core/component/mui/text-field";
 // *Utility Imports
 import { interviewSchema as baseInterviewSchema } from "@/@core/formSchema";
 import * as yup from "yup";
-
-// Extend the schema to include jobId and phone number validation
-const interviewSchema = baseInterviewSchema.shape({
-  jobId: yup.number().min(1, "Please select a job").required("Job is required"),
-  applicationId: yup.number().min(1, "Please select a candidate").required("Candidate is required"),
-  interviewerPhone: yup
-    .string()
-    .required("Phone number is required")
-    .matches(/^\+234\d{10}$/, "Phone number must start with +234 followed by 10 digits"),
-  tboRepPhone: yup
-    .string()
-    .required("Phone number is required")
-    .matches(/^\+234\d{10}$/, "Phone number must start with +234 followed by 10 digits"),
-  information: yup.string().optional(), // Explicitly mark as optional
-});
 
 // *Third Party Imports
 import { Controller, useForm, SubmitHandler } from "react-hook-form";
@@ -48,6 +32,49 @@ import InputAdornment from "@mui/material/InputAdornment";
 
 import { scheduleInterview } from "@/@core/services/interviewService";
 import { getAppliedJob } from "@/@core/services/jobVanciesService";
+
+// Extend the schema to include jobId, phone number, address, and date/time validation
+const interviewSchema = baseInterviewSchema.shape({
+  jobId: yup.number().min(1, "Please select a job").required("Job is required"),
+  applicationId: yup.number().min(1, "Please select a candidate").required("Candidate is required"),
+  interviewerPhone: yup
+    .string()
+    .required("Phone number is required")
+    .matches(/^\+234\d{10}$/, "Phone number must start with +234 followed by 10 digits"),
+  tboRepPhone: yup
+    .string()
+    .required("Phone number is required")
+    .matches(/^\+234\d{10}$/, "Phone number must start with +234 followed by 10 digits"),
+  information: yup.string().optional(),
+  address: yup.string().when("format", {
+    is: "In-Person",
+    then: (schema) => schema.required("Address is required for in-person interviews"),
+    otherwise: (schema) => schema.optional(),
+  }),
+  interviewDate: yup
+    .string()
+    .required("Interview date is required")
+    .test("is-today-or-future", "Interview date cannot be in the past", (value) => {
+      if (!value) return false;
+      const selectedDate = dayjs(value);
+      const today = dayjs().startOf("day");
+      return selectedDate.isSame(today, "day") || selectedDate.isAfter(today, "day");
+    }),
+  interviewTime: yup
+    .string()
+    .required("Interview time is required")
+    .test("is-not-past-today", "Interview time cannot be in the past for today", function (value) {
+      if (!value) return false;
+      const selectedDate = dayjs(this.parent.interviewDate);
+      const today = dayjs().startOf("day");
+      if (selectedDate.isSame(today, "day")) {
+        const selectedTime = dayjs(`2023-01-01T${value}`);
+        const currentTime = dayjs();
+        return selectedTime.isAfter(currentTime);
+      }
+      return true;
+    }),
+});
 
 // Assuming a new service to fetch jobs with applications
 interface Job {
@@ -168,6 +195,26 @@ interface IFormInput {
   tboRepName: string;
   tboRepEmail: string;
   tboRepPhone: string;
+  address?: string;
+}
+
+interface InterviewData {
+  job_id: number;
+  application_id: number;
+  user_id: number;
+  interview_date: string;
+  interview_time: string;
+  interview_location: string;
+  interviewer_department: string;
+  interviewer_name: string;
+  interviewer_role: string;
+  interviewer_email: string;
+  interviewer_phone: string;
+  tbo_rep_name: string;
+  tbo_rep_email: string;
+  tbo_rep_phone: string;
+  address?: string;
+  status: string;
 }
 
 const defaultValues: IFormInput = {
@@ -187,6 +234,7 @@ const defaultValues: IFormInput = {
   tboRepName: "",
   tboRepEmail: "",
   tboRepPhone: "",
+  address: "",
 };
 
 interface Props {
@@ -212,9 +260,10 @@ const NewInterview = ({ open, close }: Props) => {
     resolver: yupResolver(interviewSchema),
   });
 
-  // Watch jobId and applicationId
+  // Watch jobId, applicationId, and format
   const selectedJobIdValue = watch("jobId");
   const selectedApplicationId = watch("applicationId");
+  const selectedFormat = watch("format");
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -227,7 +276,6 @@ const NewInterview = ({ open, close }: Props) => {
             jobsMap.set(app.job_id, {
               ...app.job,
               applications: [] as Application[],
-              // Ensure all Job properties are present if needed
             });
           }
           const job = jobsMap.get(app.job_id);
@@ -267,21 +315,22 @@ const NewInterview = ({ open, close }: Props) => {
 
   const submitForm: SubmitHandler<IFormInput> = async (values) => {
     try {
-      const formattedData = {
-        job_id: values.jobId, // Changed to job_id to match backend response
+      const formattedData: InterviewData = {
+        job_id: values.jobId,
         application_id: values.applicationId,
         user_id: values.userId,
         interview_date: values.interviewDate,
         interview_time: values.interviewTime,
-        interview_location: values.format === "In-Person" ? "Company Headquarters, Meeting Room 3" : "Virtual",
+        interview_location: values.format, // Set to "In-Person" or "Virtual"
         interviewer_department: values.interviewerDepartment,
         interviewer_name: values.interviewerName,
         interviewer_email: values.interviewerEmail,
         interviewer_phone: values.interviewerPhone,
-        interviewer_role: "", // Provide a value or map from form if available
+        interviewer_role: "",
         tbo_rep_name: values.tboRepName,
         tbo_rep_email: values.tboRepEmail,
         tbo_rep_phone: values.tboRepPhone,
+        address: values.format === "In-Person" ? values.address : undefined,
         status: "scheduled",
       };
       const response = await scheduleInterview(formattedData);
@@ -524,6 +573,7 @@ const NewInterview = ({ open, close }: Props) => {
                     <DatePicker
                       value={value ? dayjs(value) : null}
                       onChange={(date) => onChange(date ? date.format("YYYY-MM-DD") : "")}
+                      minDate={dayjs().startOf("day")}
                       slotProps={{
                         textField: {
                           fullWidth: true,
@@ -549,6 +599,11 @@ const NewInterview = ({ open, close }: Props) => {
                       value={value ? dayjs(`2023-01-01T${value}`) : null}
                       onChange={(time) => onChange(time ? time.format("HH:mm:ss") : "")}
                       format="HH:mm:ss"
+                      minTime={
+                        dayjs(watch("interviewDate")).isSame(dayjs().startOf("day"), "day")
+                          ? dayjs()
+                          : undefined
+                      }
                       slotProps={{
                         textField: {
                           fullWidth: true,
@@ -610,6 +665,28 @@ const NewInterview = ({ open, close }: Props) => {
                   )}
                 />
               </Grid>
+              {selectedFormat === "In-Person" && (
+                <Grid item xs={12}>
+                  <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
+                    Interview Address
+                  </Typography>
+                  <Controller
+                    name="address"
+                    control={control}
+                    render={({ field: { value, onChange } }) => (
+                      <CustomTextField
+                        fullWidth
+                        value={value}
+                        onChange={onChange}
+                        size="medium"
+                        placeholder="Enter the interview address"
+                        error={Boolean(errors.address)}
+                        helperText={errors.address?.message}
+                      />
+                    )}
+                  />
+                </Grid>
+              )}
             </Grid>
 
             <Typography sx={{ mt: 4, mb: 2, fontWeight: 600 }}>TBO Representative Information</Typography>

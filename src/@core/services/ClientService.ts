@@ -11,11 +11,12 @@ export interface ClientData {
   company_name: string;
   company_email_address: string;
   phone_number: string | null;
+  country_code?:string |null;
   industry: string;
   number_of_employees: string;
   type_of_employer: string;
   company_address: string;
-  company_phone_number: string | null;
+  company_phone_number: string ;
   country: string | null;
   company_website: string;
   contact_person: string;

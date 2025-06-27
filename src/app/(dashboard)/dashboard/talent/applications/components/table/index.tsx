@@ -52,7 +52,7 @@ const JobApplicationsTable: React.FC<JobApplicationsTableProps> = ({ searchQuery
     'Role Applied For',
     'Date of Application',
     'Application Status',
-    'Action',
+    // 'Action',
   ];
 
   const companyNameField = (name: string) => (
@@ -94,13 +94,13 @@ const JobApplicationsTable: React.FC<JobApplicationsTableProps> = ({ searchQuery
 
   const viewButtonField = (jobId: number) => (
     <TableCell>
-      <Button
+      {/* <Button
         onClick={() => setOpenWithdrawModal(jobId)}
         variant="contained"
         sx={{ textTransform: 'none' }}
       >
         Withdraw Application
-      </Button>
+      </Button> */}
     </TableCell>
   );
 

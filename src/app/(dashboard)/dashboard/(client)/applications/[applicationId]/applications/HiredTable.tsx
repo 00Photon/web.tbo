@@ -83,6 +83,7 @@ interface Application {
   user: User;
 }
 
+
 const ShortlistedTable: React.FC = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [openFilter, setOpenFilter] = useState<boolean>(false);

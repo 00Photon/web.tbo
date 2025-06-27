@@ -13,7 +13,6 @@ import {
 import { useEffect, useState } from 'react';
 import InterviewDetailsModal from '@/app/(dashboard)/dashboard/talent/interview-alerts/components/modal/InterviewDetailsModal';
 import { getInterviews, getApplicationById } from '@/@core/services/jobVanciesService'; // Adjust path as needed
-
 interface Interview {
   image: string;
   name: string;
@@ -23,6 +22,7 @@ interface Interview {
   date: string;
   time: string;
   location: string;
+  address : string; // Optional address field
   application_id: number;
 }
 
@@ -68,7 +68,7 @@ const InterviewAlertsTable: React.FC<InterviewAlertsTableProps> = ({ searchQuery
               application_id: item.application_id,
               name: item.interviewer_name || 'Unknown',
               jobTitle,
-              role: item.interview_location || 'N/A',
+              role: item.interviewer_role || 'N/A', // Use interviewer_role instead of interview_location
               interviewStage:
                 item.status === 'scheduled'
                   ? 'Upcoming'
@@ -78,6 +78,7 @@ const InterviewAlertsTable: React.FC<InterviewAlertsTableProps> = ({ searchQuery
               date: new Date(item.interview_date).toLocaleDateString(),
               time: item.interview_time,
               location: item.interview_location,
+              address: item.address, // Map address directly
               image: '',
             };
           })
@@ -96,13 +97,13 @@ const InterviewAlertsTable: React.FC<InterviewAlertsTableProps> = ({ searchQuery
 
   // Filter interviews based on searchQuery
   const filteredInterviews = interviews.filter((interview) =>
-    [interview.name, interview.jobTitle, interview.location]
+    [interview.name, interview.jobTitle, interview.location, interview.address || '']
       .join(' ')
       .toLowerCase()
       .includes(searchQuery.toLowerCase())
   );
 
-  const headerFields: string[] = ['Company Name', 'Job Title', 'Location', 'Interview Stage', 'Action'];
+  const headerFields: string[] = ['Company Name', 'Job Title', 'Location', 'Address', 'Interview Stage', 'Action'];
 
   const companyNameField = (image: string, name: string) => (
     <TableCell>
@@ -126,9 +127,9 @@ const InterviewAlertsTable: React.FC<InterviewAlertsTableProps> = ({ searchQuery
     </TableCell>
   );
 
-  const textOnlyField = (data: string) => (
+  const textOnlyField = (data: string | undefined) => (
     <TableCell>
-      <Typography sx={{ fontSize: '14px' }}>{data}</Typography>
+      <Typography sx={{ fontSize: '14px' }}>{data || 'N/A'}</Typography>
     </TableCell>
   );
 
@@ -193,6 +194,7 @@ const InterviewAlertsTable: React.FC<InterviewAlertsTableProps> = ({ searchQuery
                   {companyNameField(row.image, row.name)}
                   {textOnlyField(row.jobTitle)}
                   {textOnlyField(row.location)}
+                  {textOnlyField(row.address)}
                   {interviewStageField(row.interviewStage)}
                   {buttonsField(row)}
                 </TableRow>
@@ -201,7 +203,6 @@ const InterviewAlertsTable: React.FC<InterviewAlertsTableProps> = ({ searchQuery
           </Table>
         )}
       </TableContainer>
-
       <InterviewDetailsModal open={open} onClose={handleClose} interview={selectedInterview} />
     </>
   );

@@ -7,6 +7,8 @@ import { Controller, useForm, SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
@@ -17,9 +19,7 @@ import Button from "@mui/material/Button";
 import MenuItem from "@mui/material/MenuItem";
 import Chip from "@mui/material/Chip";
 import { Autocomplete, CircularProgress, InputAdornment } from "@mui/material";
-
 import { createJob } from "@/@core/services/jobService";
-import { toast } from "react-toastify";
 
 interface Props {
   open: boolean;
@@ -35,8 +35,8 @@ interface IFormInput {
   skills: string[];
   location: string;
   currency: "USD" | "EUR" | "GBP" | "NGN";
-  minSalary: number | null;
-  maxSalary: number | null;
+  minSalary: number;
+  maxSalary: number;
   salary_type: "MONTHLY" | "ANNUALLY";
   application_deadline: string;
   information: string | null;
@@ -59,8 +59,8 @@ const defaultValues: IFormInput = {
   location: "",
   salary_type: "MONTHLY",
   currency: "NGN",
-  minSalary: null,
-  maxSalary: null,
+  minSalary: undefined as any,
+  maxSalary: undefined as any,
   application_deadline: "",
   information: null,
   client_id: "",
@@ -85,7 +85,6 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
       reset(defaultValues);
     }
   }, [open]);
-
   const fetchClients = async () => {
     setLoading(true);
     try {
@@ -98,7 +97,14 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
       setClients(clientUsers);
     } catch (error) {
       console.error("Error fetching clients:", error);
-      toast.error("Failed to fetch clients");
+      toast.error("Failed to fetch clients", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     } finally {
       setLoading(false);
     }
@@ -108,7 +114,7 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
     control,
     reset,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isValid },
     watch,
   } = useForm<IFormInput>({
     defaultValues,
@@ -138,7 +144,14 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
 
     try {
       const response = await createJob(jobData);
-      toast.success("Job created successfully");
+      toast.success("Job created successfully!", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
       reset(defaultValues);
       close();
       onJobCreated();
@@ -148,14 +161,42 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
         try {
           const errorData = JSON.parse(error.message.replace("Error creating job: ", ""));
           const errorMessages = Object.values(errorData.errors || {}).flat().join(", ");
-          toast.error(`Failed to create job: ${errorMessages}`);
+          toast.error(`Failed to create job: ${errorMessages}`, {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
         } catch {
-          toast.error(error.message);
+          toast.error(error.message, {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
         }
       } else if (error.message.includes("not authenticated")) {
-        toast.error("You must be logged in to create a job");
+        toast.error("You must be logged in to create a job", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
       } else {
-        toast.error("Failed to create job. Please try again.");
+        toast.error("Failed to create job. Please try again.", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
       }
     } finally {
       setSubmitting(false);
@@ -164,6 +205,7 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
 
   return (
     <div>
+      <ToastContainer />
       <Dialog
         disableScrollLock
         open={open}
@@ -178,7 +220,7 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
       >
         <form onSubmit={handleSubmit(submitForm)}>
           <Box sx={{ display: "flex", alignItems: "center", p: 3 }}>
-            <Button onClick={close} sx={{ color: "#111" }}>
+            <Button sx={{ color: "#111" }} onClick={close}>
               <Icon icon="basil:caret-left-solid" fontSize={25} />
             </Button>
             <Typography
@@ -348,7 +390,14 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
                           if (newValue.length <= 10) {
                             field.onChange(newValue);
                           } else {
-                            toast.error("Maximum 10 skills allowed");
+                            toast.error("Maximum 10 skills allowed", {
+                              position: "top-right",
+                              autoClose: 3000,
+                              hideProgressBar: false,
+                              closeOnClick: true,
+                              pauseOnHover: true,
+                              draggable: true,
+                            });
                           }
                         }}
                         renderInput={(params) => (
@@ -364,7 +413,14 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
                               onKeyDown: (event) => {
                                 if (event.key === "Enter" && field.value.length >= 10) {
                                   event.preventDefault();
-                                  toast.error("Maximum 10 skills allowed");
+                                  toast.error("Maximum 10 skills allowed", {
+                                    position: "top-right",
+                                    autoClose: 3000,
+                                    hideProgressBar: false,
+                                    closeOnClick: true,
+                                    pauseOnHover: true,
+                                    draggable: true,
+                                  });
                                 }
                               },
                             }}
@@ -446,7 +502,7 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
 
                 <Grid item xs={12} md={6}>
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
-                    Minimum Salary 
+                    Minimum Salary
                   </Typography>
                   <Controller
                     name="minSalary"
@@ -467,7 +523,7 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
                             </InputAdornment>
                           ),
                         }}
-                        onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                        onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
                       />
                     )}
                   />
@@ -475,7 +531,7 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
 
                 <Grid item xs={12} md={6}>
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
-                    Maximum Salary 
+                    Maximum Salary
                   </Typography>
                   <Controller
                     name="maxSalary"
@@ -496,7 +552,7 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
                             </InputAdornment>
                           ),
                         }}
-                        onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                        onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
                       />
                     )}
                   />
@@ -593,7 +649,7 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
             <Button
               type="submit"
               variant="contained"
-              disabled={isSubmitting || submitting}
+              disabled={isSubmitting || submitting || !isValid}
               sx={{ textTransform: "capitalize", width: "30%" }}
             >
               {submitting ? <CircularProgress size={24} color="inherit" /> : "Create Job"}

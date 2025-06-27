@@ -107,7 +107,7 @@ const InterviewDetailsModal: React.FC<InterviewDetailsModalProps> = ({ open, onC
             alignItems: { xs: 'center', sm: 'none' },
           }}
         >
-          <Box>
+          {/* <Box>
             <Button
               onClick={onClose}
               variant="outlined"
@@ -128,7 +128,7 @@ const InterviewDetailsModal: React.FC<InterviewDetailsModalProps> = ({ open, onC
             >
               Reschedule
             </Button>
-          </Box>
+          </Box> */}
           <Box>
             <Button
               onClick={onClose}

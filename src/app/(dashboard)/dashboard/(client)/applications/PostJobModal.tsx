@@ -44,13 +44,13 @@ interface IFormInput {
 
 const defaultValues: IFormInput = {
   title: "",
-  type: "FULLTIME", 
+  type: "FULLTIME",
   description: "",
   requirement: "",
   skills: [],
   location: "",
   salary_type: "MONTHLY",
-  currency: "NGN", 
+  currency: "NGN",
   minSalary: null,
   maxSalary: null,
   application_deadline: "",
@@ -72,12 +72,12 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
     control,
     reset,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isValid },
     watch,
   } = useForm<IFormInput>({
     defaultValues,
     mode: "onChange",
-  resolver: yupResolver<IFormInput>(newJobSchema2),
+    resolver: yupResolver<IFormInput>(newJobSchema2),
   });
 
   const selectedCurrency = watch("currency");
@@ -85,19 +85,19 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
   const submitForm: SubmitHandler<IFormInput> = async (values) => {
     setSubmitting(true);
     const jobData = {
-        title: values.title,
-        job_type: values.type, // This should be "FULLTIME", "PARTTIME", "INTERNSHIP", or "FREELANCE"
-        description: values.description,
-        requirements: values.requirement,
-        skills: values.skills,
-        currency: values.currency,
-        salary_type: values.salary_type,
-        minimum_salary: values.minSalary !== null ? values.minSalary : 0,
-        maximum_salary: values.maxSalary !== null ? values.maxSalary : 0,
-        location: values.location,
-        application_deadline: values.application_deadline,
-        additional_info: values.information ?? undefined,
-      };
+      title: values.title,
+      job_type: values.type,
+      description: values.description,
+      requirements: values.requirement,
+      skills: values.skills,
+      currency: values.currency,
+      salary_type: values.salary_type,
+      minimum_salary: values.minSalary !== null ? values.minSalary : 0,
+      maximum_salary: values.maxSalary !== null ? values.maxSalary : 0,
+      location: values.location,
+      application_deadline: values.application_deadline,
+      additional_info: values.information ?? undefined,
+    };
 
     try {
       const response = await createJobclient(jobData);
@@ -534,7 +534,7 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
             <Button
               type="submit"
               variant="contained"
-              disabled={isSubmitting || submitting}
+              disabled={isSubmitting || submitting || !isValid}
               sx={{ textTransform: "capitalize", width: "30%" }}
             >
               {submitting ? <CircularProgress size={24} color="inherit" /> : "Post Job"}
