@@ -389,7 +389,7 @@ const NewInterview = ({ open, close }: Props) => {
             px: `${theme.spacing(4)} !important`,
             m: theme.spacing(3),
             borderRadius: "10px",
-            overflowY: "scroll",
+            overflowY: "auto",
             scrollbarWidth: "none",
             msOverflowStyle: "none",
             "&::-webkit-scrollbar": { display: "none" },
@@ -536,8 +536,8 @@ const NewInterview = ({ open, close }: Props) => {
                 <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
                   Phone Number
                 </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={4}>
+                <Grid container spacing={2} direction="column">
+                  <Grid item xs={12}>
                     <Autocomplete
                       options={countryCodes}
                       getOptionLabel={(option) => `${option.code} (${option.country})`}
@@ -575,7 +575,7 @@ const NewInterview = ({ open, close }: Props) => {
                       }}
                     />
                   </Grid>
-                  <Grid item xs={8}>
+                  <Grid item xs={12}>
                     <Controller
                       name="interviewerPhone"
                       control={control}
@@ -780,8 +780,8 @@ const NewInterview = ({ open, close }: Props) => {
                 <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
                   TBO Phone Number
                 </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={4}>
+                <Grid container spacing={2} direction="column">
+                  <Grid item xs={12}>
                     <Autocomplete
                       options={countryCodes}
                       getOptionLabel={(option) => `${option.code} (${option.country})`}
@@ -813,13 +813,13 @@ const NewInterview = ({ open, close }: Props) => {
                           backgroundColor: "#f0f0f0",
                         },
                         "& .MuiAutocomplete-option.Mui-focused": {
-                          backgroundColor: "#e0e0e0",
+                          backgroundColor: "#e0e0e0"
                         },
                         "& .MuiAutocomplete-inputRoot": { paddingRight: "30px !important" },
                       }}
                     />
                   </Grid>
-                  <Grid item xs={8}>
+                  <Grid item xs={12}>
                     <Controller
                       name="tboRepPhone"
                       control={control}
