@@ -17,7 +17,7 @@ import { getJobs, saveJob } from "@/@core/services/jobVanciesService";
 import ApplicationFormModal from "./components/modals/application-form";
 import SavedJobsTab from "./components/saved-jobs";
 
-// Define JobFilterOption type if not imported from elsewhere
+
 type JobFilterOption = {
   label: string;
   checkState: boolean;

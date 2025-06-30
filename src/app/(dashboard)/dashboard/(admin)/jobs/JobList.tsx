@@ -31,17 +31,31 @@ import "react-toastify/dist/ReactToastify.css";
 import { fetchJobs, activateJob, rejectJob, deleteJob } from "@/@core/services/jobService";
 import JobDialog from "./JobDialog";
 import NewJob from "./NewJob";
+import JobDetailsModal from "./JobDetailsModal";
 
 interface Job {
   id: number;
   title: string;
+  job_type: string;
+  description: string;
+  requirements: string;
+  skill: string;
+  currency: string;
+  salary_type: string;
+  minimum_salary: string;
+  maximum_salary: string;
+  location: string;
   application_deadline: string;
-  applicant_count: number;
+  additional_info: string | null;
+  created_by: number;
+  client_id: number;
   created_at: string;
-  postingDate: string;
-  expirationDate: string;
+  updated_at: string;
   status: string;
+  applicant_count: number;
   applications: { id: number; name: string; status: string }[];
+  postingDate?: string;
+  expirationDate?: string;
 }
 
 const JobListTable: React.FC = () => {
@@ -60,6 +74,8 @@ const JobListTable: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
   const [jobToDelete, setJobToDelete] = useState<number | null>(null);
+  const [jobDetailsModalOpen, setJobDetailsModalOpen] = useState<boolean>(false);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
   const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up("md"));
 
@@ -129,6 +145,11 @@ const JobListTable: React.FC = () => {
     setPostJobModal(!postJobModal);
   };
 
+  const toggleJobDetailsModal = (job: Job | null) => {
+    setSelectedJob(job);
+    setJobDetailsModalOpen(!jobDetailsModalOpen);
+  };
+
   const handleChangePage = (
     event: React.MouseEvent<HTMLButtonElement> | null,
     newPage: number
@@ -173,7 +194,7 @@ const JobListTable: React.FC = () => {
         toast.error("Failed to delete job. Please try again.", {
           position: "top-right",
           autoClose: 3000,
-          hideProgressBar: false,
+  hideProgressBar: false,
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
@@ -452,13 +473,23 @@ const JobListTable: React.FC = () => {
                                 }}
                                 PaperProps={{ style: { minWidth: "8rem" } }}
                               >
+                                <MenuItem
+                                  sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
+                                  onClick={() => {
+                                    toggleJobDetailsModal(job);
+                                    handleRowOptionsClose(job.id);
+                                  }}
+                                >
+                                  <Icon icon="tabler:info-circle" fontSize={20} />
+                                  View Details
+                                </MenuItem>
                                 <Link href={`/dashboard/jobs/application/${job.applications[0]?.id}`}>
                                   <MenuItem
                                     sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
                                     onClick={() => handleRowOptionsClose(job.id)}
                                   >
                                     <Icon icon="tabler:eye" fontSize={20} />
-                                    View
+                                    View Applications
                                   </MenuItem>
                                 </Link>
                                 <MenuItem
@@ -518,6 +549,11 @@ const JobListTable: React.FC = () => {
           open={postJobModal}
           close={togglePostJobModal}
           onJobCreated={loadJobs}
+        />
+        <JobDetailsModal
+          open={jobDetailsModalOpen}
+          close={() => toggleJobDetailsModal(null)}
+          job={selectedJob}
         />
         <Dialog
           open={deleteDialogOpen}

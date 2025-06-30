@@ -80,98 +80,110 @@ export default function ApplicationFormModal({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      {step === "choice" && (
-        <>
-          <DialogTitle sx={{ color: "#333", fontWeight: 600, textAlign: "center" }}>
-            Apply for Job
-          </DialogTitle>
-          <DialogContent>
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {error}
-              </Alert>
-            )}
-            <Typography sx={{ textAlign: "center" }}>
-              Would you like to use your current profile or edit your profile before applying?
-            </Typography>
-          </DialogContent>
-          <DialogActions sx={{ justifyContent: "center" }}>
-            <Button
-              onClick={handleUseCurrentProfile}
-              variant="contained"
-              sx={{
-                textTransform: "none",
-                backgroundColor: "#E61C31",
-                "&:hover": { backgroundColor: "#C8102E" },
-              }}
-              aria-label="Apply with current profile"
-            >
-              Use Current Profile
-            </Button>
-            <Button
-              onClick={handleEditProfile}
-              variant="outlined"
-              sx={{
-                textTransform: "none",
-                color: "#E61C31",
-                borderColor: "#E61C31",
-                "&:hover": { borderColor: "#C8102E", backgroundColor: "#FFF5F5" },
-              }}
-              aria-label="Edit profile"
-            >
-              Edit Profile
-            </Button>
-            <Button
-              onClick={handleClose}
-              variant="text"
-              sx={{ textTransform: "none", color: "#6B7280" }}
-              aria-label="Cancel application"
-            >
-              Cancel
-            </Button>
-          </DialogActions>
-        </>
-      )}
+  <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+  {step === "choice" && (
+    <>
+      <DialogTitle sx={{ textAlign: "center", fontWeight: "bold", fontSize: "1.5rem" }}>
+        Apply for Job
+      </DialogTitle>
+      <DialogContent>
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+        <Typography variant="body1" sx={{ textAlign: "center", mb: 3 }}>
+          Would you like to use your current profile or edit your profile before applying?
+        </Typography>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
+          <Button
+            onClick={handleUseCurrentProfile}
+            variant="contained"
+            size="large"
+            sx={{
+              width: "100%",
+              maxWidth: 300,
+              backgroundColor: "#E61C31",
+              textTransform: "none",
+              "&:hover": { backgroundColor: "#C8102E" },
+            }}
+          >
+            Use Current Profile
+          </Button>
+          <Button
+            onClick={handleEditProfile}
+            variant="outlined"
+            size="large"
+            sx={{
+              width: "100%",
+              maxWidth: 300,
+              color: "#E61C31",
+              borderColor: "#E61C31",
+              textTransform: "none",
+              "&:hover": {
+                borderColor: "#C8102E",
+                backgroundColor: "#FFF5F5",
+              },
+            }}
+          >
+            Edit Profile
+          </Button>
+          <Button
+            onClick={handleClose}
+            variant="text"
+            size="small"
+            sx={{ color: "text.secondary", mt: 1 }}
+          >
+            Cancel
+          </Button>
+        </Box>
+      </DialogContent>
+    </>
+  )}
 
-      {step === "submitting" && (
-        <>
-          <DialogTitle sx={{ color: "#333", fontWeight: 600, textAlign: "center" }}>
-            Submitting Application
-          </DialogTitle>
-          <DialogContent>
-            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-              <CircularProgress sx={{ color: "#E61C31" }} />
-            </Box>
-          </DialogContent>
-        </>
-      )}
+  {step === "submitting" && (
+    <>
+      <DialogTitle sx={{ textAlign: "center", fontWeight: "bold", fontSize: "1.5rem" }}>
+        Submitting Application
+      </DialogTitle>
+      <DialogContent>
+        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+          <CircularProgress sx={{ color: "#E61C31" }} />
+        </Box>
+      </DialogContent>
+    </>
+  )}
 
-      {step === "submitted" && (
-        <>
-          <DialogTitle sx={{ color: "#333", fontWeight: 600, textAlign: "center" }}>
-            Application Submitted
-          </DialogTitle>
-          <DialogContent>
-            <Alert severity="success">
-              Your profile has been successfully sent to the employer!
-            </Alert>
-          </DialogContent>
-        </>
-      )}
+  {step === "submitted" && (
+    <>
+      <DialogTitle sx={{ textAlign: "center", fontWeight: "bold", fontSize: "1.5rem" }}>
+        Application Submitted
+      </DialogTitle>
+      <DialogContent sx={{ textAlign: "center", py: 3 }}>
+        <Alert severity="success" icon={false}>
+          <Typography variant="body1">
+            🎉 Your profile has been successfully sent to the employer!
+          </Typography>
+        </Alert>
+      </DialogContent>
+    </>
+  )}
 
-      {step === "alreadyApplied" && (
-        <>
-          <DialogTitle sx={{ color: "#333", fontWeight: 600, textAlign: "center" }}>
-            Application Status
-          </DialogTitle>
-          <DialogContent>
-            <Alert severity="info">
-              You have already applied. Please wait to be contacted by the employer.
-            </Alert>
-          </DialogContent>
-        </>
-      )}
-    </Dialog>
+  {step === "alreadyApplied" && (
+    <>
+      <DialogTitle sx={{ textAlign: "center", fontWeight: "bold", fontSize: "1.5rem" }}>
+        Already Applied
+      </DialogTitle>
+      <DialogContent sx={{ textAlign: "center", py: 3 }}>
+        <Alert severity="info" icon={false}>
+          <Typography variant="body1">
+            📩 You have already applied. Please wait to be contacted by the employer.
+          </Typography>
+        </Alert>
+      </DialogContent>
+    </>
+  )}
+</Dialog>
+
   );
 }

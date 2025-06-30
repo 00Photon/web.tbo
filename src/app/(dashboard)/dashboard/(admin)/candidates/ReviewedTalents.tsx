@@ -388,18 +388,18 @@ const RejectedTalents = () => {
                           transformOrigin={{ vertical: "top", horizontal: "right" }}
                           PaperProps={{ style: { minWidth: "8rem" } }}
                         >
-                          <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
+                          {/* <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
                             <Icon icon="tabler:edit" fontSize={20} />
                             Edit
-                          </MenuItem>
+                          </MenuItem> */}
                           <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
                             <Icon icon="tabler:eye" fontSize={20} />
                             View
                           </MenuItem>
-                          <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
+                          {/* <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
                             <Icon icon="fluent:delete-24-regular" fontSize={20} />
                             Delete
-                          </MenuItem>
+                          </MenuItem> */}
                         </Menu>
                       </Avatar>
                     </Box>

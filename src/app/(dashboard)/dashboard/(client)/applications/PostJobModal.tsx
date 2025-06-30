@@ -48,7 +48,7 @@ const defaultValues: IFormInput = {
   description: "",
   requirement: "",
   skills: [],
- location: "Hybrid", // Set a default value (or "" if you want to force selection)
+  location: "Hybrid",
   salary_type: "MONTHLY",
   currency: "NGN",
   minSalary: null,
@@ -83,23 +83,24 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
   const selectedCurrency = watch("currency");
 
   const submitForm: SubmitHandler<IFormInput> = async (values) => {
-    setSubmitting(true);
-    const jobData = {
-      title: values.title,
-      job_type: values.type,
-      description: values.description,
-      requirements: values.requirement,
-      skills: values.skills,
-      currency: values.currency,
-      salary_type: values.salary_type,
-      minimum_salary: values.minSalary !== null ? values.minSalary : 0,
-      maximum_salary: values.maxSalary !== null ? values.maxSalary : 0,
-      location: values.location,
-      application_deadline: values.application_deadline,
-      additional_info: values.information ?? undefined,
-    };
-
+    setSubmitting(false); // Ensure button is enabled before submission
     try {
+      setSubmitting(true); // Set submitting to true after enabling
+      const jobData = {
+        title: values.title,
+        job_type: values.type,
+        description: values.description,
+        requirements: values.requirement,
+        skills: values.skills,
+        currency: values.currency,
+        salary_type: values.salary_type,
+        minimum_salary: values.minSalary !== null ? values.minSalary : 0,
+        maximum_salary: values.maxSalary !== null ? values.maxSalary : 0,
+        location: values.location,
+        application_deadline: values.application_deadline,
+        additional_info: values.information ?? undefined,
+      };
+
       const response = await createJobclient(jobData);
       toast.success("Job created successfully!", {
         position: "top-right",
@@ -227,7 +228,7 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
                 </Grid>
 
                 <Grid item xs={12}>
-                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
+                 <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Description
                   </Typography>
                   <Controller
@@ -443,30 +444,30 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
                   />
                 </Grid>
 
-                  <Grid item xs={12} md={6}>
-                <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
-                  Location
-                </Typography>
-                <Controller
-                  name="location"
-                  control={control}
-                  render={({ field }) => (
-                    <CustomTextField
-                      {...field}
-                      fullWidth
-                      select
-                      size="medium"
-                      placeholder="Select Location"
-                      error={Boolean(errors.location)}
-                      helperText={errors.location?.message}
-                    >
-                      <MenuItem value="Hybrid">Hybrid</MenuItem>
-                      <MenuItem value="Remote">Remote</MenuItem>
-                      <MenuItem value="Onsite">Onsite</MenuItem>
-                    </CustomTextField>
-                  )}
-                />
-              </Grid>
+                <Grid item xs={12} md={6}>
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
+                    Location
+                  </Typography>
+                  <Controller
+                    name="location"
+                    control={control}
+                    render={({ field }) => (
+                      <CustomTextField
+                        {...field}
+                        fullWidth
+                        select
+                        size="medium"
+                        placeholder="Select Location"
+                        error={Boolean(errors.location)}
+                        helperText={errors.location?.message}
+                      >
+                        <MenuItem value="Hybrid">Hybrid</MenuItem>
+                        <MenuItem value="Remote">Remote</MenuItem>
+                        <MenuItem value="Onsite">Onsite</MenuItem>
+                      </CustomTextField>
+                    )}
+                  />
+                </Grid>
 
                 <Grid item xs={12} md={6}>
                   <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
@@ -539,7 +540,7 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
             <Button
               type="submit"
               variant="contained"
-              disabled={isSubmitting || submitting || !isValid}
+              disabled={isSubmitting || submitting}
               sx={{ textTransform: "capitalize", width: "30%" }}
             >
               {submitting ? <CircularProgress size={24} color="inherit" /> : "Post Job"}

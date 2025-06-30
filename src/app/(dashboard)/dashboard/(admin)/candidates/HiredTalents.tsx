@@ -1,5 +1,4 @@
-
-// *React Imports
+// * React Imports
 import React, { useEffect, useState } from "react";
 
 // * Icon Imports
@@ -34,6 +33,10 @@ import TableRow from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
 import TableBody from "@mui/material/TableBody";
 import TablePagination from "@mui/material/TablePagination";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { Theme } from "@mui/material/styles";
 
@@ -91,14 +94,16 @@ interface Application {
 
 const HiredTalents = () => {
   const [openFilter, setOpenFilter] = useState<boolean>(false);
-  const [value, setValue] = useState<string>("");
-  const [status, setStatus] = useState<string>("");
+  const [searchValue, setSearchValue] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [anchorEl, setAnchorEl] = useState<(HTMLElement | null)[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [openDialog, setOpenDialog] = useState<boolean>(false);
+  const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
 
   const smallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up("md"));
 
@@ -109,7 +114,7 @@ const HiredTalents = () => {
         setLoading(true);
         const data = await getAppliedJob();
         // Filter for HIRED status
-        const hiredApplications = data.filter((app) => app.status === "HIRED");
+        const hiredApplications = data.filter((app: Application) => app.status === "HIRED");
         setApplications(hiredApplications);
         setAnchorEl(Array(hiredApplications.length).fill(null));
       } catch (err) {
@@ -137,7 +142,7 @@ const HiredTalents = () => {
     setPage(0);
   };
 
-  const handleRowOptionsClick = (event: any, index: number) => {
+  const handleRowOptionsClick = (event: React.MouseEvent<HTMLElement>, index: number) => {
     const newAnchorEl = [...anchorEl];
     newAnchorEl[index] = event.currentTarget;
     setAnchorEl(newAnchorEl);
@@ -149,10 +154,26 @@ const HiredTalents = () => {
     setAnchorEl(newAnchorEl);
   };
 
+  const handleViewClick = (application: Application) => {
+    setSelectedApplication(application);
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setSelectedApplication(null);
+  };
+
   const toggleFilter = () => setOpenFilter(!openFilter);
 
+  // Filter applications based on search and status
+  const filteredApplications = applications.filter((app) =>
+    app.user.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+    app.job.title.toLowerCase().includes(searchValue.toLowerCase())
+  );
+
   // Pagination logic
-  const paginatedApplications = applications.slice(
+  const paginatedApplications = filteredApplications.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
@@ -197,14 +218,14 @@ const HiredTalents = () => {
               <Grid item xs={6} sm={3}>
                 <CustomTextField
                   select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
                   size="small"
                   placeholder="Reviewed, Hired, Short..."
                   fullWidth
                   label="Status"
                 >
-                  <MenuItem value="0">Select Status</MenuItem>
+                  <MenuItem value="">Select Status</MenuItem>
                   <MenuItem value="PENDING">Pending</MenuItem>
                   <MenuItem value="SHORTLISTED">Shortlisted</MenuItem>
                   <MenuItem value="REVIEWED">Reviewed</MenuItem>
@@ -215,31 +236,31 @@ const HiredTalents = () => {
               <Grid item xs={6} sm={3}>
                 <CustomTextField
                   select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
                   size="small"
                   placeholder="Senior, mid-level, entry..."
                   fullWidth
                   label="Level of Experience"
                 >
-                  <MenuItem value="0">Select Level</MenuItem>
+                  <MenuItem value="">Select Level</MenuItem>
                   <MenuItem value="ENTRY">Entry Level</MenuItem>
                   <MenuItem value="INTERMEDIATE">Intermediate</MenuItem>
-                  <MenuItem value="MID">Mid-Level</MenuItem>
+                  <MenuItem value="MID">MId-Level</MenuItem>
                   <MenuItem value="SENIOR">Senior</MenuItem>
                 </CustomTextField>
               </Grid>
               <Grid item xs={6} sm={3}>
                 <CustomTextField
                   select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
                   size="small"
                   placeholder="less than 3..."
                   fullWidth
                   label="Years of Experience"
                 >
-                  <MenuItem value="0">Select Years of Experience</MenuItem>
+                  <MenuItem value="">Select Years of Experience</MenuItem>
                   <MenuItem value="1">Less than 1</MenuItem>
                   <MenuItem value="2">Less than 3</MenuItem>
                   <MenuItem value="3">More than 3</MenuItem>
@@ -249,14 +270,14 @@ const HiredTalents = () => {
               <Grid item xs={6} sm={3}>
                 <CustomTextField
                   select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
                   size="small"
                   placeholder="Month and Year..."
                   fullWidth
                   label="Date Applied"
                 >
-                  <MenuItem value="0">Date of Application</MenuItem>
+                  <MenuItem value="">Date of Application</MenuItem>
                   <MenuItem value="1">May 2025</MenuItem>
                   <MenuItem value="2">April 2025</MenuItem>
                   <MenuItem value="3">March 2025</MenuItem>
@@ -276,10 +297,10 @@ const HiredTalents = () => {
           }}
         >
           {smallScreen && <Typography variant="h6">Hired</Typography>}
-          {/* <Box sx={{ display: "flex", alignItems: "center", gap: 2, minWidth: 400 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, minWidth: { md: 400 } }}>
             <CustomTextField
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
               size="small"
               placeholder="Job title, company name, applicant"
               fullWidth
@@ -305,11 +326,11 @@ const HiredTalents = () => {
               }}
             >
               {smallScreen && (
-                <Typography sx={{ fontSize: ".857rem" }}> Filter</Typography>
+                <Typography sx={{ fontSize: ".857rem" }}>Filter</Typography>
               )}
               <Icon icon="basil:filter-outline" />
             </Button>
-          </Box> */}
+          </Box>
         </Box>
 
         <TableContainer component={Paper}>
@@ -343,7 +364,7 @@ const HiredTalents = () => {
                   <TableCell>
                     {new Date(item.created_at).toLocaleDateString()}
                   </TableCell>
-                  <TableCell align="center" sx={{ textTransform: "capitalize" }}>
+                  <TableCell align="center" sx={{ textTransform: "capitallze" }}>
                     <CustomChip
                       size="small"
                       skin="light"
@@ -366,22 +387,20 @@ const HiredTalents = () => {
                           disableScrollLock
                           anchorEl={anchorEl[i]}
                           open={Boolean(anchorEl[i])}
-                          onBlur={() => handleRowOptionsClose(i)}
+                          onClose={() => handleRowOptionsClose(i)}
                           anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                           transformOrigin={{ vertical: "top", horizontal: "right" }}
                           PaperProps={{ style: { minWidth: "8rem" } }}
                         >
-                          <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
-                            <Icon icon="tabler:edit" fontSize={20} />
-                            Edit
-                          </MenuItem>
-                          <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
+                          <MenuItem
+                            sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
+                            onClick={() => {
+                              handleViewClick(item);
+                              handleRowOptionsClose(i);
+                            }}
+                          >
                             <Icon icon="tabler:eye" fontSize={20} />
                             View
-                          </MenuItem>
-                          <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
-                            <Icon icon="fluent:delete-24-regular" fontSize={20} />
-                            Delete
                           </MenuItem>
                         </Menu>
                       </Avatar>
@@ -396,12 +415,80 @@ const HiredTalents = () => {
 
       <TablePagination
         component="div"
-        count={applications.length}
+        count={filteredApplications.length}
         page={page}
         onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
+
+      {/* View Dialog */}
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Application Details</DialogTitle>
+        <DialogContent>
+          {selectedApplication && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Typography variant="h6">User Information</Typography>
+              <Typography><strong>Name:</strong> {selectedApplication.user.name}</Typography>
+              <Typography><strong>Email:</strong> {selectedApplication.user.email}</Typography>
+              <Typography><strong>Phone:</strong> {selectedApplication.user.phone_number || "N/A"}</Typography>
+              <Typography><strong>Account Type:</strong> {selectedApplication.user.account_type}</Typography>
+              <Typography>
+                <strong>CV:</strong>{" "}
+                {selectedApplication.user.cv_upload ? (
+                  <a href={selectedApplication.user.cv_upload} target="_blank" rel="noopener noreferrer">
+                    View CV
+                  </a>
+                ) : (
+                  "N/A"
+                )}
+              </Typography>
+              <Typography>
+                <strong>Cover Letter:</strong>{" "}
+                {selectedApplication.user.cover_letter_upload ? (
+                  <a href={selectedApplication.user.cover_letter_upload} target="_blank" rel="noopener noreferrer">
+                    View Cover Letter
+                  </a>
+                ) : (
+                  "N/A"
+                )}
+              </Typography>
+              <Typography>
+                <strong>Portfolio:</strong>{" "}
+                {selectedApplication.user.portfolio_link ? (
+                  <a href={selectedApplication.user.portfolio_link} target="_blank" rel="noopener noreferrer">
+                    View Portfolio
+                  </a>
+                ) : (
+                  "N/A"
+                )}
+              </Typography>
+              
+              <Typography variant="h6" sx={{ mt: 2 }}>Job Information</Typography>
+              <Typography><strong>Job Title:</strong> {selectedApplication.job.title}</Typography>
+              <Typography><strong>Job Type:</strong> {selectedApplication.job.job_type}</Typography>
+              <Typography><strong>Location:</strong> {selectedApplication.job.location}</Typography>
+              <Typography>
+                <strong>Salary Range:</strong> {selectedApplication.job.currency}{" "}
+                {selectedApplication.job.minimum_salary} - {selectedApplication.job.maximum_salary}
+              </Typography>
+              <Typography>
+                <strong>Application Date:</strong>{" "}
+                {new Date(selectedApplication.created_at).toLocaleDateString()}
+              </Typography>
+              <Typography><strong>Status:</strong> {selectedApplication.status}</Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} variant="contained">Close</Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 };

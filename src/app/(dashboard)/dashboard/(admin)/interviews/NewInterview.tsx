@@ -1,25 +1,14 @@
-// *React Imports
 import { useState, useEffect } from "react";
-
-// *Icon Imports
 import Icon from "@/@core/component/icon";
-
-// *Custom Component Imports
 import CustomTextField from "@/@core/component/mui/text-field";
-
-// *Utility Imports
 import { interviewSchema as baseInterviewSchema } from "@/@core/formSchema";
 import * as yup from "yup";
-
-// *Third Party Imports
 import { Controller, useForm, SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { TimeField } from "@mui/x-date-pickers/TimeField";
 import Autocomplete from "@mui/material/Autocomplete";
 import dayjs from "dayjs";
-
-// *MUI Imports
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
@@ -32,19 +21,25 @@ import InputAdornment from "@mui/material/InputAdornment";
 
 import { scheduleInterview } from "@/@core/services/interviewService";
 import { getAppliedJob } from "@/@core/services/jobVanciesService";
+import { countryCodes } from "@/@core/utils/data";
 
-// Extend the schema to include jobId, phone number, address, and date/time validation
+// Interface for country code
+interface CountryCode {
+  code: string;
+  country: string;
+}
+
 const interviewSchema = baseInterviewSchema.shape({
   jobId: yup.number().min(1, "Please select a job").required("Job is required"),
   applicationId: yup.number().min(1, "Please select a candidate").required("Candidate is required"),
   interviewerPhone: yup
     .string()
     .required("Phone number is required")
-    .matches(/^\+234\d{10}$/, "Phone number must start with +234 followed by 10 digits"),
+    .matches(/^\+\d{1,3}\d{7,15}$/, "Phone number must include country code and 7-15 digits"),
   tboRepPhone: yup
     .string()
     .required("Phone number is required")
-    .matches(/^\+234\d{10}$/, "Phone number must start with +234 followed by 10 digits"),
+    .matches(/^\+\d{1,3}\d{7,15}$/, "Phone number must include country code and 7-15 digits"),
   information: yup.string().optional(),
   address: yup.string().when("format", {
     is: "In-Person",
@@ -76,7 +71,6 @@ const interviewSchema = baseInterviewSchema.shape({
     }),
 });
 
-// Assuming a new service to fetch jobs with applications
 interface Job {
   id: number;
   title: string;
@@ -246,6 +240,8 @@ const NewInterview = ({ open, close }: Props) => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<number>(0);
   const [loading, setLoading] = useState(false);
+  const [interviewerCountryCode, setInterviewerCountryCode] = useState<CountryCode>(countryCodes[0]);
+  const [tboRepCountryCode, setTboRepCountryCode] = useState<CountryCode>(countryCodes[0]);
 
   const {
     control,
@@ -260,7 +256,6 @@ const NewInterview = ({ open, close }: Props) => {
     resolver: yupResolver(interviewSchema),
   });
 
-  // Watch jobId, applicationId, and format
   const selectedJobIdValue = watch("jobId");
   const selectedApplicationId = watch("applicationId");
   const selectedFormat = watch("format");
@@ -310,7 +305,6 @@ const NewInterview = ({ open, close }: Props) => {
     }
   }, [selectedApplicationId, jobs, setValue]);
 
-  // Filter applications based on selected job
   const filteredApplications = jobs.find((job) => job.id === selectedJobIdValue)?.applications || [];
 
   const submitForm: SubmitHandler<IFormInput> = async (values) => {
@@ -321,12 +315,12 @@ const NewInterview = ({ open, close }: Props) => {
         user_id: values.userId,
         interview_date: values.interviewDate,
         interview_time: values.interviewTime,
-        interview_location: values.format, // Set to "In-Person" or "Virtual"
+        interview_location: values.format,
         interviewer_department: values.interviewerDepartment,
         interviewer_name: values.interviewerName,
+        interviewer_role: "",
         interviewer_email: values.interviewerEmail,
         interviewer_phone: values.interviewerPhone,
-        interviewer_role: "",
         tbo_rep_name: values.tboRepName,
         tbo_rep_email: values.tboRepEmail,
         tbo_rep_phone: values.tboRepPhone,
@@ -338,6 +332,8 @@ const NewInterview = ({ open, close }: Props) => {
       alert("Interview scheduled successfully!");
       reset();
       setSelectedJobId(0);
+      setInterviewerCountryCode(countryCodes[0]);
+      setTboRepCountryCode(countryCodes[0]);
       close();
     } catch (error) {
       console.error("Error scheduling interview:", error);
@@ -345,12 +341,14 @@ const NewInterview = ({ open, close }: Props) => {
     }
   };
 
-  // Handle phone number input to ensure +234 prefix
-  const handlePhoneChange = (value: string, onChange: (value: string) => void) => {
-    if (!value.startsWith("+234")) {
-      value = "+234" + value.replace(/^\+234/, "");
-    }
-    onChange(value);
+  const handlePhoneChange = (
+    value: string,
+    countryCode: string,
+    onChange: (value: string) => void
+  ) => {
+    const cleanedValue = value.replace(/[^0-9]/g, "");
+    const fullPhoneNumber = `${countryCode}${cleanedValue}`;
+    onChange(fullPhoneNumber);
   };
 
   return (
@@ -376,6 +374,7 @@ const NewInterview = ({ open, close }: Props) => {
               flex: 1,
               textAlign: "center",
               fontWeight: 600,
+              mx: 1,
               fontSize: { xs: "1rem", md: "1.2rem" },
               mr: "4rem",
             }}
@@ -387,7 +386,7 @@ const NewInterview = ({ open, close }: Props) => {
         <DialogContent
           sx={(theme) => ({
             pb: `${theme.spacing(4)} !important`,
-            px: [`${theme.spacing(4)} !important`],
+            px: `${theme.spacing(4)} !important`,
             m: theme.spacing(3),
             borderRadius: "10px",
             overflowY: "scroll",
@@ -537,25 +536,69 @@ const NewInterview = ({ open, close }: Props) => {
                 <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
                   Phone Number
                 </Typography>
-                <Controller
-                  name="interviewerPhone"
-                  control={control}
-                  rules={{ required: true }}
-                  render={({ field: { value, onChange } }) => (
-                    <CustomTextField
-                      fullWidth
-                      value={value}
-                      onChange={(e) => handlePhoneChange(e.target.value, onChange)}
-                      size="medium"
-                      placeholder="8100011111"
-                      error={Boolean(errors.interviewerPhone)}
-                      helperText={errors.interviewerPhone?.message}
-                      InputProps={{
-                        startAdornment: <InputAdornment position="start"></InputAdornment>,
+                <Grid container spacing={2}>
+                  <Grid item xs={4}>
+                    <Autocomplete
+                      options={countryCodes}
+                      getOptionLabel={(option) => `${option.code} (${option.country})`}
+                      value={interviewerCountryCode}
+                      onChange={(_, newValue) => {
+                        if (newValue) {
+                          setInterviewerCountryCode(newValue);
+                          const currentPhone = watch("interviewerPhone") || "";
+                          const cleanedPhone = currentPhone.replace(/^\+\d{1,3}/, "");
+                          setValue("interviewerPhone", `${newValue.code}${cleanedPhone}`);
+                        }
+                      }}
+                      renderInput={(params) => (
+                        <CustomTextField
+                          {...params}
+                          fullWidth
+                          size="medium"
+                          placeholder="Select country code"
+                          error={Boolean(errors.interviewerPhone)}
+                        />
+                      )}
+                      sx={{
+                        "& .MuiAutocomplete-option": {
+                          fontFamily: "'Inter', sans-serif",
+                          fontSize: "14px",
+                          color: "#333",
+                        },
+                        "& .MuiAutocomplete-option:hover": {
+                          backgroundColor: "#f0f0f0",
+                        },
+                        "& .MuiAutocomplete-option.Mui-focused": {
+                          backgroundColor: "#e0e0e0",
+                        },
+                        "& .MuiAutocomplete-inputRoot": { paddingRight: "30px !important" },
                       }}
                     />
-                  )}
-                />
+                  </Grid>
+                  <Grid item xs={8}>
+                    <Controller
+                      name="interviewerPhone"
+                      control={control}
+                      rules={{ required: true }}
+                      render={({ field: { value, onChange } }) => (
+                        <CustomTextField
+                          fullWidth
+                          value={value ? value.replace(interviewerCountryCode.code, "") : ""}
+                          onChange={(e) => handlePhoneChange(e.target.value, interviewerCountryCode.code, onChange)}
+                          size="medium"
+                          placeholder="Enter phone number"
+                          error={Boolean(errors.interviewerPhone)}
+                          helperText={errors.interviewerPhone?.message}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">{interviewerCountryCode.code}</InputAdornment>
+                            ),
+                          }}
+                        />
+                      )}
+                    />
+                  </Grid>
+                </Grid>
               </Grid>
             </Grid>
 
@@ -737,25 +780,69 @@ const NewInterview = ({ open, close }: Props) => {
                 <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>
                   TBO Phone Number
                 </Typography>
-                <Controller
-                  name="tboRepPhone"
-                  control={control}
-                  rules={{ required: true }}
-                  render={({ field: { value, onChange } }) => (
-                    <CustomTextField
-                      fullWidth
-                      value={value}
-                      onChange={(e) => handlePhoneChange(e.target.value, onChange)}
-                      size="medium"
-                      placeholder="8100011111"
-                      error={Boolean(errors.tboRepPhone)}
-                      helperText={errors.tboRepPhone?.message}
-                      InputProps={{
-                        startAdornment: <InputAdornment position="start"></InputAdornment>,
+                <Grid container spacing={2}>
+                  <Grid item xs={4}>
+                    <Autocomplete
+                      options={countryCodes}
+                      getOptionLabel={(option) => `${option.code} (${option.country})`}
+                      value={tboRepCountryCode}
+                      onChange={(_, newValue) => {
+                        if (newValue) {
+                          setTboRepCountryCode(newValue);
+                          const currentPhone = watch("tboRepPhone") || "";
+                          const cleanedPhone = currentPhone.replace(/^\+\d{1,3}/, "");
+                          setValue("tboRepPhone", `${newValue.code}${cleanedPhone}`);
+                        }
+                      }}
+                      renderInput={(params) => (
+                        <CustomTextField
+                          {...params}
+                          fullWidth
+                          size="medium"
+                          placeholder="Select country code"
+                          error={Boolean(errors.tboRepPhone)}
+                        />
+                      )}
+                      sx={{
+                        "& .MuiAutocomplete-option": {
+                          fontFamily: "'Inter', sans-serif",
+                          fontSize: "14px",
+                          color: "#333",
+                        },
+                        "& .MuiAutocomplete-option:hover": {
+                          backgroundColor: "#f0f0f0",
+                        },
+                        "& .MuiAutocomplete-option.Mui-focused": {
+                          backgroundColor: "#e0e0e0",
+                        },
+                        "& .MuiAutocomplete-inputRoot": { paddingRight: "30px !important" },
                       }}
                     />
-                  )}
-                />
+                  </Grid>
+                  <Grid item xs={8}>
+                    <Controller
+                      name="tboRepPhone"
+                      control={control}
+                      rules={{ required: true }}
+                      render={({ field: { value, onChange } }) => (
+                        <CustomTextField
+                          fullWidth
+                          value={value ? value.replace(tboRepCountryCode.code, "") : ""}
+                          onChange={(e) => handlePhoneChange(e.target.value, tboRepCountryCode.code, onChange)}
+                          size="medium"
+                          placeholder="Enter phone number"
+                          error={Boolean(errors.tboRepPhone)}
+                          helperText={errors.tboRepPhone?.message}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">{tboRepCountryCode.code}</InputAdornment>
+                            ),
+                          }}
+                        />
+                      )}
+                    />
+                  </Grid>
+                </Grid>
               </Grid>
               <Grid item xs={12}>
                 <Typography sx={{ fontWeight: 500, fontSize: "14px", mb: "10px" }}>

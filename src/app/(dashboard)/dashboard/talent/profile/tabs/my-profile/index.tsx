@@ -13,6 +13,7 @@ import {
   MenuItem,
   Select,
   InputLabel,
+  Stack,
   FormControl
 } from "@mui/material";
 import { Edit, DeleteOutlineOutlined, Save } from "@mui/icons-material";
@@ -217,22 +218,62 @@ const MyProfileTab = () => {
               <Typography sx={{ fontWeight: 600, color: '#39353D', fontSize: '16px' }}>Personal Information</Typography>
               <Typography sx={{ fontSize: '13px', mb: '10px' }}>Details about yourself</Typography>
             </Box>
-            <Box>
-              {editable ? (
-                <>
-                  <IconButton onClick={() => setEditable(false)} sx={{ mr: 1 }}>
-                    <DeleteOutlineOutlined />
-                  </IconButton>
-                  <IconButton onClick={savePersonalInfo}>
-                    <Save />
-                  </IconButton>
-                </>
-              ) : (
-                <IconButton onClick={() => setEditable(true)}>
-                  <Edit />
-                </IconButton>
-              )}
-            </Box>
+         
+<Box>
+  {editable ? (
+    <Stack direction="row" spacing={1} alignItems="center">
+      {/* Cancel Button */}
+      <Button
+        variant="outlined"
+        size="small"
+        onClick={() => setEditable(false)}
+        startIcon={<DeleteOutlineOutlined />}
+        sx={{
+          fontSize: '12px',
+          textTransform: 'none',
+          borderColor: '#D0D5DD',
+          borderRadius: '8px',
+          padding: '4px 12px',
+          color: '#667085',
+        }}
+      >
+        Cancel
+      </Button>
+
+      {/* Save Button */}
+      <Button
+        variant="contained"
+        size="small"
+        onClick={savePersonalInfo}
+        startIcon={<Save />}
+        sx={{
+          fontSize: '12px',
+          textTransform: 'none',
+          borderRadius: '8px',
+          padding: '4px 12px',
+        }}
+      >
+        Save
+      </Button>
+    </Stack>
+  ) : (
+    <Button
+      variant="contained"
+      size="small"
+      onClick={() => setEditable(true)}
+      startIcon={<Edit />}
+      sx={{
+        fontSize: '12px',
+        textTransform: 'none',
+        borderRadius: '8px',
+        padding: '4px 12px',
+      }}
+    >
+      Edit
+    </Button>
+  )}
+</Box>
+
           </Box>
 
           <Grid columnSpacing={4} rowSpacing={3} container>

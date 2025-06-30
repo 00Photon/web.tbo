@@ -22,6 +22,8 @@ const StyledDialog = styled(Dialog)`
     padding: 20px;
     background: #fff;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    max-width: 500px;
+    width: 100%;
   }
 `;
 
@@ -39,6 +41,7 @@ const DialogContentStyled = styled(DialogContent)`
 
 const DialogActionsStyled = styled(DialogActions)`
   justify-content: center;
+  padding-bottom: 20px;
 `;
 
 const ButtonStyled = styled(Button)`
@@ -47,7 +50,7 @@ const ButtonStyled = styled(Button)`
   font-size: 16px;
   font-weight: 600;
   border-radius: 8px;
-  margin: 10px;
+  margin: 0 8px;
   &.MuiButton-contained {
     background-color: #E61C31;
     color: white;
@@ -62,6 +65,16 @@ const ButtonStyled = styled(Button)`
     &:hover {
       background-color: #d9d9d9;
     }
+  }
+`;
+
+const ViewMoreButton = styled(Button)`
+  text-transform: none;
+  font-size: 14px;
+  color: #E61C31;
+  padding: 4px 8px;
+  &:hover {
+    background-color: #f8f9fa;
   }
 `;
 
@@ -102,8 +115,14 @@ const JobCard: React.FC<JobCardProps> = ({
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error" | "info">("error");
   const [openDialog, setOpenDialog] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  // Auto-close snackbar after 3 seconds
+  const DESCRIPTION_LIMIT = 200;
+  const truncatedDescription =
+    description.length > DESCRIPTION_LIMIT
+      ? `${description.slice(0, DESCRIPTION_LIMIT)}...`
+      : description;
+
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (openSnackbar) {
@@ -168,101 +187,138 @@ const JobCard: React.FC<JobCardProps> = ({
     setOpenSnackbar(false);
   };
 
+  const toggleDescription = () => {
+    setIsExpanded(!isExpanded);
+  };
+
   return (
     <Box
       sx={{
         border: "1px solid #E4E5E8",
         borderRadius: "8px",
-        padding: "20px",
+        padding: "24px",
         display: "flex",
         flexDirection: "column",
-        gap: 2,
+        gap: "16px",
+        backgroundColor: "#fff",
+        maxWidth: "600px",
+        margin: "0 auto",
+        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
       }}
     >
-      <Box sx={{ display: "flex", gap: 3 }}>
+      {/* Header Section */}
+      <Box sx={{ display: "flex", alignItems: "center", gap: "16px" }}>
         <Box
           sx={{
             backgroundColor: "#EDEFF5",
-            padding: "10px",
+            padding: "8px",
+            borderRadius: "4px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            alignSelf: "flex-start",
           }}
         >
           <Image
             src={logo || "/unknown.png"}
-            width={18}
-            height={18}
+            width={24}
+            height={24}
             alt={`${name} Logo`}
           />
         </Box>
-        <Box>
-          <Box>{name}</Box>
-          <Box>{location}</Box>
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, color: "#333" }}>
+            {name}
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#666" }}>
+            {location}
+          </Typography>
         </Box>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            gap: 2,
-          }}
-        >
-          <Box>
-            <Image
-              src="/icons/bookmark.svg"
-              width={18}
-              height={18}
-              alt="Bookmark Icon"
-            />
-          </Box>
-          <Box>{postedAt}</Box>
-        </Box>
-      </Box>
-      <Box>{title}</Box>
-      <Box sx={{ display: "flex", gap: 1 }}>
-        <Box>{commitment}</Box>
-        <Box>Salary: {salary}</Box>
-      </Box>
-      <Box>{description}</Box>
-      <Box sx={{ display: "flex", gap: 3 }}>
-        {[commitment, `${noOfApplied} Applied`, `${daysLeft} Days Left`].map(
-          (item, index) => (
-            <Box key={index} sx={{ display: "flex", alignItems: "center" }}>
-              <Image
-                src="/icons/location_marker.svg"
-                width={18}
-                height={18}
-                alt="Location Marker Icon"
-              />
-              {item}
-            </Box>
-          )
-        )}
-      </Box>
-      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-        <Box sx={{ display: "flex", gap: 3 }}>
-          {!hideSaveButton && (
-            <ButtonStyled
-              variant="outlined"
-              onClick={handleDialogOpen}
-              disabled={saved || isSaving}
-              aria-label="Save job"
-            >
-              {saved ? "Saved" : isSaving ? "Saving..." : "Save Job"}
-            </ButtonStyled>
-          )}
-          <ButtonStyled
-            variant="contained"
-            onClick={handleApplyJob}
-            aria-label="Apply for job"
-          >
-            Apply Now
-          </ButtonStyled>
+        <Box sx={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <Image
+            src="/icons/bookmark.svg"
+            width={18}
+            height={18}
+            alt="Bookmark Icon"
+          />
+          <Typography variant="body2" sx={{ color: "#666" }}>
+            {postedAt}
+          </Typography>
         </Box>
       </Box>
 
-      {/* Confirmation Dialog for Save Job */}
+      {/* Job Title */}
+      <Typography variant="h5" sx={{ fontWeight: 700, color: "#333" }}>
+        {title}
+      </Typography>
+
+      {/* Job Details */}
+      <Box sx={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+        <Typography variant="body2" sx={{ color: "#666" }}>
+          {commitment}
+        </Typography>
+        <Typography variant="body2" sx={{ color: "#666" }}>
+          Salary: {salary}
+        </Typography>
+      </Box>
+
+      {/* Description */}
+      <Box>
+        <Typography
+          variant="body1"
+          sx={{ color: "#333", lineHeight: 1.6, marginBottom: "8px" }}
+        >
+          {isExpanded ? description : truncatedDescription}
+        </Typography>
+        {description.length > DESCRIPTION_LIMIT && (
+          <ViewMoreButton onClick={toggleDescription} aria-label={isExpanded ? "View less" : "View more"}>
+            {isExpanded ? "View Less" : "View More"}
+          </ViewMoreButton>
+        )}
+      </Box>
+
+      {/* Metadata */}
+      <Box sx={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
+        {[
+          { icon: "/icons/location_marker.svg", text: commitment },
+          { icon: "/icons/location_marker.svg", text: `${noOfApplied} Applied` },
+          { icon: "/icons/location_marker.svg", text: `${daysLeft} Days Left` },
+        ].map((item, index) => (
+          <Box key={index} sx={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Image
+              src={item.icon}
+              width={18}
+              height={18}
+              alt="Icon"
+            />
+            <Typography variant="body2" sx={{ color: "#666" }}>
+              {item.text}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
+
+      {/* Action Buttons */}
+      <Box sx={{ display: "flex", justifyContent: "flex-end", gap: "16px" }}>
+        {!hideSaveButton && (
+          <ButtonStyled
+            variant="outlined"
+            onClick={handleDialogOpen}
+            disabled={saved || isSaving}
+            aria-label="Save job"
+          >
+            {saved ? "Saved" : isSaving ? "Saving..." : "Save Job"}
+          </ButtonStyled>
+        )}
+        <ButtonStyled
+          variant="contained"
+          onClick={handleApplyJob}
+          aria-label="Apply for job"
+        >
+          Apply Now
+        </ButtonStyled>
+      </Box>
+
+      {/* Confirmation Dialog */}
       <StyledDialog open={openDialog} onClose={handleDialogClose}>
         <DialogTitleStyled>Confirm Action</DialogTitleStyled>
         <DialogContentStyled>
@@ -288,7 +344,7 @@ const JobCard: React.FC<JobCardProps> = ({
         </DialogActionsStyled>
       </StyledDialog>
 
-      {/* Snackbar for success/error/info messages */}
+      {/* Snackbar */}
       <Snackbar
         open={openSnackbar}
         onClose={handleCloseSnackbar}
