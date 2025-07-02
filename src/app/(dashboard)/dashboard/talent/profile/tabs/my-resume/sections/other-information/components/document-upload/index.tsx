@@ -286,87 +286,90 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
       <Typography sx={{ fontWeight: 600, color: "#39353D", fontSize: "14px", mb: 1 }}>{label}</Typography>
       {description && <Typography sx={{ fontSize: "12px", color: "#666", mb: 2 }}>{description}</Typography>}
 
-      <Paper
-        sx={{
-          border: "2px dashed #D0D5DD",
-          borderRadius: "12px",
-          padding: "20px",
-          textAlign: "center",
-          backgroundColor: fileData ? "#f8f9fa" : "transparent",
-          transition: "all 0.2s ease-in-out",
-          "&:hover": {
-            borderColor: fileData ? "#D0D5DD" : "#1976d2",
-            backgroundColor: fileData ? "#f8f9fa" : "#f5f5f5",
-          },
-        }}
-      >
-        {isUploading ? (
-          <Box sx={{ width: "100%", textAlign: "center" }}>
-            <Typography sx={{ fontSize: "14px", color: "#666", mb: 2 }}>
-              Uploading {uploadProgress}%
-            </Typography>
-            <LinearProgress variant="determinate" value={uploadProgress} sx={{ mb: 2 }} />
-          </Box>
-        ) : fileData ? (
-          <Box>
-            <Box sx={{ mb: 2 }}>{renderThumbnail()}</Box>
-            <Box sx={{ mb: 2 }}>
-              <Tooltip title={fileData.name}>
-                <Typography
-                  sx={{
-                    fontSize: "14px",
-                    fontWeight: 500,
-                    color: "#333",
-                    mb: 0.5,
-                  }}
-                >
-                  {formatFileName(fileData.name)}
-                </Typography>
-              </Tooltip>
-              <Box sx={{ display: "flex", justifyContent: "center", gap: 1, flexWrap: "wrap" }}>
-                <Chip
-                  label={fileData.type === "application/pdf" ? "PDF" : fileData.type.split("/")[1]?.toUpperCase()}
-                  size="small"
-                  sx={{ fontSize: "10px", height: "20px" }}
-                />
-                {canPreviewFile(fileData.type, fileData.url) && (
-                  <Chip label="Previewable" size="small" color="success" sx={{ fontSize: "10px", height: "20px" }} />
-                )}
-              </Box>
-            </Box>
-            <Box sx={{ display: "flex", justifyContent: "center", gap: 1, flexWrap: "wrap" }}>
-              {canPreviewFile(fileData.type, fileData.url) && (
-                <Button size="small" startIcon={<Visibility />} onClick={handlePreview} sx={{ textTransform: "none" }}>
-                  Preview
-                </Button>
-              )}
-              <Button size="small" startIcon={<Download />} onClick={handleDownload} sx={{ textTransform: "none" }}>
-                Download
-              </Button>
-              <IconButton size="small" onClick={onRemove} color="error">
-                <Delete />
-              </IconButton>
-            </Box>
-          </Box>
-        ) : (
-          <Box>
-            <CloudUpload sx={{ fontSize: 48, color: "#D0D5DD", mb: 2 }} />
-            <Typography sx={{ fontSize: "14px", color: "#666", mb: 2 }}>Click to upload or drag and drop</Typography>
-            <input
-              type="file"
-              accept={accept}
-              onChange={handleFileChange}
-              style={{ display: "none" }}
-              id={`file-input-${label}`}
-            />
-            <label htmlFor={`file-input-${label}`}>
-              <Button component="span" variant="outlined" startIcon={<CloudUpload />} sx={{ textTransform: "none" }}>
-                Choose File
-              </Button>
-            </label>
-          </Box>
+     <Paper
+  sx={{
+    border: "2px dashed #D0D5DD",
+    borderRadius: "12px",
+    padding: "20px",
+    textAlign: "center",
+    minHeight: "250px", // Fixed height
+    backgroundColor: fileData ? "#f8f9fa" : "transparent",
+    transition: "all 0.2s ease-in-out",
+    "&:hover": {
+      borderColor: fileData ? "#D0D5DD" : "#1976d2",
+      backgroundColor: fileData ? "#f8f9fa" : "#f5f5f5",
+    },
+  }}
+>
+  {isUploading ? (
+    <Box sx={{ width: "100%", textAlign: "center" }}>
+      <Typography sx={{ fontSize: "14px", color: "#666", mb: 2 }}>
+        Uploading {uploadProgress}%
+      </Typography>
+      <LinearProgress variant="determinate" value={uploadProgress} sx={{ mb: 2 }} />
+    </Box>
+  ) : fileData ? (
+    <Box>
+      <Box sx={{ mb: 2 }}>{renderThumbnail()}</Box>
+      <Box sx={{ mb: 2 }}>
+        <Tooltip title={fileData.name}>
+          <Typography
+            sx={{
+              fontSize: "14px",
+              fontWeight: 500,
+              color: "#333",
+              mb: 0.5,
+            }}
+          >
+            {formatFileName(fileData.name)}
+          </Typography>
+        </Tooltip>
+        <Box sx={{ display: "flex", justifyContent: "center", gap: 1, flexWrap: "wrap" }}>
+          <Chip
+            label={fileData.type === "application/pdf" ? "PDF" : fileData.type.split("/")[1]?.toUpperCase()}
+            size="small"
+            sx={{ fontSize: "10px", height: "20px" }}
+          />
+          {canPreviewFile(fileData.type, fileData.url) && (
+            <Chip label="Previewable" size="small" color="success" sx={{ fontSize: "10px", height: "20px" }} />
+          )}
+        </Box>
+      </Box>
+      <Box sx={{ display: "flex", justifyContent: "center", gap: 1, flexWrap: "wrap" }}>
+        {canPreviewFile(fileData.type, fileData.url) && (
+          <Button size="small" startIcon={<Visibility />} onClick={handlePreview} sx={{ textTransform: "none" }}>
+            Preview
+          </Button>
         )}
-      </Paper>
+        <Button size="small" startIcon={<Download />} onClick={handleDownload} sx={{ textTransform: "none" }}>
+          Download
+        </Button>
+        <IconButton size="small" onClick={onRemove} color="error">
+          <Delete />
+        </IconButton>
+      </Box>
+    </Box>
+  ) : (
+    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", minHeight: "160px" }}>
+      <Box sx={{ width: "100%", height: "120px", mb: 2, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <CloudUpload sx={{ fontSize: 48, color: "#D0D5DD" }} />
+      </Box>
+      <Typography sx={{ fontSize: "14px", color: "#666", mb: 2 }}>Click to upload or drag and drop</Typography>
+      <input
+        type="file"
+        accept={accept}
+        onChange={handleFileChange}
+        style={{ display: "none" }}
+        id={`file-input-${label}`}
+      />
+      <label htmlFor={`file-input-${label}`}>
+        <Button component="span" variant="outlined" startIcon={<CloudUpload />} sx={{ textTransform: "none" }}>
+          Choose File
+        </Button>
+      </label>
+    </Box>
+  )}
+</Paper>
 
       <Dialog
         open={previewOpen}
