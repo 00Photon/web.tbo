@@ -18,7 +18,6 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import MenuItem from "@mui/material/MenuItem";
 import InputAdornment from "@mui/material/InputAdornment";
-
 import { scheduleInterview } from "@/@core/services/interviewService";
 import { getAppliedJob } from "@/@core/services/jobVanciesService";
 import { countryCodes } from "@/@core/utils/data";

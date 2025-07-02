@@ -157,8 +157,8 @@ const TalentsTabs = ({ tab }: TabProps) => {
   }, [tab]);
 
   const tabContentList = {
-    all: <Talents />,
-    underReview: <Unreviewed />,
+    all: <Unreviewed />,
+    // underReview: <Unreviewed />,
     reviewed: <Reviewed />,
     interviewed: <Interviewed />,
     shortlisted: <Shortlisted />,
@@ -219,7 +219,7 @@ const TalentsTabs = ({ tab }: TabProps) => {
                           </Box>
                         }
                       />
-                      <Tab
+                      {/* <Tab
                         value="underReview"
                         label={
                           <Box
@@ -234,7 +234,7 @@ const TalentsTabs = ({ tab }: TabProps) => {
                             {!hideText && "Under Review"}
                           </Box>
                         }
-                      />
+                      /> */}
                      
                      
                       <Tab

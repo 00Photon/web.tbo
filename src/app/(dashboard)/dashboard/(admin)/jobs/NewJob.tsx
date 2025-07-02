@@ -29,7 +29,7 @@ interface Props {
 
 interface IFormInput {
   title: string;
-  type: "FULLTIME" | "PARTTIME" | "CONTRACT" | "INTERNSHIP" | "FREELANCE";
+  type: "FULL TIME" | "PART TIME" | "CONTRACT" | "INTERNSHIP" | "FREELANCE";
   description: string;
   requirement: string;
   skills: string[];
@@ -52,7 +52,7 @@ interface Client {
 
 const defaultValues: IFormInput = {
   title: "",
-  type: "FULLTIME",
+  type: "FULL TIME",
   description: "",
   requirement: "",
   skills: [],
@@ -321,8 +321,8 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
                         error={Boolean(errors.type)}
                         helperText={errors.type?.message}
                       >
-                        <MenuItem value="FULLTIME">Full Time</MenuItem>
-                        <MenuItem value="PARTTIME">Part Time</MenuItem>
+                        <MenuItem value="FULL TIME">Full Time</MenuItem>
+                        <MenuItem value="PART TIME">Part Time</MenuItem>
                         <MenuItem value="CONTRACT">Contract</MenuItem>
                         <MenuItem value="INTERNSHIP">Internship</MenuItem>
                         <MenuItem value="FREELANCE">Freelance</MenuItem>

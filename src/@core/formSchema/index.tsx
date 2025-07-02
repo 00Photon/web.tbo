@@ -68,8 +68,8 @@ export const passwordSchema = yup.object().shape({
 export const newJobSchema = yup.object().shape({
   title: yup.string().max(255).required(),
   type: yup
-    .mixed<"FULLTIME" | "PARTTIME" | "CONTRACT" | "INTERNSHIP" | "FREELANCE">()
-    .oneOf(["FULLTIME", "PARTTIME", "CONTRACT", "INTERNSHIP", "FREELANCE"])
+    .mixed<"FULL TIME" | "PART TIME" | "CONTRACT" | "INTERNSHIP" | "FREELANCE">()
+    .oneOf(["FULL TIME", "PART TIME", "CONTRACT", "INTERNSHIP", "FREELANCE"])
     .required(),
   description: yup.string().required(),
   requirement: yup.string().required(),
@@ -118,8 +118,8 @@ export const newJobSchema = yup.object().shape({
 export const newJobSchema2 = yup.object().shape({
   title: yup.string().max(255, "Title must be at most 255 characters").required(),
   type: yup
-    .mixed<"FULLTIME" | "PARTTIME" | "INTERNSHIP" | "FREELANCE">()
-    .oneOf(["FULLTIME", "PARTTIME", "INTERNSHIP", "FREELANCE"])
+    .mixed<"FULL TIME" | "PART TIME" | "INTERNSHIP" | "FREELANCE">()
+    .oneOf(["FULL TIME", "PART TIME", "INTERNSHIP", "FREELANCE"])
     .required(),
   description: yup.string().required(),
   requirement: yup.string().required(),

@@ -30,10 +30,9 @@ import CloseIcon from '@mui/icons-material/Close';
 
 // Define dropdown options to match client side
 const industryOptions = ['consultancy', 'technology', 'travel', 'logistic', 'education'];
-const employeeOptions = ['10-50', '50-100', '100-200', '200+'];
+const employeeOptions = ['1-10', '10-50', '50-100', '100-500', '500+'];
 const employerOptions = ['private', 'public', 'government', 'other'];
 const countryCodes = [{ code: '+234', label: '+234 (Nigeria)' }];
-
 interface ModalProps {
   open: boolean;
   onClose: () => void;
@@ -81,24 +80,24 @@ const ClientModal: React.FC<ModalProps> = ({ open, onClose, client, onClientUpda
   };
 
   // Validation function to match client side
-  const validateForm = () => {
-    const errors: string[] = [];
-    if (!formData.company_name?.trim()) errors.push('Company name is required.');
-    if (!formData.company_email_address?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.company_email_address)) {
-      errors.push('A valid company email address is required.');
-    }
-    if (!formData.country_code) errors.push('Country code is required.');
-    if (!formData.phone_number?.trim() || !/^\d{7,15}$/.test(formData.phone_number)) {
-      errors.push('Phone number must be 7-15 digits long.');
-    }
-    if (!formData.industry) errors.push('Industry selection is required.');
-    if (!formData.number_of_employees) errors.push('Number of employees is required.');
-    if (!formData.type_of_employer) errors.push('Type of employer is required.');
-    if (!formData.company_address?.trim()) errors.push('Company address is required.');
-    if (!formData.country?.trim()) errors.push('Country is required.');
-    if (!formData.position_in_company?.trim()) errors.push('Position in company is required.');
-    return errors;
-  };
+const validateForm = () => {
+  const errors: string[] = [];
+  if (!formData.company_name?.trim()) errors.push('Company name is required.');
+  if (!formData.company_email_address?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.company_email_address)) {
+    errors.push('A valid company email address is required.');
+  }
+  if (!formData.country_code) errors.push('Country code is required.');
+  if (!formData.phone_number?.trim() || !/^\d{7,15}$/.test(formData.phone_number)) {
+    errors.push('Phone number must be 7-15 digits long.');
+  }
+  if (!formData.industry) errors.push('Industry selection is required.');
+  if (!formData.number_of_employees) errors.push('Number of employees is required.');
+  if (!formData.type_of_employer) errors.push('Type of employer is required.');
+  if (!formData.company_address?.trim()) errors.push('Company address is required.');
+  if (!formData.country?.trim()) errors.push('Country is required.');
+  if (!formData.position_in_company?.trim()) errors.push('Position in company is required.');
+  return errors;
+};
 
   const handleSave = () => {
     const validationErrors = validateForm();
@@ -364,39 +363,40 @@ const handleInputChange = (field: keyof ClientData, value: string | number) => {
                   <Grid item xs={12}>
                     {renderEditableField('Phone Number', 'phone_number', client.phone_number)}
                   </Grid>
-                  <Grid item xs={12}>
-                    {isEditing ? (
-                      <TextField
-                        label="Website"
-                        value={formData.company_website || client.company_website || ''}
-                        onChange={(e) => handleInputChange('company_website', e.target.value)}
-                        fullWidth
-                        size="small"
-                        sx={{ mb: 2 }}
-                        disabled={isLoading}
-                      />
-                    ) : (
-                      <>
-                        <Typography variant="subtitle2" color="text.secondary">
-                          Website
-                        </Typography>
-                        <Typography
-                          component="a"
-                          href={client.company_website || '#'}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          sx={{
-                            color: client.company_website ? 'primary.main' : 'text.secondary',
-                            textDecoration: 'none',
-                            '&:hover': { textDecoration: client.company_website ? 'underline' : 'none' },
-                            mb: 2,
-                          }}
-                        >
-                          {renderField(client.company_website)}
-                        </Typography>
-                      </>
-                    )}
-                  </Grid>
+                <Grid item xs={12}>
+                  {isEditing ? (
+                    <TextField
+                      label="Website"
+                      value={formData.company_website || client.company_website || ''}
+                      onChange={(e) => handleInputChange('company_website', e.target.value)}
+                      fullWidth
+                      size="small"
+                      sx={{ mb: 2 }}
+                      disabled={isLoading}
+                    
+                    />
+                  ) : (
+                    <>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Website
+                      </Typography>
+                      <Typography
+                        component="a"
+                        href={client.company_website || '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{
+                          color: client.company_website ? 'primary.main' : 'text.secondary',
+                          textDecoration: 'none',
+                          '&:hover': { textDecoration: client.company_website ? 'underline' : 'none' },
+                          mb: 2,
+                        }}
+                      >
+                        {renderField(client.company_website)}
+                      </Typography>
+                    </>
+                  )}
+                </Grid>
                 </>
               )}
               {activeTab === 'account' && (
@@ -407,9 +407,7 @@ const handleInputChange = (field: keyof ClientData, value: string | number) => {
                   <Grid item xs={12}>
                     {renderEditableField('Position in Company', 'position_in_company', client.position_in_company)}
                   </Grid>
-                  {/* <Grid item xs={12}>
-                    {renderEditableField('Status', 'status', client.status)}
-                  </Grid> */}
+                
                 </>
               )}
             </Grid>

@@ -202,6 +202,7 @@ const JobCard: React.FC<JobCardProps> = ({
         gap: "16px",
         backgroundColor: "#fff",
         maxWidth: "600px",
+        minHeight: "450px", // Increased height to accommodate description
         margin: "0 auto",
         boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
       }}
@@ -262,7 +263,7 @@ const JobCard: React.FC<JobCardProps> = ({
       </Box>
 
       {/* Description */}
-      <Box>
+      <Box sx={{ flex: 1, minHeight: "120px" }}> {/* Added flex and minHeight for description space */}
         <Typography
           variant="body1"
           sx={{ color: "#333", lineHeight: 1.6, marginBottom: "8px" }}
@@ -301,7 +302,7 @@ const JobCard: React.FC<JobCardProps> = ({
       <Box sx={{ display: "flex", justifyContent: "flex-end", gap: "16px" }}>
         {!hideSaveButton && (
           <ButtonStyled
-            variant="outlined"
+            variant="contained" // Changed to contained for consistency with Apply Now
             onClick={handleDialogOpen}
             disabled={saved || isSaving}
             aria-label="Save job"
@@ -317,6 +318,8 @@ const JobCard: React.FC<JobCardProps> = ({
           Apply Now
         </ButtonStyled>
       </Box>
+
+
 
       {/* Confirmation Dialog */}
       <StyledDialog open={openDialog} onClose={handleDialogClose}>

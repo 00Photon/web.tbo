@@ -93,8 +93,8 @@ export default function TalentJobVacanciesPage() {
   };
 
   const jobTypeMap: { [key: string]: string } = {
-    "Full Time": "FULLTIME",
-    "Part Time": "PARTTIME",
+    "Full Time": "FULL TIME",
+    "Part Time": "PART TIME",
     "Contract": "CONTRACT",
     "Internship": "INTERNSHIP",
     "Freelance": "FREELANCE",
