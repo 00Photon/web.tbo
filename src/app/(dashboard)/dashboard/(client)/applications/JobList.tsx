@@ -345,8 +345,62 @@ const EditJobModal: React.FC<{
   );
 };
 
+const JobDetailsModal: React.FC<{
+  open: boolean;
+  job: Job | null;
+  close: () => void;
+}> = ({ open, job, close }) => {
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (job) {
+      setLoading(false);
+    }
+  }, [job]);
+
+  if (loading) {
+    return <Typography>Loading...</Typography>;
+  }
+
+  if (!job) {
+    return <Typography></Typography>;
+  }
+
+  return (
+    <Dialog open={open} onClose={close} maxWidth="md" fullWidth>
+      <DialogTitle>{job.title}</DialogTitle>
+      <DialogContent>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
+          <Typography variant="h6">Job Details</Typography>
+          <Typography><strong>Type:</strong> {job.job_type}</Typography>
+          <Typography><strong>Location:</strong> {job.location}</Typography>
+          <Typography><strong>Salary:</strong> {job.currency} {job.minimum_salary} - {job.maximum_salary}</Typography>
+          <Typography><strong>Deadline:</strong> {new Date(job.application_deadline).toLocaleDateString()}</Typography>
+          <Typography><strong>Status:</strong> {job.status}</Typography>
+          <Typography><strong>Applicants:</strong> {job.applicant_count}</Typography>
+          
+          <Typography variant="h6" sx={{ mt: 2 }}>Description</Typography>
+          <Typography>{job.description}</Typography>
+          
+          <Typography variant="h6" sx={{ mt: 2 }}>Requirements</Typography>
+          <Typography>{job.requirements}</Typography>
+          
+          <Typography variant="h6" sx={{ mt: 2 }}>Skills</Typography>
+          <Typography>{job.skills.join(", ")}</Typography>
+          
+          <Typography variant="h6" sx={{ mt: 2 }}>Additional Info</Typography>
+          <Typography>{job.additional_info}</Typography>
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={close}>Close</Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 const JobListTable: React.FC = () => {
- const [jobs, setJobs] = useState<Job[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [openFilter, setOpenFilter] = useState<boolean>(false);
   const [value, setValue] = useState<string>("");
   const [status, setStatus] = useState<string>("");
@@ -356,6 +410,7 @@ const JobListTable: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<(HTMLElement | null)[]>([]);
   const [openPostJobModal, setOpenPostJobModal] = useState(false);
   const [openEditJobModal, setOpenEditJobModal] = useState(false);
+  const [openJobDetailsModal, setOpenJobDetailsModal] = useState(false);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [totalJobs, setTotalJobs] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -408,7 +463,7 @@ const JobListTable: React.FC = () => {
     return result;
   }, [jobs, status, jobType, value]);
 
- useEffect(() => {
+  useEffect(() => {
     setTotalJobs(filteredJobs.length);
     setPage(0);
   }, [filteredJobs]);
@@ -459,6 +514,16 @@ const JobListTable: React.FC = () => {
 
   const handleCloseEditModal = () => {
     setOpenEditJobModal(false);
+    setSelectedJob(null);
+  };
+
+  const handleOpenJobDetailsModal = (job: Job) => {
+    setSelectedJob(job);
+    setOpenJobDetailsModal(true);
+  };
+
+  const handleCloseJobDetailsModal = () => {
+    setOpenJobDetailsModal(false);
     setSelectedJob(null);
   };
 
@@ -527,7 +592,7 @@ const JobListTable: React.FC = () => {
       }}
     >
       <CardContent sx={{ p: { xs: 2, md: 4 } }}>
-      <Collapse
+        <Collapse
           easing={"ease-in-out"}
           in={openFilter}
           timeout={500}
@@ -730,10 +795,17 @@ const JobListTable: React.FC = () => {
                               <Icon icon="tabler:edit" fontSize={20} />
                               Edit
                             </MenuItem>
+                            <MenuItem
+                              sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}
+                              onClick={() => handleOpenJobDetailsModal(item)}
+                            >
+                              <Icon icon="tabler:eye" fontSize={20} />
+                              View Job Details
+                            </MenuItem>
                             <MenuItem sx={{ fontSize: ".85rem", "& svg": { mr: 2 } }}>
                               <Icon icon="tabler:eye" fontSize={20} />
                               <Link href={`/dashboard/applications/${item.id}`}>
-                                View
+                                View Application
                               </Link>
                             </MenuItem>
                             <MenuItem
@@ -772,6 +844,11 @@ const JobListTable: React.FC = () => {
         close={handleCloseEditModal}
         onJobUpdated={handleJobUpdated}
       />
+      <JobDetailsModal
+        open={openJobDetailsModal}
+        job={selectedJob}
+        close={handleCloseJobDetailsModal}
+      />
       <ConfirmDialog
         open={confirmDialogOpen}
         title="Delete Job?"
@@ -779,63 +856,6 @@ const JobListTable: React.FC = () => {
         onCancel={handleCancelDelete}
         onConfirm={handleConfirmDelete}
       />
-    </Card>
-  );
-};
-
-export const JobDetail: React.FC<{ jobId: string }> = ({ jobId }) => {
-  const [job, setJob] = useState<Job | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchJob = async () => {
-      try {
-        setLoading(true);
-        const response = await fetchJobsclinetsById(jobId);
-        if (response.status) {
-          setJob(response.job);
-        }
-      } catch (error) {
-        console.error("Error fetching job:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchJob();
-  }, [jobId]);
-
-  if (loading) {
-    return <Typography>Loading...</Typography>;
-  }
-
-  if (!job) {
-    return <Typography>Job not found</Typography>;
-  }
-
-  return (
-    <Card sx={{ m: 4 }}>
-      <CardHeader title={job.title} />
-      <CardContent>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <Typography variant="h6">Job Details</Typography>
-          <Typography><strong>Type:</strong> {job.job_type}</Typography>
-          <Typography><strong>Location:</strong> {job.location}</Typography>
-          <Typography><strong>Salary:</strong> {job.currency} {job.minimum_salary} - {job.maximum_salary}</Typography>
-          <Typography><strong>Deadline:</strong> {new Date(job.application_deadline).toLocaleDateString()}</Typography>
-          <Typography><strong>Status:</strong> {job.status}</Typography>
-          <Typography><strong>Applicants:</strong> {job.applicant_count}</Typography>
-          
-          <Typography variant="h6" sx={{ mt: 2 }}>Description</Typography>
-          <Typography>{job.description}</Typography>
-          
-          <Typography variant="h6" sx={{ mt: 2 }}>Requirements</Typography>
-          <Typography>{job.requirements}</Typography>
-          
-          <Typography variant="h6" sx={{ mt: 2 }}>Additional Info</Typography>
-          <Typography>{job.additional_info}</Typography>
-        </Box>
-      </CardContent>
     </Card>
   );
 };
