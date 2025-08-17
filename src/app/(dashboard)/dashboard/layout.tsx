@@ -10,6 +10,7 @@ import SmallNav from './components/nav/small';
 import ConfirmationModal from '@/@core/utils/modals/confirmation';
 import { signOut } from 'next-auth/react';
 import Image from 'next/image';
+import InactivityLogout from '../InactivityLogout'; 
 
 export default function DashboardLayout({
   children,
@@ -25,6 +26,7 @@ export default function DashboardLayout({
 
   return (
     <>
+      <InactivityLogout /> {/* Add the auto-logout component here */}
       <SmallNav
         setOpenNavBar={setOpenNav}
         openNavBar={openNav}

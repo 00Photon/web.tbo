@@ -1,6 +1,7 @@
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { API_BASE_URL } from "@/@core/utils/constants"
+import { API_BASE_URL } from "@/@core/utils/constants";
+
 interface APIResponse {
   status: boolean;
   access_token: string;
@@ -32,8 +33,6 @@ export const authOptions: NextAuthOptions = {
           body: JSON.stringify(credentials),
           headers: { 'Content-Type': 'application/json' },
         });
-        
-        
 
         const data = (await res.json()) as APIResponse;
 
@@ -79,6 +78,9 @@ export const authOptions: NextAuthOptions = {
       session.user.expiresIn = token.expiresIn as number;
       return session;
     },
+  },
+  session: {
+    maxAge: 20 * 60, // 20 minutes in seconds
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

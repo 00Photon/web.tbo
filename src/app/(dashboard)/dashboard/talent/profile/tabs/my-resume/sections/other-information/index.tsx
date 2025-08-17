@@ -12,6 +12,7 @@ interface FileData {
   type: string
 }
 
+
 interface FilePreviews {
   cv_upload: FileData | null
   cover_letter_upload: FileData | null

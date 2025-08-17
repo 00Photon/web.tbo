@@ -29,15 +29,15 @@ import {
 import { conversationData } from "@/@core/component/data/message-data"
 import type { ConversationData } from "@/@core/component/data/message-data"
 
-export default function InboxPage() {
+export default function HirePage() {
   const [selectedConversation, setSelectedConversation] = useState<ConversationData | null>(conversationData[0])
   const [searchQuery, setSearchQuery] = useState("")
   const [newMessage, setNewMessage] = useState("")
 
   const filteredConversations = conversationData.filter(
     (conversation) =>
-      conversation.talentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      conversation.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()),
+      conversation.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      conversation.companyName.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
   const handleSendMessage = () => {
@@ -70,15 +70,25 @@ export default function InboxPage() {
 
   return (
     <Box sx={{ width: "100%" }}>
+      {/* Header */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h1" sx={{ mb: 1 }}>
+          Hiring
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          Manage hiring conversations and communications
+        </Typography>
+      </Box>
+
       {/* Main Content - Fixed height container */}
-      <Box sx={{ display: "flex", height: "calc(100vh - 140px)", gap: 3 }}>
+      <Box sx={{ display: "flex", height: "calc(100vh - 200px)", gap: 3 }}>
         {/* Conversations List - Left Panel */}
         <Box sx={{ width: 400, minWidth: 350 }}>
           <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
             {/* Search Header */}
             <CardContent sx={{ p: 3, pb: 2 }}>
               <TextField
-                placeholder="Search talents or jobs..."
+                placeholder="Search jobs or companies..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 size="small"
@@ -100,7 +110,7 @@ export default function InboxPage() {
               <List sx={{ p: 0 }}>
                 {filteredConversations.map((conversation) => {
                   const isSelected = selectedConversation?.id === conversation.id
-                  const talent = conversation.participants.find((p) => p.role === "Talent")
+                  const company = conversation.participants.find((p) => p.role === "Company")
 
                   return (
                     <ListItem key={conversation.id} sx={{ p: 0 }}>
@@ -123,16 +133,16 @@ export default function InboxPage() {
                             variant="dot"
                             sx={{
                               "& .MuiBadge-badge": {
-                                backgroundColor: talent?.isOnline ? "#44b700" : "#bdbdbd",
-                                color: talent?.isOnline ? "#44b700" : "#bdbdbd",
+                                backgroundColor: company?.isOnline ? "#44b700" : "#bdbdbd",
+                                color: company?.isOnline ? "#44b700" : "#bdbdbd",
                                 width: 12,
                                 height: 12,
                                 border: "2px solid white",
                               },
                             }}
                           >
-                            <Avatar src={conversation.talentAvatar} sx={{ width: 48, height: 48 }}>
-                              {conversation.talentName[0]}
+                            <Avatar src={company?.avatar} sx={{ width: 48, height: 48 }}>
+                              {conversation.jobTitle[0]}
                             </Avatar>
                           </Badge>
                         </ListItemAvatar>
@@ -152,14 +162,14 @@ export default function InboxPage() {
                                 mr: 1,
                               }}
                             >
-                              {conversation.talentName}
+                              {conversation.jobTitle}
                             </Typography>
                             <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
                               {conversation.lastMessageTime}
                             </Typography>
                           </Box>
 
-                          {/* Secondary text with job title and unread count */}
+                          {/* Secondary text with company name and unread count */}
                           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
                             <Typography
                               variant="body2"
@@ -174,7 +184,7 @@ export default function InboxPage() {
                                 fontWeight: 500,
                               }}
                             >
-                              {conversation.jobTitle}
+                              {conversation.companyName}
                             </Typography>
                             {conversation.unreadCount > 0 && (
                               <Chip
@@ -230,11 +240,11 @@ export default function InboxPage() {
                         variant="dot"
                         sx={{
                           "& .MuiBadge-badge": {
-                            backgroundColor: selectedConversation.participants.find((p) => p.role === "Talent")
+                            backgroundColor: selectedConversation.participants.find((p) => p.role === "Company")
                               ?.isOnline
                               ? "#44b700"
                               : "#bdbdbd",
-                            color: selectedConversation.participants.find((p) => p.role === "Talent")?.isOnline
+                            color: selectedConversation.participants.find((p) => p.role === "Company")?.isOnline
                               ? "#44b700"
                               : "#bdbdbd",
                             width: 12,
@@ -243,17 +253,20 @@ export default function InboxPage() {
                           },
                         }}
                       >
-                        <Avatar src={selectedConversation.talentAvatar} sx={{ width: 48, height: 48 }}>
-                          {selectedConversation.talentName[0]}
+                        <Avatar
+                          src={selectedConversation.participants.find((p) => p.role === "Company")?.avatar}
+                          sx={{ width: 48, height: 48 }}
+                        >
+                          {selectedConversation.jobTitle[0]}
                         </Avatar>
                       </Badge>
                       <Box>
                         <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                          {selectedConversation.talentName}
+                          {selectedConversation.jobTitle}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {selectedConversation.jobTitle} •{" "}
-                          {selectedConversation.participants.find((p) => p.role === "Talent")?.isOnline
+                          {selectedConversation.companyName} •{" "}
+                          {selectedConversation.participants.find((p) => p.role === "Company")?.isOnline
                             ? "Online"
                             : "Offline"}
                         </Typography>
@@ -268,7 +281,7 @@ export default function InboxPage() {
                 {/* Messages Area */}
                 <Box sx={{ flex: 1, overflow: "auto", p: 3, bgcolor: "#FAFAFA" }}>
                   {selectedConversation.messages.map((message, index) => {
-                    const isOwnMessage = message.senderName === "TBO Admin"
+                    const isOwnMessage = message.senderName === "You"
                     const showDate =
                       index === 0 ||
                       formatDate(message.timestamp) !== formatDate(selectedConversation.messages[index - 1].timestamp)

@@ -1,390 +1,523 @@
-"use client";
+"use client"
+
+import { useState, useMemo } from "react"
 import {
-  Badge,
   Box,
-  Button,
-  Grid,
-  Stack,
-  TextField,
   Typography,
-} from "@mui/material";
-import { Restore, Search, Person } from "@mui/icons-material";
-import JobCard from "./components/cards/job";
-import JobFilter from "./components/filter";
-import { useEffect, useState, useMemo } from "react";
-import { Job } from "@/@core/services/types/job";
-import { getJobs, saveJob } from "@/@core/services/jobVanciesService";
-import ApplicationFormModal from "./components/modals/application-form";
-import SavedJobsTab from "./components/saved-jobs";
+  Card,
+  CardContent,
+  TextField,
+  Button,
+  InputAdornment,
+  Checkbox,
+  FormControlLabel,
+  FormGroup,
+  Chip,
+  Avatar,
+  Link,
+  Pagination,
+} from "@mui/material"
+import {
+  Search as SearchIcon,
+  Refresh as RefreshIcon,
+  Work as WorkIcon,
+  Group as GroupIcon,
+  Schedule as ScheduleIcon,
+  Bookmark as BookmarkIcon,
+  ArrowBack as ArrowBackIcon,
+  ArrowForward as ArrowForwardIcon,
+} from "@mui/icons-material"
+import { opportunityData } from "@/@core/component/data/opportunity-data"
+import { OpportunityDetailModal } from "@/@core/component/modals/opportunity-detail-modal"
+import type { OpportunityData } from "@/@core/component/data/opportunity-data"
 
+export default function OpportunitiesPage() {
+  const [searchQuery, setSearchQuery] = useState("")
+  const [jobTypeFilters, setJobTypeFilters] = useState<string[]>([])
+  const [locationFilters, setLocationFilters] = useState<string[]>([])
+  const [selectedOpportunity, setSelectedOpportunity] = useState<OpportunityData | null>(null)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
-type JobFilterOption = {
-  label: string;
-  checkState: boolean;
-};
+  const jobTypes = ["Full Time", "Part Time", "Contract", "Internship", "Freelance"]
+  const locations = ["Hybrid", "Remote", "Onsite"]
 
-export default function TalentJobVacanciesPage() {
-  const [activeTab, setActiveTab] = useState(0);
-  const [openApplicationFormModal, setOpenApplicationFormModal] = useState(false);
-  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({
-    jobType: [] as string[],
-    experience: [] as string[],
-    location: [] as string[],
-  });
-  const [searchParams, setSearchParams] = useState({
-    titleOrCompany: "",
-  });
+  const filteredOpportunities = useMemo(() => {
+    return opportunityData.filter((opportunity) => {
+      const matchesSearch =
+        opportunity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        opportunity.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        opportunity.description.toLowerCase().includes(searchQuery.toLowerCase())
 
-  const hoverTabStyle = {
-    backgroundColor: "#F5F0F0",
-    color: "#E61C31",
-  };
+      const matchesJobType = jobTypeFilters.length === 0 || jobTypeFilters.includes(opportunity.jobType)
+      const matchesLocation = locationFilters.length === 0 || locationFilters.includes(opportunity.location)
 
-  const handleSaveJob = async (jobId: number) => {
-    try {
-      await saveJob(jobId);
-      alert("Job saved successfully!");
-    } catch {
-      alert("Failed to save job.");
+      return matchesSearch && matchesJobType && matchesLocation
+    })
+  }, [searchQuery, jobTypeFilters, locationFilters])
+
+  const pageCount = Math.ceil(filteredOpportunities.length / itemsPerPage)
+  const paginatedOpportunities = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    return filteredOpportunities.slice(startIndex, startIndex + itemsPerPage)
+  }, [filteredOpportunities, currentPage])
+
+  const handleJobTypeChange = (jobType: string, checked: boolean) => {
+    if (checked) {
+      setJobTypeFilters([...jobTypeFilters, jobType])
+    } else {
+      setJobTypeFilters(jobTypeFilters.filter((type) => type !== jobType))
     }
-  };
+    setCurrentPage(1) // Reset to first page on filter change
+  }
 
-  const tabs = [
-    { icon: <Person />, name: "Job List" },
-    { icon: <Badge />, name: "Saved Jobs" },
-  ];
-
-  useEffect(() => {
-    const fetchJobs = async () => {
-      try {
-        const data = await getJobs();
-        setJobs(data);
-      } catch (error) {
-        console.error("Error fetching jobs:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchJobs();
-  }, []);
-
-  const handleFilterChange = (filterType: string, selectedOptions: string[]) => {
-    setFilters((prev) => ({
-      ...prev,
-      [filterType]: selectedOptions,
-    }));
-  };
-
-  const handleSearch = (params: { titleOrCompany: string }) => {
-    setSearchParams(params);
-  };
+  const handleLocationChange = (location: string, checked: boolean) => {
+    if (checked) {
+      setLocationFilters([...locationFilters, location])
+    } else {
+      setLocationFilters(locationFilters.filter((loc) => loc !== location))
+    }
+    setCurrentPage(1) // Reset to first page on filter change
+  }
 
   const handleReset = () => {
-    // Reset all filters and search parameters to their initial state
-    setFilters({
-      jobType: [],
-      experience: [],
-      location: [],
-    });
-    setSearchParams({ titleOrCompany: "" });
-  };
+    setSearchQuery("")
+    setJobTypeFilters([])
+    setLocationFilters([])
+    setCurrentPage(1) // Reset to first page on reset
+  }
 
-  const jobTypeMap: { [key: string]: string } = {
-    "Full Time": "FULL TIME",
-    "Part Time": "PART TIME",
-    "Contract": "CONTRACT",
-    "Internship": "INTERNSHIP",
-    "Freelance": "FREELANCE",
-  };
+  const clearJobTypes = () => {
+    setJobTypeFilters([])
+    setCurrentPage(1) // Reset to first page
+  }
 
-  const parseExperience = (requirements: string): string | null => {
-    const lowerReq = requirements.toLowerCase();
-    if (lowerReq.includes("5+ years") || lowerReq.includes("5 years and above")) {
-      return "5years and above";
-    } else if (lowerReq.includes("2-5 years") || lowerReq.includes("2 to 5 years")) {
-      return "2-5 Years";
-    } else if (
-      lowerReq.includes("0-1 year") ||
-      lowerReq.includes("1 year") ||
-      lowerReq.includes("less than 1 year")
-    ) {
-      return "0-1year";
+  const clearLocations = () => {
+    setLocationFilters([])
+    setCurrentPage(1) // Reset to first page
+  }
+
+  const handleCardClick = (opportunity: OpportunityData) => {
+    setSelectedOpportunity(opportunity)
+    setModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setModalOpen(false)
+    setSelectedOpportunity(null)
+  }
+
+  const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
+    setCurrentPage(page)
+  }
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1)
     }
-    return null;
-  };
+  }
 
-  const filteredJobs = useMemo(() => {
-    return jobs.filter((job) => {
-      const matchesJobType =
-        filters.jobType.length === 0 ||
-        filters.jobType.some((displayLabel) => job.job_type === jobTypeMap[displayLabel]);
-
-      const jobExperience = parseExperience(job.requirements);
-      const matchesExperience =
-        filters.experience.length === 0 ||
-        (jobExperience && filters.experience.includes(jobExperience));
-
-      const matchesLocation =
-        filters.location.length === 0 ||
-        filters.location.includes(job.location);
-
-      const matchesTitleOrCompany =
-        !searchParams.titleOrCompany ||
-        job.title.toLowerCase().includes(searchParams.titleOrCompany.toLowerCase()) ||
-        (job.client?.company_name || "").toLowerCase().includes(searchParams.titleOrCompany.toLowerCase());
-
-      return matchesJobType && matchesExperience && matchesLocation && matchesTitleOrCompany;
-    });
-  }, [jobs, filters, searchParams]);
-
-  if (loading) {
-    return <Typography>Loading...</Typography>;
+  const handleNextPage = () => {
+    if (currentPage < pageCount) {
+      setCurrentPage(currentPage + 1)
+    }
   }
 
   return (
-    <main>
-      <Box>
-        <Box
-          sx={{
-            display: "flex",
-            mb: "20px",
-            flexDirection: { xs: "column", sm: "row" },
-            gap: { xs: 2, sm: 0 },
-          }}
-        >
-          <Stack flexGrow={1} gap={1}>
-            <Typography
-              sx={{ fontWeight: 600, color: "#39353D", fontSize: "20px" }}
-            >
-              Job Vacancies
-            </Typography>
-            <Typography sx={{ fontSize: "13px", mb: "14px" }}>
-              See jobs posted by people around the world
-            </Typography>
-          </Stack>
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            {tabs.map((tab, index) => (
-              <Box
-                onClick={() => setActiveTab(index)}
-                key={index}
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#98A2B3",
-                  border: "1px solid #EEEEEE",
-                  px: "10px",
-                  py: "5px",
-                  cursor: "pointer",
-                  "&:hover": hoverTabStyle,
-                  ...(activeTab === index && hoverTabStyle),
-                }}
-              >
-                {tab.icon}
-                <Typography sx={{ fontSize: "14px", ml: "5px" }}>
-                  {tab.name}
-                </Typography>
-              </Box>
-            ))}
-          </Box>
+    <Box sx={{ width: "100%" }}>
+      {/* Header */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
+          Find Your Dream Job
+        </Typography>
+
+        {/* Search Bar */}
+        <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+          <TextField
+            placeholder="Job Title, Company name or Anything"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value)
+              setCurrentPage(1) // Reset to first page on search
+            }}
+            fullWidth
+            sx={{ maxWidth: 400 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: "text.secondary" }} />
+                </InputAdornment>
+              ),
+            }}
+          />
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={handleReset}
+            sx={{
+              color: "#E61C31",
+              borderColor: "#E61C31",
+              "&:hover": {
+                borderColor: "#E61C31",
+                bgcolor: "#FEF2F2",
+              },
+            }}
+          >
+            Reset
+          </Button>
+          <Button
+            variant="contained"
+            sx={{
+              bgcolor: "#E61C31",
+              "&:hover": {
+                bgcolor: "#DC2626",
+              },
+            }}
+          >
+            Search
+          </Button>
         </Box>
       </Box>
 
-      {activeTab === 0 ? (
-        <>
-          <Box
-            sx={{
-              mb: "20px",
-              display: "flex",
-              flexDirection: "column",
-              gap: 3,
-              backgroundColor: "white",
-              padding: "20px",
-              borderRadius: "8px",
-              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-            }}
-          >
-            <Box>
-              <Typography
-                sx={{ fontWeight: 600, color: "#2D2D2D", fontSize: "18px" }}
-              >
-                Find Your Dream Job
-              </Typography>
-            </Box>
-            <Box
-              sx={{
-                display: "flex",
-                gap: { xs: 4, md: 5 },
-                flexDirection: { xs: "column", md: "row" },
-                alignItems: "center",
-              }}
-            >
-              <Grid flexGrow={1} columnSpacing={3} rowSpacing={3} container>
-                <Grid xs={12} lg={6} item>
-                  <TextField
-                    placeholder="Job Title, Company name or Anything"
-                    value={searchParams.titleOrCompany}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setSearchParams((prev) => ({
-                        ...prev,
-                        titleOrCompany: e.target.value,
-                      }))
-                    }
-                    InputProps={{
-                      startAdornment: <Search sx={{ color: "#6B7280", mr: 1 }} />,
-                      sx: {
-                        height: "40px",
-                        borderRadius: "4px",
-                        "& .MuiOutlinedInput-notchedOutline": {
-                          borderColor: "#D1D5DB",
-                        },
-                        "&:hover .MuiOutlinedInput-notchedOutline": {
-                          borderColor: "#9CA3AF",
-                        },
-                        "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                          borderColor: "#E61C31",
-                        },
-                        "& input": {
-                          padding: "8px 12px",
-                        },
-                      },
-                    }}
-                    fullWidth
-                    variant="outlined"
-                  />
-                </Grid>
-              </Grid>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 2,
-                }}
-              >
-                <Button
-                  variant="outlined"
+      {/* Main Content */}
+      <Box sx={{ display: "flex", gap: 4 }}>
+        {/* Filters Sidebar */}
+        <Box sx={{ width: 280, flexShrink: 0 }}>
+          {/* Job Type Filter */}
+          <Card sx={{ mb: 3 }}>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Job Type
+                </Typography>
+                <Link
+                  component="button"
+                  variant="body2"
+                  onClick={clearJobTypes}
                   sx={{
-                    textTransform: "none",
                     color: "#E61C31",
-                    borderColor: "#E61C31",
+                    textDecoration: "none",
                     "&:hover": {
-                      borderColor: "#C8102E",
-                      backgroundColor: "#FFF5F5",
+                      textDecoration: "underline",
                     },
                   }}
-                  onClick={handleReset}
                 >
-                  <Restore sx={{ marginRight: "5px", color: "#E61C31" }} />
-                  Reset
-                </Button>
-                <Button
-                  variant="contained"
-                  sx={{
-                    textTransform: "none",
-                    backgroundColor: "#E61C31",
-                    "&:hover": {
-                      backgroundColor: "#C8102E",
-                    },
-                  }}
-                  onClick={() => handleSearch(searchParams)}
-                >
-                  Search
-                </Button>
+                  Clear
+                </Link>
               </Box>
-            </Box>
-          </Box>
-
-          <Grid columnSpacing={3} container>
-            <Grid
-              sm={4}
-              md={4}
-              lg={3}
-              item
-              sx={{ display: { xs: "none", sm: "block" } }}
-            >
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                <JobFilter
-                  title={"Job Type"}
-                  options={[
-                    { label: "Full Time", checkState: false },
-                    { label: "Part Time", checkState: false },
-                    { label: "Contract", checkState: false },
-                    { label: "Internship", checkState: false },
-                    { label: "Freelance", checkState: false },
-                  ] as JobFilterOption[]}
-                  onFilterChange={(selected: string[]) => handleFilterChange("jobType", selected)}
-                />
-                {/* <JobFilter
-                  title={"Experience"}
-                  options={[
-                    { label: "0-1year", checkState: false },
-                    { label: "2-5 Years", checkState: false },
-                    { label: "5years and above", checkState: false },
-                  ] as JobFilterOption[]}
-                  onFilterChange={(selected: string[]) => handleFilterChange("experience", selected)}
-                /> */}
-                <JobFilter
-                  title={"Location"}
-                  options={[
-                    { label: "Hybrid", checkState: false },
-                    { label: "Remote", checkState: false },
-                    { label: "Onsite", checkState: false },
-                  ] as JobFilterOption[]}
-                  onFilterChange={(selected: string[]) => handleFilterChange("location", selected)}
-                />
-              </Box>
-            </Grid>
-            <Grid sm={8} md={8} lg={9} item>
-              <Grid rowSpacing={3} columnSpacing={3} container>
-                {filteredJobs.length > 0 ? (
-                  filteredJobs.map((job) => (
-                    <Grid key={job.id} xs={12} lg={6} item>
-                      <JobCard
-                        id={job.id}
-                        logo={job.client?.company_logo ?? "/icons/default-logo.png"}
-                        name={job.client?.company_name ?? "Unknown Company"}
-                        location={job.location}
-                        title={job.title}
-                        commitment={job.job_type}
-                        salary={`${job.currency} ${job.minimum_salary} - ${job.maximum_salary}`}
-                        description={job.description}
-                        noOfApplied={job.applicant_count.toString()}
-                        postedAt={new Date(job.created_at).toLocaleDateString()}
-                        daysLeft={Math.ceil(
-                          (new Date(job.application_deadline).getTime() - new Date().getTime()) /
-                            (1000 * 60 * 60 * 24)
-                        ).toString()}
-                        setOpenApplicationFormModal={(jobId: number) => {
-                          setSelectedJobId(jobId);
-                          setOpenApplicationFormModal(true);
+              <FormGroup>
+                {jobTypes.map((jobType) => (
+                  <FormControlLabel
+                    key={jobType}
+                    control={
+                      <Checkbox
+                        checked={jobTypeFilters.includes(jobType)}
+                        onChange={(e) => handleJobTypeChange(jobType, e.target.checked)}
+                        sx={{
+                          color: "#E61C31",
+                          "&.Mui-checked": {
+                            color: "#E61C31",
+                          },
                         }}
                       />
-                    </Grid>
-                  ))
-                ) : (
-                  <Typography>No jobs match the selected filters.</Typography>
-                )}
-              </Grid>
-            </Grid>
-          </Grid>
-        </>
-      ) : (
-        <SavedJobsTab />
-      )}
+                    }
+                    label={jobType}
+                    sx={{ mb: 0.5 }}
+                  />
+                ))}
+              </FormGroup>
+            </CardContent>
+          </Card>
 
-      <ApplicationFormModal
-        open={openApplicationFormModal}
-        onClose={() => {
-          setOpenApplicationFormModal(false);
-          setSelectedJobId(null);
-        }}
-        newApplication
-        jobId={selectedJobId === null ? undefined : selectedJobId}
-      />
-    </main>
-  );
+          {/* Location Filter */}
+          <Card>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Location
+                </Typography>
+                <Link
+                  component="button"
+                  variant="body2"
+                  onClick={clearLocations}
+                  sx={{
+                    color: "#E61C31",
+                    textDecoration: "none",
+                    "&:hover": {
+                      textDecoration: "underline",
+                    },
+                  }}
+                >
+                  Clear
+                </Link>
+              </Box>
+              <FormGroup>
+                {locations.map((location) => (
+                  <FormControlLabel
+                    key={location}
+                    control={
+                      <Checkbox
+                        checked={locationFilters.includes(location)}
+                        onChange={(e) => handleLocationChange(location, e.target.checked)}
+                        sx={{
+                          color: "#E61C31",
+                          "&.Mui-checked": {
+                            color: "#E61C31",
+                          },
+                        }}
+                      />
+                    }
+                    label={location}
+                    sx={{ mb: 0.5 }}
+                  />
+                ))}
+              </FormGroup>
+            </CardContent>
+          </Card>
+        </Box>
+
+        {/* Job Cards - Using CSS Grid for exactly 2 cards per row */}
+        <Box sx={{ flex: 1 }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                md: "repeat(2, 1fr)",
+              },
+              gap: 3,
+            }}
+          >
+            {paginatedOpportunities.map((opportunity) => (
+              <Card
+                key={opportunity.id}
+                onClick={() => handleCardClick(opportunity)}
+                sx={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  cursor: "pointer",
+                  "&:hover": {
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                    transform: "translateY(-2px)",
+                    transition: "all 0.2s ease",
+                  },
+                }}
+              >
+                <CardContent sx={{ p: 3, flex: 1, display: "flex", flexDirection: "column" }}>
+                  {/* Header */}
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                      <Avatar src={opportunity.companyLogo} sx={{ width: 48, height: 48 }}>
+                        {opportunity.companyName[0]}
+                      </Avatar>
+                      <Box>
+                        <Typography variant="body2" sx={{ color: "#E61C31" }}>
+                          {opportunity.location}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary">
+                      {opportunity.postedDate}
+                    </Typography>
+                  </Box>
+
+                  {/* Job Title */}
+                  <Typography variant="h5" sx={{ fontWeight: 600, mb: 2 }}>
+                    {opportunity.title}
+                  </Typography>
+
+                  {/* Job Details */}
+                  <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+                    <Chip
+                      label={opportunity.jobType.toUpperCase()}
+                      size="small"
+                      sx={{
+                        bgcolor: "#FEF2F2",
+                        color: "#E61C31",
+                        fontWeight: 500,
+                      }}
+                    />
+                    <Typography variant="body2" color="text.secondary">
+                      Salary: {opportunity.currency} {opportunity.salaryRange}
+                    </Typography>
+                  </Box>
+
+                  {/* Skills */}
+                  <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                    Skill
+                  </Typography>
+
+                  {/* Description */}
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flex: 1 }}>
+                    {opportunity.description}
+                  </Typography>
+
+                  <Link
+                    component="button"
+                    variant="body2"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleCardClick(opportunity)
+                    }}
+                    sx={{
+                      color: "#E61C31",
+                      textDecoration: "none",
+                      alignSelf: "flex-start",
+                      mb: 3,
+                      "&:hover": {
+                        textDecoration: "underline",
+                      },
+                    }}
+                  >
+                    View More
+                  </Link>
+
+                  {/* Footer */}
+                  <Box sx={{ mt: "auto" }}>
+                    {/* Stats */}
+                    <Box sx={{ display: "flex", gap: 3, mb: 2 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                        <WorkIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                        <Typography variant="body2" color="text.secondary">
+                          {opportunity.jobType.toUpperCase()}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                        <GroupIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                        <Typography variant="body2" color="text.secondary">
+                          {opportunity.applicationsCount} Applied
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                        <ScheduleIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                        <Typography variant="body2" color="text.secondary">
+                          {opportunity.daysLeft} Days Left
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    {/* Action Buttons */}
+                    <Box sx={{ display: "flex", gap: 2 }}>
+                      <Button
+                        variant="contained"
+                        startIcon={<BookmarkIcon />}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          console.log("Save job:", opportunity.title)
+                        }}
+                        sx={{
+                          bgcolor: "#E61C31",
+                          "&:hover": {
+                            bgcolor: "#DC2626",
+                          },
+                          flex: 1,
+                        }}
+                      >
+                        Save Job
+                      </Button>
+                      <Button
+                        variant="contained"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          console.log("Apply to:", opportunity.title)
+                        }}
+                        sx={{
+                          bgcolor: "#E61C31",
+                          "&:hover": {
+                            bgcolor: "#DC2626",
+                          },
+                          flex: 1,
+                        }}
+                      >
+                        Apply Now
+                      </Button>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            ))}
+          </Box>
+
+          {filteredOpportunities.length === 0 && (
+            <Box sx={{ textAlign: "center", py: 8 }}>
+              <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+                No opportunities found
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Try adjusting your search criteria or filters
+              </Typography>
+            </Box>
+          )}
+
+          {filteredOpportunities.length > 0 && (
+            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 2, mt: 4 }}>
+              <Button
+                variant="outlined"
+                startIcon={<ArrowBackIcon />}
+                onClick={handlePreviousPage}
+                disabled={currentPage === 1}
+                sx={{
+                  color: "#E61C31",
+                  borderColor: "#E61C31",
+                  "&:hover": {
+                    borderColor: "#E61C31",
+                    bgcolor: "#FEF2F2",
+                  },
+                  "&.Mui-disabled": {
+                    color: "#B0B0B0",
+                    borderColor: "#B0B0B0",
+                  },
+                }}
+              >
+                Previous
+              </Button>
+              <Pagination
+                count={pageCount}
+                page={currentPage}
+                onChange={handlePageChange}
+                color="primary"
+                sx={{
+                  "& .MuiPaginationItem-root": {
+                    color: "#E61C31",
+                    "&.Mui-selected": {
+                      bgcolor: "#E61C31",
+                      color: "white",
+                      "&:hover": {
+                        bgcolor: "#DC2626",
+                      },
+                    },
+                  },
+                }}
+              />
+              <Button
+                variant="outlined"
+                endIcon={<ArrowForwardIcon />}
+                onClick={handleNextPage}
+                disabled={currentPage === pageCount}
+                sx={{
+                  color: "#E61C31",
+                  borderColor: "#E61C31",
+                  "&:hover": {
+                    borderColor: "#E61C31",
+                    bgcolor: "#FEF2F2",
+                  },
+                  "&.Mui-disabled": {
+                    color: "#B0B0B0",
+                    borderColor: "#B0B0B0",
+                  },
+                }}
+              >
+                Next
+              </Button>
+            </Box>
+          )}
+        </Box>
+      </Box>
+
+      {/* Opportunity Detail Modal */}
+      <OpportunityDetailModal opportunity={selectedOpportunity} open={modalOpen} onClose={handleCloseModal} />
+    </Box>
+  )
 }

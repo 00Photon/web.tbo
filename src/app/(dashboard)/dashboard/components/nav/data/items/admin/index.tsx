@@ -21,6 +21,11 @@ export const adminNavItemsData = [
     path: "/dashboard/jobs",
   },
   {
+    icon: <CasesOutlined />,
+    name: "Requests",
+    path: "/dashboard/requests",
+  },
+  {
     icon: <StorageRounded />,
     name: "Companies",
     path: "/dashboard/clients",
@@ -34,6 +39,16 @@ export const adminNavItemsData = [
     icon: <Person />,
     name: "Admin",
     path: "/dashboard/admin-management",
+  },
+   {
+    icon: <Person />,
+    name: "Hire",
+    path: "/dashboard/company-hire",
+  },
+   {
+    icon: <Person />,
+    name: "Inbox",
+    path: "/dashboard/talent-inbox",
   },
   {
     icon: <TodayTwoTone />,

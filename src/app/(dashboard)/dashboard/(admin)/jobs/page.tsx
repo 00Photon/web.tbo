@@ -6,7 +6,7 @@ import JobList from "./JobList";
 const JobManager = () => {
   return (
     <>
-      <StatHeader />
+      {/* <StatHeader /> */}
       <JobList />
     </>
   );

@@ -18,7 +18,7 @@ export const talentNavItemsData = [
     },
     {
         icon: <List />,
-        name: 'Job Vacancies',
+        name: 'Opportunities',
         path: '/dashboard/talent/job-vacancies'
     },
     {

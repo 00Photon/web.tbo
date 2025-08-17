@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Box, Grid } from '@mui/material';
 import CustomChip from '@/@core/component/mui/chip';
-import Icon from '@/@core/component/icon';
 
 interface Job {
   id: number;
@@ -9,7 +8,7 @@ interface Job {
   job_type: string;
   description: string;
   requirements: string;
-  skill: string;
+  skill: string | string[]; // Handle both string and array
   currency: string;
   salary_type: string;
   minimum_salary: string;
@@ -23,7 +22,6 @@ interface Job {
   updated_at: string;
   status: string;
   applicant_count: number;
-  applications: { id: number; name: string; status: string }[];
   postingDate?: string; // Optional, as in original interface
   expirationDate?: string; // Optional, as in original interface
 }
@@ -37,8 +35,18 @@ interface JobDetailsModalProps {
 const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ open, close, job }) => {
   if (!job) return null;
 
-  // Parse skills JSON string to array
-  const skills = job.skill ? JSON.parse(job.skill) as string[] : [];
+  // Parse skills: handle both JSON string and comma-separated string
+  const skills = useMemo(() => {
+    if (Array.isArray(job.skill)) return job.skill;
+    if (!job.skill) return [];
+    try {
+      // Attempt to parse as JSON
+      return JSON.parse(job.skill) as string[];
+    } catch {
+      // Fallback to splitting comma-separated string
+      return job.skill.split(',').map((s) => s.trim()).filter((s) => s);
+    }
+  }, [job.skill]);
 
   return (
     <Dialog
@@ -54,9 +62,9 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ open, close, job }) =
           <CustomChip
             label={job.status.charAt(0).toUpperCase() + job.status.slice(1)}
             color={
-              job.status === 'active' ? 'success' :
-              job.status === 'pending' ? 'warning' :
-              job.status === 'rejected' ? 'error' : 'default'
+              job.status.toLowerCase() === 'active' ? 'success' :
+              job.status.toLowerCase() === 'pending' ? 'warning' :
+              job.status.toLowerCase() === 'rejected' ? 'error' : 'default'
             }
             skin="light"
             size="small"
@@ -65,7 +73,6 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ open, close, job }) =
       </DialogTitle>
       <DialogContent>
         <Grid container spacing={3}>
-         
           <Grid item xs={12} sm={6}>
             <Typography variant="subtitle2" color="text.secondary">Job Type</Typography>
             <Typography variant="body1">{job.job_type}</Typography>
@@ -80,7 +87,7 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ open, close, job }) =
           </Grid>
           <Grid item xs={12} sm={6}>
             <Typography variant="subtitle2" color="text.secondary">Application Deadline</Typography>
-            <Typography variant="body1">{job.application_deadline}</Typography>
+            <Typography variant="body1">{new Date(job.application_deadline).toLocaleDateString()}</Typography>
           </Grid>
           <Grid item xs={12} sm={6}>
             <Typography variant="subtitle2" color="text.secondary">Applicants</Typography>
@@ -128,8 +135,6 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ open, close, job }) =
               <Typography variant="body1">{job.additional_info}</Typography>
             </Grid>
           )}
-         
-         
         </Grid>
       </DialogContent>
       <DialogActions>
