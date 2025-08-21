@@ -132,7 +132,7 @@ export default function InterviewsPage() {
     <Box sx={{ width: "100%" }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h1" sx={{ mb: 1 }}>
+        <Typography variant="h4" sx={{ mb: 1 }}>
           Interview Calendar
         </Typography>
       </Box>
@@ -251,7 +251,7 @@ export default function InterviewsPage() {
         <CardContent sx={{ p: 4 }}>
           {/* Interviews Header */}
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-            <Typography variant="h4" sx={{ fontWeight: 600, color: "#E61C31" }}>
+            <Typography variant="h5" sx={{ fontWeight: 600, color: "#E61C31" }}>
               Interviews
             </Typography>
             <Button

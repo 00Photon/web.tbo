@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState } from "react"
+import { useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -14,7 +14,7 @@ import {
   Grid,
   Chip,
   Avatar,
-} from "@mui/material"
+} from "@mui/material";
 import {
   LocationOn as LocationIcon,
   CalendarToday as CalendarIcon,
@@ -23,73 +23,96 @@ import {
   Description as DescriptionIcon,
   Favorite as FavoriteIcon,
   Close as CloseIcon,
-} from "@mui/icons-material"
-import { InterestModal, NewJobMessageModal } from "@/@core/component/modals/interest-modal"
-import { JobSelectionModal } from "@/@core/component/modals/job-selection-modal"
-import { SuccessModal } from "@/@core/component/modals/success-modal"
-import type { TalentData } from "./talent-table"
+} from "@mui/icons-material";
+import { InterestModal, NewJobMessageModal } from "@/@core/component/modals/interest-modal";
+import { JobSelectionModal } from "@/@core/component/modals/job-selection-modal";
+import { SuccessModal } from "@/@core/component/modals/success-modal";
+import type { TalentDetailsData } from "@/@core/services/clientTalent"; // Adjust import
 
 interface JobData {
-  id: string
-  title: string
-  department: string
+  id: string;
+  title: string;
+  department: string;
 }
 
 interface TalentProfileProps {
-  talent: TalentData
-  open: boolean
-  onClose: () => void
-  onInterested: () => void
-  onNotInterested: () => void
-  jobs: JobData[]
+  talent: TalentDetailsData["talent"];
+  open: boolean;
+  onClose: () => void;
+  onInterested: (data: any) => void;
+  onNotInterested: () => void;
+  jobs: JobData[];
 }
 
-export function TalentProfile({ talent, open, onClose, onInterested, onNotInterested, jobs }: TalentProfileProps) {
-  const [interestModalOpen, setInterestModalOpen] = useState(false)
-  const [newJobMessageModalOpen, setNewJobMessageModalOpen] = useState(false)
-  const [jobSelectionModalOpen, setJobSelectionModalOpen] = useState(false)
-  const [selectedJob, setSelectedJob] = useState("")
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false)
+export function TalentProfile({
+  talent,
+  open,
+  onClose,
+  onInterested,
+  onNotInterested,
+  jobs,
+}: TalentProfileProps) {
+  const [interestModalOpen, setInterestModalOpen] = useState(false);
+  const [newJobMessageModalOpen, setNewJobMessageModalOpen] = useState(false);
+  const [jobSelectionModalOpen, setJobSelectionModalOpen] = useState(false);
+  const [selectedJob, setSelectedJob] = useState("");
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   const handleInterestedClick = () => {
-    setInterestModalOpen(true)
-  }
+    setInterestModalOpen(true);
+  };
 
   const handleNewJobClick = () => {
-    setInterestModalOpen(false)
-    setNewJobMessageModalOpen(true)
-  }
+    setInterestModalOpen(false);
+    setNewJobMessageModalOpen(true);
+  };
 
   const handleExistingJobClick = () => {
-    setInterestModalOpen(false)
-    setJobSelectionModalOpen(true)
-  }
+    setInterestModalOpen(false);
+    setJobSelectionModalOpen(true);
+  };
 
   const handleJobSelectionContinue = () => {
     if (selectedJob) {
-      setJobSelectionModalOpen(false)
-      setShowSuccessMessage(true)
+      onInterested({
+        interested: true,
+        interest_type: "existing_job",
+        job_id: selectedJob,
+      });
+      setJobSelectionModalOpen(false);
+      setShowSuccessMessage(true);
       setTimeout(() => {
-        setShowSuccessMessage(false)
-        onInterested()
-      }, 3000)
+        setShowSuccessMessage(false);
+        onClose();
+      }, 3000);
     }
-  }
+  };
+
+  const handleNewJobContinue = () => {
+    onInterested({
+      interested: true,
+      interest_type: "new_job",
+      job_title: "New Job Title", // Replace with dynamic input if needed
+    });
+    setNewJobMessageModalOpen(false);
+    setShowSuccessMessage(true);
+    setTimeout(() => {
+      setShowSuccessMessage(false);
+      onClose();
+    }, 3000);
+  };
 
   const handleCloseAll = () => {
-    setInterestModalOpen(false)
-    setNewJobMessageModalOpen(false)
-    setJobSelectionModalOpen(false)
-    setSelectedJob("")
-    setShowSuccessMessage(false)
-    onClose()
-  }
-
-  // ... rest of the component remains the same until the modals section
+    setInterestModalOpen(false);
+    setNewJobMessageModalOpen(false);
+    setJobSelectionModalOpen(false);
+    setSelectedJob("");
+    setShowSuccessMessage(false);
+    onClose();
+  };
 
   return (
     <>
-      {/* Main Dialog - keep existing content */}
       <Dialog open={open} onClose={handleCloseAll} maxWidth="md" fullWidth>
         <DialogTitle>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -101,15 +124,13 @@ export function TalentProfile({ talent, open, onClose, onInterested, onNotIntere
         </DialogTitle>
         <DialogContent>
           <Box sx={{ py: 2 }}>
-            {/* Header */}
             <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2, mb: 3 }}>
               <Avatar sx={{ width: 64, height: 64 }}>
-                {talent.firstName[0]}
-                {talent.lastName[0]}
+                {talent.name?.[0] || "T"}
               </Avatar>
               <Box sx={{ flex: 1 }}>
                 <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-                  {talent.firstName}
+                  {talent.name}
                 </Typography>
                 <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
                   {talent.designation}
@@ -118,25 +139,24 @@ export function TalentProfile({ talent, open, onClose, onInterested, onNotIntere
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                     <LocationIcon sx={{ fontSize: 16, color: "text.secondary" }} />
                     <Typography variant="body2" color="text.secondary">
-                      {talent.location.split(", ")[1] || talent.location}
+                      {talent.location?.split(", ")[1] || talent.location}
                     </Typography>
                   </Box>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                     <CalendarIcon sx={{ fontSize: 16, color: "text.secondary" }} />
                     <Typography variant="body2" color="text.secondary">
-                      {talent.experience} years experience
+                      {talent.years_experience} years experience
                     </Typography>
                   </Box>
                 </Box>
                 <Chip
                   label={talent.status}
-                  color={talent.status === "Open to work" ? "success" : "default"}
+                  color={talent.status === "open_to_work" ? "success" : "default"}
                   size="small"
                 />
               </Box>
             </Box>
 
-            {/* Contact Information (Grayed out) */}
             <Card sx={{ bgcolor: "#F9FAFB", mb: 3 }}>
               <CardContent>
                 <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
@@ -145,50 +165,61 @@ export function TalentProfile({ talent, open, onClose, onInterested, onNotIntere
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <EmailIcon sx={{ fontSize: 16, color: "text.disabled" }} />
-                    <Typography variant="body2" sx={{ filter: "blur(2px)", color: "text.disabled" }}>
-                      ████████@email.com
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        filter: talent.contact_email ? "none" : "blur(2px)",
+                        color: talent.contact_email ? "text.primary" : "text.disabled",
+                      }}
+                    >
+                      {talent.contact_email || "████████@email.com"}
                     </Typography>
                   </Box>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <PhoneIcon sx={{ fontSize: 16, color: "text.disabled" }} />
-                    <Typography variant="body2" sx={{ filter: "blur(2px)", color: "text.disabled" }}>
-                      +1 (███) ███-████
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        filter: talent.contact_phone ? "none" : "blur(2px)",
+                        color: talent.contact_phone ? "text.primary" : "text.disabled",
+                      }}
+                    >
+                      {talent.contact_phone || "+1 (███) ███-████"}
                     </Typography>
                   </Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-                    Contact information available after expressing interest
-                  </Typography>
+                  {!talent.contact_email && (
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                      Contact information available after expressing interest
+                    </Typography>
+                  )}
                 </Box>
               </CardContent>
             </Card>
 
-            {/* Professional Summary */}
             <Card sx={{ mb: 3 }}>
               <CardContent>
                 <Typography variant="subtitle2" sx={{ mb: 2 }}>
                   Professional Summary
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {talent.summary}
+                  {talent.professional_summary}
                 </Typography>
               </CardContent>
             </Card>
 
-            {/* Skills */}
             <Card sx={{ mb: 3 }}>
               <CardContent>
                 <Typography variant="subtitle2" sx={{ mb: 2 }}>
                   Skills
                 </Typography>
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                  {talent.skills.map((skill, index) => (
+                  {talent.skills?.map((skill, index) => (
                     <Chip key={index} label={skill} variant="outlined" size="small" />
-                  ))}
+                  )) || <Typography>No skills listed</Typography>}
                 </Box>
               </CardContent>
             </Card>
 
-            {/* Experience & Education */}
             <Grid container spacing={2} sx={{ mb: 3 }}>
               <Grid item xs={12} md={6}>
                 <Card>
@@ -197,7 +228,7 @@ export function TalentProfile({ talent, open, onClose, onInterested, onNotIntere
                       Current Company
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {talent.currentCompany}
+                      {talent.current_company}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -216,7 +247,6 @@ export function TalentProfile({ talent, open, onClose, onInterested, onNotIntere
               </Grid>
             </Grid>
 
-            {/* CV Section (Grayed out) */}
             <Card sx={{ bgcolor: "#F9FAFB" }}>
               <CardContent>
                 <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
@@ -224,22 +254,40 @@ export function TalentProfile({ talent, open, onClose, onInterested, onNotIntere
                 </Typography>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <DescriptionIcon sx={{ fontSize: 16, color: "text.disabled" }} />
-                  <Typography variant="body2" sx={{ filter: "blur(2px)", color: "text.disabled" }}>
-                    ████████_Resume.pdf
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      filter: talent.resume_url ? "none" : "blur(2px)",
+                      color: talent.resume_url ? "text.primary" : "text.disabled",
+                    }}
+                  >
+                    {talent.resume_url || "████████_Resume.pdf"}
                   </Typography>
                 </Box>
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-                  Full resume available after expressing interest
-                </Typography>
+                {!talent.resume_url && (
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                    Full resume available after expressing interest
+                  </Typography>
+                )}
               </CardContent>
             </Card>
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 3, pt: 0 }}>
-          <Button variant="contained" startIcon={<FavoriteIcon />} onClick={handleInterestedClick} sx={{ flex: 1 }}>
+          <Button
+            variant="contained"
+            startIcon={<FavoriteIcon />}
+            onClick={handleInterestedClick}
+            sx={{ flex: 1 }}
+          >
             Interested
           </Button>
-          <Button variant="outlined" startIcon={<CloseIcon />} onClick={onNotInterested} sx={{ flex: 1 }}>
+          <Button
+            variant="outlined"
+            startIcon={<CloseIcon />}
+            onClick={onNotInterested}
+            sx={{ flex: 1 }}
+          >
             Not Interested
           </Button>
         </DialogActions>
@@ -250,16 +298,16 @@ export function TalentProfile({ talent, open, onClose, onInterested, onNotIntere
         onClose={() => setInterestModalOpen(false)}
         onNewJob={handleNewJobClick}
         onExistingJob={handleExistingJobClick}
-        talentName={talent.firstName}
+        talentName={talent.name || ""}
       />
 
       <NewJobMessageModal
         open={newJobMessageModalOpen}
         onClose={() => {
-          setNewJobMessageModalOpen(false)
-          handleCloseAll()
+          setNewJobMessageModalOpen(false);
+          handleCloseAll();
         }}
-        talentName={talent.firstName}
+        onContinue={handleNewJobContinue}
       />
 
       <JobSelectionModal
@@ -269,10 +317,10 @@ export function TalentProfile({ talent, open, onClose, onInterested, onNotIntere
         selectedJob={selectedJob}
         onJobChange={setSelectedJob}
         jobs={jobs}
-        talentName={talent.firstName}
+        talentName={talent.name || ""}
       />
 
-      <SuccessModal open={showSuccessMessage} talentName={talent.firstName} />
+      <SuccessModal open={showSuccessMessage} talentName={talent.name || ""} />
     </>
-  )
+  );
 }

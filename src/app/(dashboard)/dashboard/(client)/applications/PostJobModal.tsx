@@ -20,6 +20,7 @@ import Chip from "@mui/material/Chip";
 import { Autocomplete, InputAdornment } from "@mui/material";
 import CircularProgress from "@mui/material/CircularProgress";
 import { createJobclient } from "@/@core/services/jobService";
+import IFormInput from "./IFormInput"; // Import the updated interface
 
 interface Props {
   open: boolean;
@@ -27,26 +28,14 @@ interface Props {
   onJobCreated: () => void;
 }
 
-interface IFormInput {
-  title: string;
-  type: "FULL TIME" | "PART TIME" | "INTERNSHIP" | "FREELANCE";
-  description: string;
-  requirement: string;
-  skills: string[];
-  location: "Hybrid" | "Remote" | "Onsite";
-  currency: "USD" | "EUR" | "GBP" | "NGN";
-  minSalary: number | null;
-  maxSalary: number | null;
-  salary_type: "MONTHLY" | "ANNUALLY";
-  application_deadline: string;
-  information: string | null;
-}
-
 const defaultValues: IFormInput = {
   title: "",
   type: "FULL TIME",
   description: "",
   requirement: "",
+  responsibilities: "",
+  benefits: "",
+  about_the_role: "",
   skills: [],
   location: "Hybrid",
   salary_type: "MONTHLY",
@@ -83,14 +72,17 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
   const selectedCurrency = watch("currency");
 
   const submitForm: SubmitHandler<IFormInput> = async (values) => {
-    setSubmitting(false); // Ensure button is enabled before submission
+    setSubmitting(false);
     try {
-      setSubmitting(true); // Set submitting to true after enabling
+      setSubmitting(true);
       const jobData = {
         title: values.title,
         job_type: values.type,
         description: values.description,
         requirements: values.requirement,
+        responsibilities: values.responsibilities,
+        benefits: values.benefits,
+        about_the_role: values.about_the_role,
         skills: values.skills,
         currency: values.currency,
         salary_type: values.salary_type,
@@ -228,7 +220,7 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
                 </Grid>
 
                 <Grid item xs={12}>
-                 <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
                     Description
                   </Typography>
                   <Controller
@@ -266,6 +258,72 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
                         placeholder="Enter job requirements..."
                         error={Boolean(errors.requirement)}
                         helperText={errors.requirement?.message}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
+                    Responsibilities
+                  </Typography>
+                  <Controller
+                    name="responsibilities"
+                    control={control}
+                    render={({ field }) => (
+                      <CustomTextField
+                        {...field}
+                        fullWidth
+                        multiline
+                        rows={4}
+                        size="medium"
+                        placeholder="Enter job responsibilities..."
+                        error={Boolean(errors.responsibilities)}
+                        helperText={errors.responsibilities?.message}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
+                    Benefits
+                  </Typography>
+                  <Controller
+                    name="benefits"
+                    control={control}
+                    render={({ field }) => (
+                      <CustomTextField
+                        {...field}
+                        fullWidth
+                        multiline
+                        rows={4}
+                        size="medium"
+                        placeholder="Enter job benefits..."
+                        error={Boolean(errors.benefits)}
+                        helperText={errors.benefits?.message}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
+                    About the Role
+                  </Typography>
+                  <Controller
+                    name="about_the_role"
+                    control={control}
+                    render={({ field }) => (
+                      <CustomTextField
+                        {...field}
+                        fullWidth
+                        multiline
+                        rows={4}
+                        size="medium"
+                        placeholder="Enter details about the role..."
+                        error={Boolean(errors.about_the_role)}
+                        helperText={errors.about_the_role?.message}
                       />
                     )}
                   />
@@ -543,7 +601,7 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
               disabled={isSubmitting || submitting}
               sx={{ textTransform: "capitalize", width: "30%" }}
             >
-              {submitting ? <CircularProgress size={24} color="inherit" /> : "Post Job"}
+              {submitting ? <CircularProgress size={24} color="inherit" /> : "Create Job"}
             </Button>
           </DialogActions>
         </form>

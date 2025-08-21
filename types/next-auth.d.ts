@@ -8,6 +8,7 @@ declare module 'next-auth' {
     accessToken: string;
     tokenType: string;
     expiresIn: number;
+    isPasswordChange: boolean;
   }
 
   interface Session {
@@ -17,6 +18,7 @@ declare module 'next-auth' {
       accessToken: string;
       tokenType: string;
       expiresIn: number;
+      isPasswordChange: boolean;
     } & DefaultSession['user'];
   }
 

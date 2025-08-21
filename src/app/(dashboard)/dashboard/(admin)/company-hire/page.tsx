@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState } from "react"
+import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -18,59 +18,171 @@ import {
   IconButton,
   Paper,
   Divider,
-} from "@mui/material"
+} from "@mui/material";
 import {
   Search as SearchIcon,
   Star as StarIcon,
   Send as SendIcon,
   Attachment as AttachmentIcon,
   MoreVert as MoreVertIcon,
-} from "@mui/icons-material"
-import { conversationData } from "@/@core/component/data/message-data"
-import type { ConversationData } from "@/@core/component/data/message-data"
+} from "@mui/icons-material";
+import { fetchMessages, sendMessage, getAdminRequests } from "@/@core/services/AdminPool";
+import { getSession } from "next-auth/react";
+
+export interface ConversationData {
+  id: number;
+  jobTitle: string;
+  companyName: string;
+  participants: { id: number; role: string; name: string; avatar?: string; isOnline: boolean }[];
+  lastMessage: string;
+  lastMessageTime: string;
+  unreadCount: number;
+  messages: { id: number; senderName: string; senderAvatar?: string; content: string; timestamp: string; isStarred: boolean }[];
+}
+
+export interface Message {
+  id: number;
+  sender_id: number;
+  sender_name: string;
+  sender_role: string;
+  receiver_id: number;
+  message_text: string;
+  sent_at: string;
+  status: string;
+}
 
 export default function HirePage() {
-  const [selectedConversation, setSelectedConversation] = useState<ConversationData | null>(conversationData[0])
-  const [searchQuery, setSearchQuery] = useState("")
-  const [newMessage, setNewMessage] = useState("")
+  const [conversations, setConversations] = useState<ConversationData[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<ConversationData | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [newMessage, setNewMessage] = useState("");
+  const [messages, setMessages] = useState<{ id: number; senderName: string; senderAvatar?: string; content: string; timestamp: string; isStarred: boolean }[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const filteredConversations = conversationData.filter(
+  // Fetch initial conversations from admin requests
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      setLoading(true);
+      try {
+        const session = await getSession();
+        const data = await getAdminRequests();
+        const adminId = session?.user?.id;
+        const adminConversations = data.requests.map((request) => ({
+          id: request.id,
+          jobTitle: request.job_title || "Untitled Job",
+          companyName: request.client?.company_name || "Unknown Company",
+          participants: [
+            { id: request.client?.id || 0, role: "Company", name: request.client?.company_name || "Unknown", isOnline: false },
+          ],
+          lastMessage: request.messages?.[request.messages.length - 1]?.message_text || "No messages yet",
+          lastMessageTime: request.messages?.[request.messages.length - 1]?.sent_at || "",
+          unreadCount: request.messages?.filter((m) => m.receiver_id === adminId && !m.status.includes("read")).length || 0,
+          messages: [],
+        }));
+        setConversations(adminConversations);
+      } catch (error) {
+        console.error("Failed to fetch conversations:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInitialData();
+  }, []);
+
+useEffect(() => {
+  let isMounted = true; // Flag to prevent state updates on unmounted component
+
+  const fetchMessagesForConversation = async () => {
+    if (selectedConversation) {
+      setLoading(true);
+      try {
+        const session = await getSession();
+        const adminId = session?.user?.id;
+        const data = await fetchMessages(selectedConversation.id);
+        if (isMounted) {
+          const mappedMessages = data.messages
+            .filter((msg) => msg.receiver_id === adminId) // Only messages sent to admin (from clients)
+            .map((msg) => ({
+              id: msg.id,
+              senderName: msg.sender_role === "ADMIN" ? "You" : msg.sender_name,
+              senderAvatar: msg.sender_role === "ADMIN" ? session?.user?.image ?? undefined : undefined, // Convert null to undefined
+              content: msg.message_text,
+              timestamp: msg.sent_at,
+              isStarred: false,
+            }));
+          setMessages(mappedMessages);
+          setSelectedConversation((prev) => prev ? { ...prev, messages: mappedMessages } : prev);
+        }
+      } catch (error) {
+        console.error("Failed to fetch messages:", error);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+  };
+
+  fetchMessagesForConversation();
+
+  // Cleanup function to prevent state updates after unmount
+  return () => {
+    isMounted = false;
+  };
+}, [selectedConversation?.id]); // Only re-run when selectedConversation.id changes
+  const filteredConversations = conversations.filter(
     (conversation) =>
       conversation.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      conversation.companyName.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+      conversation.companyName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (newMessage.trim() && selectedConversation) {
-      // Here you would add the new message to the conversation
-      console.log("Sending message:", newMessage)
-      setNewMessage("")
+      setLoading(true);
+      try {
+        const session = await getSession();
+        const senderId = session?.user?.id;
+        const receiverId = selectedConversation.participants.find((p) => p.role === "Company")?.id || 1; // Client ID
+        await sendMessage(selectedConversation.id, receiverId, newMessage);
+        const data = await fetchMessages(selectedConversation.id);
+        const newMsg = data.messages.find((msg) => msg.sender_id === senderId && msg.message_text === newMessage);
+        if (newMsg) {
+          const mappedNewMsg = {
+            id: newMsg.id,
+            senderName: "You",
+            senderAvatar: session?.user?.image ?? undefined, // Convert null to undefined
+            content: newMsg.message_text,
+            timestamp: newMsg.sent_at,
+            isStarred: false,
+          };
+          setMessages((prev) => [...prev, mappedNewMsg]);
+          setNewMessage("");
+          setSelectedConversation((prev) => prev ? { ...prev, messages: [...prev.messages, mappedNewMsg], lastMessage: newMsg.message_text, lastMessageTime: newMsg.sent_at } : prev);
+        }
+      } catch (error) {
+        console.error("Failed to send message:", error);
+      } finally {
+        setLoading(false);
+      }
     }
-  }
+  };
 
   const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp)
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-  }
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
 
   const formatDate = (timestamp: string) => {
-    const date = new Date(timestamp)
-    const today = new Date()
-    const yesterday = new Date(today)
-    yesterday.setDate(yesterday.getDate() - 1)
+    const date = new Date(timestamp);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
 
-    if (date.toDateString() === today.toDateString()) {
-      return "Today"
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return "Yesterday"
-    } else {
-      return date.toLocaleDateString()
-    }
-  }
+    if (date.toDateString() === today.toDateString()) return "Today";
+    else if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+    else return date.toLocaleDateString();
+  };
 
   return (
     <Box sx={{ width: "100%" }}>
-      {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h1" sx={{ mb: 1 }}>
           Hiring
@@ -80,12 +192,9 @@ export default function HirePage() {
         </Typography>
       </Box>
 
-      {/* Main Content - Fixed height container */}
       <Box sx={{ display: "flex", height: "calc(100vh - 200px)", gap: 3 }}>
-        {/* Conversations List - Left Panel */}
         <Box sx={{ width: 400, minWidth: 350 }}>
           <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-            {/* Search Header */}
             <CardContent sx={{ p: 3, pb: 2 }}>
               <TextField
                 placeholder="Search jobs or companies..."
@@ -105,12 +214,11 @@ export default function HirePage() {
 
             <Divider />
 
-            {/* Conversations List */}
             <Box sx={{ flex: 1, overflow: "auto" }}>
               <List sx={{ p: 0 }}>
                 {filteredConversations.map((conversation) => {
-                  const isSelected = selectedConversation?.id === conversation.id
-                  const company = conversation.participants.find((p) => p.role === "Company")
+                  const isSelected = selectedConversation?.id === conversation.id;
+                  const company = conversation.participants.find((p) => p.role === "Company");
 
                   return (
                     <ListItem key={conversation.id} sx={{ p: 0 }}>
@@ -147,9 +255,7 @@ export default function HirePage() {
                           </Badge>
                         </ListItemAvatar>
 
-                        {/* Custom ListItemText to avoid nested p tags */}
                         <Box sx={{ ml: 2, flex: 1, minWidth: 0 }}>
-                          {/* Primary text with time */}
                           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
                             <Typography
                               variant="body1"
@@ -169,7 +275,6 @@ export default function HirePage() {
                             </Typography>
                           </Box>
 
-                          {/* Secondary text with company name and unread count */}
                           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
                             <Typography
                               variant="body2"
@@ -202,7 +307,6 @@ export default function HirePage() {
                             )}
                           </Box>
 
-                          {/* Last message preview */}
                           <Typography
                             variant="body2"
                             color="text.secondary"
@@ -218,19 +322,17 @@ export default function HirePage() {
                         </Box>
                       </ListItemButton>
                     </ListItem>
-                  )
+                  );
                 })}
               </List>
             </Box>
           </Card>
         </Box>
 
-        {/* Chat Area - Right Panel */}
         <Box sx={{ flex: 1 }}>
           <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
             {selectedConversation ? (
               <>
-                {/* Chat Header */}
                 <Box sx={{ p: 3, borderBottom: "1px solid #E5E7EB" }}>
                   <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -278,13 +380,11 @@ export default function HirePage() {
                   </Box>
                 </Box>
 
-                {/* Messages Area */}
                 <Box sx={{ flex: 1, overflow: "auto", p: 3, bgcolor: "#FAFAFA" }}>
-                  {selectedConversation.messages.map((message, index) => {
-                    const isOwnMessage = message.senderName === "You"
+                  {messages.map((message, index) => {
+                    const isOwnMessage = message.senderName === "You";
                     const showDate =
-                      index === 0 ||
-                      formatDate(message.timestamp) !== formatDate(selectedConversation.messages[index - 1].timestamp)
+                      index === 0 || formatDate(message.timestamp) !== formatDate(messages[index - 1].timestamp);
 
                     return (
                       <Box key={message.id}>
@@ -364,11 +464,10 @@ export default function HirePage() {
                           </Box>
                         </Box>
                       </Box>
-                    )
+                    );
                   })}
                 </Box>
 
-                {/* Message Input */}
                 <Box sx={{ p: 3, borderTop: "1px solid #E5E7EB", bgcolor: "white" }}>
                   <Box sx={{ display: "flex", alignItems: "flex-end", gap: 2 }}>
                     <TextField
@@ -387,8 +486,8 @@ export default function HirePage() {
                       }}
                       onKeyPress={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault()
-                          handleSendMessage()
+                          e.preventDefault();
+                          handleSendMessage();
                         }
                       }}
                     />
@@ -398,7 +497,7 @@ export default function HirePage() {
                     <IconButton
                       color="primary"
                       onClick={handleSendMessage}
-                      disabled={!newMessage.trim()}
+                      disabled={!newMessage.trim() || loading}
                       sx={{
                         bgcolor: "primary.main",
                         color: "white",
@@ -441,5 +540,5 @@ export default function HirePage() {
         </Box>
       </Box>
     </Box>
-  )
+  );
 }

@@ -32,6 +32,9 @@ interface IFormInput {
   type: "FULL TIME" | "PART TIME" | "CONTRACT" | "INTERNSHIP" | "FREELANCE";
   description: string;
   requirement: string;
+  responsibilities: string; // New field
+  benefits: string; // New field
+  about_the_role: string; // New field
   skills: string[];
   location: "Hybrid" | "Remote" | "Onsite";
   currency: "USD" | "EUR" | "GBP" | "NGN";
@@ -43,18 +46,14 @@ interface IFormInput {
   client_id: string;
 }
 
-interface Client {
-  id: number;
-  name: string;
-  email: string;
-  account_type: string;
-}
-
 const defaultValues: IFormInput = {
   title: "",
   type: "FULL TIME",
   description: "",
   requirement: "",
+  responsibilities: "", // New field
+  benefits: "", // New field
+  about_the_role: "", // New field
   skills: [],
   location: "Hybrid",
   salary_type: "MONTHLY",
@@ -75,7 +74,7 @@ const currencyMap = {
 
 const NewJob = ({ open, close, onJobCreated }: Props) => {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [clients, setClients] = useState<Client[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
@@ -94,7 +93,7 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
         throw new Error("Failed to fetch clients");
       }
       const data = await response.json();
-      const clientUsers = data.filter((user: Client) => user.account_type === "CLIENT");
+      const clientUsers = data.filter((user: any) => user.account_type === "CLIENT");
       setClients(clientUsers);
     } catch (error) {
       console.error("Error fetching clients:", error);
@@ -126,15 +125,17 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
   const selectedCurrency = watch("currency");
 
   const submitForm: SubmitHandler<IFormInput> = async (values) => {
-    // Ensure the button is not disabled before submission starts
-    setSubmitting(false); // Temporarily enable the button
+    setSubmitting(false);
     try {
-      setSubmitting(true); // Set submitting to true after enabling
+      setSubmitting(true);
       const jobData = {
         title: values.title,
         job_type: values.type,
         description: values.description,
         requirements: values.requirement,
+        responsibilities: values.responsibilities, // New field
+        benefits: values.benefits, // New field
+        about_the_role: values.about_the_role, // New field
         skills: values.skills,
         currency: values.currency,
         salary_type: values.salary_type,
@@ -370,6 +371,72 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
                         placeholder="Enter job requirements..."
                         error={Boolean(errors.requirement)}
                         helperText={errors.requirement?.message}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
+                    Responsibilities
+                  </Typography>
+                  <Controller
+                    name="responsibilities"
+                    control={control}
+                    render={({ field }) => (
+                      <CustomTextField
+                        {...field}
+                        fullWidth
+                        multiline
+                        rows={4}
+                        size="medium"
+                        placeholder="Enter job responsibilities..."
+                        error={Boolean(errors.responsibilities)}
+                        helperText={errors.responsibilities?.message}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
+                    Benefits
+                  </Typography>
+                  <Controller
+                    name="benefits"
+                    control={control}
+                    render={({ field }) => (
+                      <CustomTextField
+                        {...field}
+                        fullWidth
+                        multiline
+                        rows={4}
+                        size="medium"
+                        placeholder="Enter job benefits..."
+                        error={Boolean(errors.benefits)}
+                        helperText={errors.benefits?.message}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Typography sx={{ fontWeight: 600, fontSize: "14px", mb: "10px" }}>
+                    About the Role
+                  </Typography>
+                  <Controller
+                    name="about_the_role"
+                    control={control}
+                    render={({ field }) => (
+                      <CustomTextField
+                        {...field}
+                        fullWidth
+                        multiline
+                        rows={4}
+                        size="medium"
+                        placeholder="Enter details about the role..."
+                        error={Boolean(errors.about_the_role)}
+                        helperText={errors.about_the_role?.message}
                       />
                     )}
                   />
@@ -657,7 +724,7 @@ const NewJob = ({ open, close, onJobCreated }: Props) => {
             <Button
               type="submit"
               variant="contained"
-              disabled={isSubmitting || submitting} // Removed !isValid to allow submission
+              disabled={isSubmitting || submitting}
               sx={{ textTransform: "capitalize", width: "30%" }}
             >
               {submitting ? <CircularProgress size={24} color="inherit" /> : "Create Job"}

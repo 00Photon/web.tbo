@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -16,7 +16,11 @@ import {
   Avatar,
   Link,
   Pagination,
-} from "@mui/material"
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
 import {
   Search as SearchIcon,
   Refresh as RefreshIcon,
@@ -26,120 +30,312 @@ import {
   Bookmark as BookmarkIcon,
   ArrowBack as ArrowBackIcon,
   ArrowForward as ArrowForwardIcon,
-} from "@mui/icons-material"
-import { opportunityData } from "@/@core/component/data/opportunity-data"
-import { OpportunityDetailModal } from "@/@core/component/modals/opportunity-detail-modal"
-import type { OpportunityData } from "@/@core/component/data/opportunity-data"
+  Close as CloseIcon,
+} from "@mui/icons-material";
+import { getJobs, Job } from "@/@core/services/jobVanciesService";
+import { applyJob, saveJob } from "@/@core/services/jobVanciesService";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useRouter } from "next/navigation";
+import { OpportunityDetailModal } from "@/@core/component/modals/opportunity-detail-modal";
+
+interface Opportunity {
+  id: string;
+  title: string;
+  job_type: string;
+  location: string;
+  currency: string;
+  minimum_salary: number;
+  maximum_salary: number;
+  created_at: string;
+  application_deadline: string;
+  applicant_count?: number; // Optional, matches the error context
+  description: string;
+  additional_info?: string;
+  requirements?: string;
+  responsibilities?: string;
+  benefits?: string;
+  skill?: string;
+  client?: {
+    company_logo?: string;
+    company_name?: string;
+    industry?: string;
+  };
+}
+interface ApplyJobModalProps {
+  open: boolean;
+  onClose: () => void;
+  jobId: number | null;
+  onApply: (jobId: number) => Promise<void>;
+}
+
+function ApplyJobModal({ open, onClose, jobId, onApply }: ApplyJobModalProps) {
+  const router = useRouter();
+
+  const handleApplyWithProfile = async () => {
+    if (jobId !== null) {
+      await onApply(jobId);
+      onClose();
+    } else {
+      toast.error("Invalid job ID");
+    }
+  };
+
+  const handleEditProfile = () => {
+    router.push("/dashboard/talent/profile");
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            Apply for Job
+          </Typography>
+          <Button onClick={onClose} sx={{ minWidth: "auto", p: 1 }}>
+            <CloseIcon />
+          </Button>
+        </Box>
+      </DialogTitle>
+      <DialogContent>
+        <Typography variant="body1" sx={{ mb: 2 }}>
+          Would you like to apply with your current profile or edit your profile before applying?
+        </Typography>
+      </DialogContent>
+      <DialogActions sx={{ p: 3, pt: 0 }}>
+        <Box sx={{ display: "flex", gap: 2, width: "100%" }}>
+          <Button
+            variant="outlined"
+            onClick={handleEditProfile}
+            sx={{
+              flex: 1,
+              color: "#E61C31",
+              borderColor: "#E61C31",
+              "&:hover": {
+                borderColor: "#E61C31",
+                bgcolor: "#FEF2F2",
+              },
+            }}
+          >
+            Edit Profile
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleApplyWithProfile}
+            sx={{
+              flex: 1,
+              bgcolor: "#E61C31",
+              "&:hover": {
+                bgcolor: "#DC2626",
+              },
+            }}
+          >
+            Apply with Current Profile
+          </Button>
+        </Box>
+      </DialogActions>
+    </Dialog>
+  );
+}
 
 export default function OpportunitiesPage() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [jobTypeFilters, setJobTypeFilters] = useState<string[]>([])
-  const [locationFilters, setLocationFilters] = useState<string[]>([])
-  const [selectedOpportunity, setSelectedOpportunity] = useState<OpportunityData | null>(null)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 10
+  const [searchQuery, setSearchQuery] = useState("");
+  const [jobTypeFilters, setJobTypeFilters] = useState<string[]>([]);
+  const [locationFilters, setLocationFilters] = useState<string[]>([]);
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [applyModalOpen, setApplyModalOpen] = useState(false);
+  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const itemsPerPage = 10;
 
-  const jobTypes = ["Full Time", "Part Time", "Contract", "Internship", "Freelance"]
-  const locations = ["Hybrid", "Remote", "Onsite"]
+  const jobTypes = ["Full Time", "Part Time", "Contract", "Internship", "Freelance"];
+  const locations = ["Hybrid", "Remote", "Onsite"];
+
+useEffect(() => {
+  const fetchOpportunities = async () => {
+    try {
+      setLoading(true);
+      const jobs: Job[] = await getJobs();
+      const opportunities: Opportunity[] = jobs
+        .map((job) => {
+          const minSalary = parseFloat(job.minimum_salary);
+          const maxSalary = parseFloat(job.maximum_salary);
+          if (isNaN(minSalary) || isNaN(maxSalary)) {
+            console.warn(`Invalid salary for job ${job.id}: min=${job.minimum_salary}, max=${job.maximum_salary}`);
+            return null;
+          }
+          return {
+            id: job.id.toString(),
+            title: job.title,
+            job_type: job.job_type,
+            location: job.location,
+            currency: job.currency,
+            minimum_salary: minSalary,
+            maximum_salary: maxSalary,
+            created_at: job.created_at,
+            application_deadline: job.application_deadline,
+            applicant_count: job.applicant_count ?? undefined, // Ensure optional
+            description: job.description,
+            additional_info: job.additional_info || undefined,
+            requirements: job.requirements || undefined,
+            responsibilities: job.responsibilities || undefined,
+            benefits: job.benefits || undefined,
+            skill: job.skill || undefined,
+            client: {
+              company_logo: job.client.company_logo || undefined,
+              company_name: job.client.company_name || undefined,
+              industry: job.client.industry || undefined,
+            },
+          } as Opportunity; // Explicitly cast to Opportunity
+        })
+        .filter((job): job is Opportunity => job !== null);
+      setOpportunities(opportunities);
+    } catch (error: any) {
+      console.error("Failed to fetch opportunities:", error);
+      toast.error(error?.response?.data?.message || error?.message || "Failed to load opportunities.");
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchOpportunities();
+}, []);
 
   const filteredOpportunities = useMemo(() => {
-    return opportunityData.filter((opportunity) => {
+    return opportunities.filter((opportunity) => {
       const matchesSearch =
         opportunity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        opportunity.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        opportunity.description.toLowerCase().includes(searchQuery.toLowerCase())
+        opportunity.client?.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        opportunity.description.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesJobType = jobTypeFilters.length === 0 || jobTypeFilters.includes(opportunity.jobType)
-      const matchesLocation = locationFilters.length === 0 || locationFilters.includes(opportunity.location)
+      const matchesJobType = jobTypeFilters.length === 0 || jobTypeFilters.includes(opportunity.job_type);
+      const matchesLocation = locationFilters.length === 0 || locationFilters.includes(opportunity.location);
 
-      return matchesSearch && matchesJobType && matchesLocation
-    })
-  }, [searchQuery, jobTypeFilters, locationFilters])
+      return matchesSearch && matchesJobType && matchesLocation;
+    });
+  }, [searchQuery, jobTypeFilters, locationFilters, opportunities]);
 
-  const pageCount = Math.ceil(filteredOpportunities.length / itemsPerPage)
+  const pageCount = Math.ceil(filteredOpportunities.length / itemsPerPage);
   const paginatedOpportunities = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage
-    return filteredOpportunities.slice(startIndex, startIndex + itemsPerPage)
-  }, [filteredOpportunities, currentPage])
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredOpportunities.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredOpportunities, currentPage]);
 
   const handleJobTypeChange = (jobType: string, checked: boolean) => {
     if (checked) {
-      setJobTypeFilters([...jobTypeFilters, jobType])
+      setJobTypeFilters([...jobTypeFilters, jobType]);
     } else {
-      setJobTypeFilters(jobTypeFilters.filter((type) => type !== jobType))
+      setJobTypeFilters(jobTypeFilters.filter((type) => type !== jobType));
     }
-    setCurrentPage(1) // Reset to first page on filter change
-  }
+    setCurrentPage(1);
+  };
 
   const handleLocationChange = (location: string, checked: boolean) => {
     if (checked) {
-      setLocationFilters([...locationFilters, location])
+      setLocationFilters([...locationFilters, location]);
     } else {
-      setLocationFilters(locationFilters.filter((loc) => loc !== location))
+      setLocationFilters(locationFilters.filter((loc) => loc !== location));
     }
-    setCurrentPage(1) // Reset to first page on filter change
-  }
+    setCurrentPage(1);
+  };
 
   const handleReset = () => {
-    setSearchQuery("")
-    setJobTypeFilters([])
-    setLocationFilters([])
-    setCurrentPage(1) // Reset to first page on reset
-  }
+    setSearchQuery("");
+    setJobTypeFilters([]);
+    setLocationFilters([]);
+    setCurrentPage(1);
+  };
 
   const clearJobTypes = () => {
-    setJobTypeFilters([])
-    setCurrentPage(1) // Reset to first page
-  }
+    setJobTypeFilters([]);
+    setCurrentPage(1);
+  };
 
   const clearLocations = () => {
-    setLocationFilters([])
-    setCurrentPage(1) // Reset to first page
-  }
+    setLocationFilters([]);
+    setCurrentPage(1);
+  };
 
-  const handleCardClick = (opportunity: OpportunityData) => {
-    setSelectedOpportunity(opportunity)
-    setModalOpen(true)
-  }
+  const handleCardClick = (opportunity: Opportunity) => {
+    setSelectedOpportunity(opportunity);
+    setModalOpen(true);
+  };
 
   const handleCloseModal = () => {
-    setModalOpen(false)
-    setSelectedOpportunity(null)
-  }
+    setModalOpen(false);
+    setSelectedOpportunity(null);
+  };
 
   const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
-    setCurrentPage(page)
-  }
+    setCurrentPage(page);
+  };
 
   const handlePreviousPage = () => {
     if (currentPage > 1) {
-      setCurrentPage(currentPage - 1)
+      setCurrentPage(currentPage - 1);
     }
-  }
+  };
 
   const handleNextPage = () => {
     if (currentPage < pageCount) {
-      setCurrentPage(currentPage + 1)
+      setCurrentPage(currentPage + 1);
     }
-  }
+  };
+
+  const handleSaveJob = async (jobId: string) => {
+    try {
+      const id = parseInt(jobId, 10);
+      if (isNaN(id)) {
+        throw new Error("Invalid job ID");
+      }
+      await saveJob(id);
+      toast.success("Job saved successfully!");
+    } catch (error: any) {
+      console.error("Failed to save job:", error);
+      const errorMessage = error?.response?.data?.message || error?.message || "Failed to save job. Please try again.";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleApplyJob = (jobId: string) => {
+    const id = parseInt(jobId, 10);
+    if (isNaN(id)) {
+      toast.error("Invalid job ID");
+      return;
+    }
+    setSelectedJobId(id);
+    setApplyModalOpen(true);
+  };
+
+  const handleApplyWithProfile = async (jobId: number) => {
+    try {
+      await applyJob(jobId);
+      toast.success("Job application submitted successfully!");
+    } catch (error: any) {
+      console.error("Failed to apply for job:", error);
+      const errorMessage = error?.response?.data?.message || error?.message || "Failed to apply for job. Please try again.";
+      toast.error(errorMessage);
+    }
+  };
+
+  if (loading) return <Typography>Loading...</Typography>;
 
   return (
     <Box sx={{ width: "100%" }}>
-      {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
           Find Your Dream Job
         </Typography>
-
-        {/* Search Bar */}
         <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
           <TextField
             placeholder="Job Title, Company name or Anything"
             value={searchQuery}
             onChange={(e) => {
-              setSearchQuery(e.target.value)
-              setCurrentPage(1) // Reset to first page on search
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
             }}
             fullWidth
             sx={{ maxWidth: 400 }}
@@ -180,11 +376,8 @@ export default function OpportunitiesPage() {
         </Box>
       </Box>
 
-      {/* Main Content */}
       <Box sx={{ display: "flex", gap: 4 }}>
-        {/* Filters Sidebar */}
         <Box sx={{ width: 280, flexShrink: 0 }}>
-          {/* Job Type Filter */}
           <Card sx={{ mb: 3 }}>
             <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
@@ -230,7 +423,6 @@ export default function OpportunitiesPage() {
             </CardContent>
           </Card>
 
-          {/* Location Filter */}
           <Card>
             <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
@@ -277,7 +469,6 @@ export default function OpportunitiesPage() {
           </Card>
         </Box>
 
-        {/* Job Cards - Using CSS Grid for exactly 2 cards per row */}
         <Box sx={{ flex: 1 }}>
           <Box
             sx={{
@@ -306,11 +497,10 @@ export default function OpportunitiesPage() {
                 }}
               >
                 <CardContent sx={{ p: 3, flex: 1, display: "flex", flexDirection: "column" }}>
-                  {/* Header */}
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                      <Avatar src={opportunity.companyLogo} sx={{ width: 48, height: 48 }}>
-                        {opportunity.companyName[0]}
+                      <Avatar src={opportunity.client?.company_logo || ""} sx={{ width: 48, height: 48 }}>
+                        {opportunity.client?.company_name?.[0] || "C"}
                       </Avatar>
                       <Box>
                         <Typography variant="body2" sx={{ color: "#E61C31" }}>
@@ -319,19 +509,17 @@ export default function OpportunitiesPage() {
                       </Box>
                     </Box>
                     <Typography variant="body2" color="text.secondary">
-                      {opportunity.postedDate}
+                      {new Date(opportunity.created_at).toLocaleDateString()}
                     </Typography>
                   </Box>
 
-                  {/* Job Title */}
                   <Typography variant="h5" sx={{ fontWeight: 600, mb: 2 }}>
                     {opportunity.title}
                   </Typography>
 
-                  {/* Job Details */}
                   <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
                     <Chip
-                      label={opportunity.jobType.toUpperCase()}
+                      label={opportunity.job_type.toUpperCase()}
                       size="small"
                       sx={{
                         bgcolor: "#FEF2F2",
@@ -340,16 +528,19 @@ export default function OpportunitiesPage() {
                       }}
                     />
                     <Typography variant="body2" color="text.secondary">
-                      Salary: {opportunity.currency} {opportunity.salaryRange}
+                      Salary: {opportunity.currency} {opportunity.minimum_salary} - {opportunity.maximum_salary}
                     </Typography>
                   </Box>
 
-                  {/* Skills */}
                   <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                    Skill
+                    Skills
                   </Typography>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
+                    {JSON.parse(opportunity.skill || "[]").map((skill: string, index: number) => (
+                      <Chip key={index} label={skill} size="small" variant="outlined" />
+                    ))}
+                  </Box>
 
-                  {/* Description */}
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flex: 1 }}>
                     {opportunity.description}
                   </Typography>
@@ -358,8 +549,8 @@ export default function OpportunitiesPage() {
                     component="button"
                     variant="body2"
                     onClick={(e) => {
-                      e.stopPropagation()
-                      handleCardClick(opportunity)
+                      e.stopPropagation();
+                      handleCardClick(opportunity);
                     }}
                     sx={{
                       color: "#E61C31",
@@ -374,38 +565,39 @@ export default function OpportunitiesPage() {
                     View More
                   </Link>
 
-                  {/* Footer */}
                   <Box sx={{ mt: "auto" }}>
-                    {/* Stats */}
                     <Box sx={{ display: "flex", gap: 3, mb: 2 }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                         <WorkIcon sx={{ fontSize: 16, color: "text.secondary" }} />
                         <Typography variant="body2" color="text.secondary">
-                          {opportunity.jobType.toUpperCase()}
+                          {opportunity.job_type.toUpperCase()}
                         </Typography>
                       </Box>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                         <GroupIcon sx={{ fontSize: 16, color: "text.secondary" }} />
                         <Typography variant="body2" color="text.secondary">
-                          {opportunity.applicationsCount} Applied
+                          {opportunity.applicant_count || 0} Applied
                         </Typography>
                       </Box>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                         <ScheduleIcon sx={{ fontSize: 16, color: "text.secondary" }} />
                         <Typography variant="body2" color="text.secondary">
-                          {opportunity.daysLeft} Days Left
+                          {Math.ceil(
+                            (new Date(opportunity.application_deadline).getTime() - new Date().getTime()) /
+                              (1000 * 3600 * 24)
+                          )}{" "}
+                          Days Left
                         </Typography>
                       </Box>
                     </Box>
 
-                    {/* Action Buttons */}
                     <Box sx={{ display: "flex", gap: 2 }}>
                       <Button
                         variant="contained"
                         startIcon={<BookmarkIcon />}
                         onClick={(e) => {
-                          e.stopPropagation()
-                          console.log("Save job:", opportunity.title)
+                          e.stopPropagation();
+                          handleSaveJob(opportunity.id);
                         }}
                         sx={{
                           bgcolor: "#E61C31",
@@ -420,8 +612,8 @@ export default function OpportunitiesPage() {
                       <Button
                         variant="contained"
                         onClick={(e) => {
-                          e.stopPropagation()
-                          console.log("Apply to:", opportunity.title)
+                          e.stopPropagation();
+                          handleApplyJob(opportunity.id);
                         }}
                         sx={{
                           bgcolor: "#E61C31",
@@ -516,8 +708,31 @@ export default function OpportunitiesPage() {
         </Box>
       </Box>
 
-      {/* Opportunity Detail Modal */}
-      <OpportunityDetailModal opportunity={selectedOpportunity} open={modalOpen} onClose={handleCloseModal} />
+      <OpportunityDetailModal
+        opportunity={selectedOpportunity}
+        open={modalOpen}
+        onClose={handleCloseModal}
+        onOpenApplyModal={setApplyModalOpen}
+        setSelectedJobId={setSelectedJobId}
+      />
+      <ApplyJobModal
+        open={applyModalOpen}
+        onClose={() => setApplyModalOpen(false)}
+        jobId={selectedJobId}
+        onApply={handleApplyWithProfile}
+      />
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </Box>
-  )
+  );
 }

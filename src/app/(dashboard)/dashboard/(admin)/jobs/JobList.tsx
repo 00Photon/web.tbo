@@ -95,7 +95,7 @@ const stats = [
   },
   {
     title: "Hired",
-    value: "0", // Will be updated dynamically
+    value: "0", 
     icon: PersonAddIcon,
     color: "#EF4444",
     bgcolor: "#FEF2F2",
@@ -291,7 +291,7 @@ export default function JobApplications() {
       />
       {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h1" sx={{ mb: 1 }}>
+        <Typography variant="h3" sx={{ mb: 1 }}>
           Job List
         </Typography>
         <Typography variant="body1" color="text.secondary">

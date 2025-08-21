@@ -81,7 +81,7 @@ export const changePassword = async (data: { current_password: string, password:
 export interface UpdateUserPayload {
   name: string;
   email: string;
-  designation:String;
+  designation: string;
   account_type: 'TALENT' | 'EMPLOYER';
   phone_number: string;
   cv_upload?: string;
@@ -92,7 +92,13 @@ export interface UpdateUserPayload {
   work_sample_upload?: string;
   portfolio_link?: string;
   profile_image?: string;
-
+  professional_summary?: string; // Add professional summary
+  skills?: string[]; // Skills as an array of strings
+  education?: Array<{
+    degree: string;
+    institution: string;
+    year: string;
+  }>; // Education as an array of objects
   company_logo?: File | string;
   company_name?: string;
   company_email_address?: string;
@@ -106,11 +112,9 @@ export interface UpdateUserPayload {
   contact_person?: string;
   work_email?: string;
   position_in_company?: string;
-
   role?: string;
   adminPrivileges?: string;
 }
-
 export interface UploadProgressCallback {
   (progress: number): void
 }

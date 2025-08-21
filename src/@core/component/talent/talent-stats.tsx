@@ -1,5 +1,5 @@
 import { Grid } from "@mui/material"
-import { StatsCard } from "@/components/common/stats-card"
+import { StatsCard } from "@/@core/component/common/stats-card"
 import {
   People as PeopleIcon,
   Favorite as FavoriteIcon,

@@ -1,8 +1,6 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState, useMemo } from "react"
+import { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -28,7 +26,7 @@ import {
   IconButton,
   Menu,
   MenuItem as MenuItemComponent,
-} from "@mui/material"
+} from "@mui/material";
 import {
   Assignment as AssignmentIcon,
   HourglassEmpty as ProcessingIcon,
@@ -36,171 +34,212 @@ import {
   Cancel as CancelledIcon,
   Search as SearchIcon,
   MoreHoriz as MoreHorizIcon,
-} from "@mui/icons-material"
-import { StatsCard } from "@/@core/component/common/stats-card"
-import { CustomPagination } from "@/@core/component/common/custom-pagination"
-import { usePagination } from "@/@core/component/hooks/use-pagination"
+} from "@mui/icons-material";
+import { StatsCard } from "@/@core/component/common/stats-card";
+import { CustomPagination } from "@/@core/component/common/custom-pagination";
+import { usePagination } from "@/@core/component/hooks/use-pagination";
 import {
   RequestViewModal,
   ContactModal,
   ScheduleInterviewModal,
   CancelRequestModal,
-} from "@/@core/component/modals/request-action-modals"
-import { requestData } from "@/@core/component/data/request-data"
-import type { RequestData } from "@/@core/component/data/request-data"
+} from "@/@core/component/modals/request-action-modals";
+import {
+  getAdminRequests,
+  updateRequestStatus,
+  sendMessage,
+  AdminRequestsData,
+} from "@/@core/services/AdminPool";
 
 export default function RequestsPage() {
-  const [activeTab, setActiveTab] = useState(0)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState("All")
-  const [selectedRequest, setSelectedRequest] = useState<RequestData | null>(null)
-  const [viewModalOpen, setViewModalOpen] = useState(false)
-  const [contactModalOpen, setContactModalOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [requests, setRequests] = useState<AdminRequestsData["requests"]>([]);
+  const [selectedRequest, setSelectedRequest] = useState<AdminRequestsData["requests"][0] | null>(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [contactModalOpen, setContactModalOpen] = useState(false);
   const [contactModalData, setContactModalData] = useState<{
-    title: string
-    name: string
-    email: string
-    phone: string
-  } | null>(null)
-  const [scheduleModalOpen, setScheduleModalOpen] = useState(false)
-  const [cancelModalOpen, setCancelModalOpen] = useState(false)
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-  const [selectedRequestIndex, setSelectedRequestIndex] = useState<number | null>(null)
+    title: string;
+    name: string;
+    email: string;
+    phone: string;
+    receiverId: number;
+    requestId: number; // Ensure requestId is part of the type
+  } | null>(null);
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedRequestIndex, setSelectedRequestIndex] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const tabs = ["All", "Processing", "Hired", "Cancelled"]
-  const statusFilters = ["All", "Processing", "Hired", "Cancelled"]
+  const tabs = ["All", "Processing", "Hired", "Cancelled"];
+  const statusFilters = ["All", "Processing", "Hired", "Cancelled"];
 
-  // Calculate stats
+  useEffect(() => {
+    const fetchRequests = async () => {
+      try {
+        setLoading(true);
+        const data = await getAdminRequests();
+        setRequests(data.requests || []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to fetch requests");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRequests();
+  }, []);
+
   const stats = [
     {
       title: "Total Requests",
-      value: requestData.length.toString(),
+      value: requests.length.toString(),
       icon: AssignmentIcon,
       color: "#3B82F6",
       bgcolor: "#EFF6FF",
     },
     {
       title: "Processing",
-      value: requestData.filter((r) => r.status === "Processing").length.toString(),
+      value: requests.filter((r) => r.status === "Processing").length.toString(),
       icon: ProcessingIcon,
       color: "#F59E0B",
       bgcolor: "#FFFBEB",
     },
     {
       title: "Hired",
-      value: requestData.filter((r) => r.status === "Hired").length.toString(),
+      value: requests.filter((r) => r.status === "Hired").length.toString(),
       icon: HiredIcon,
       color: "#10B981",
       bgcolor: "#ECFDF5",
     },
     {
       title: "Cancelled",
-      value: requestData.filter((r) => r.status === "Cancelled").length.toString(),
+      value: requests.filter((r) => r.status === "Cancelled").length.toString(),
       icon: CancelledIcon,
       color: "#EF4444",
       bgcolor: "#FEF2F2",
     },
-  ]
+  ];
 
   const filteredRequests = useMemo(() => {
-    return requestData.filter((request) => {
-      const matchesTab = activeTab === 0 || request.status === tabs[activeTab]
+    return requests.filter((request) => {
+      const matchesTab = activeTab === 0 || request.status === tabs[activeTab];
       const matchesSearch =
-        request.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        request.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        request.talentName.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesStatus = statusFilter === "All" || request.status === statusFilter
+        (request.client?.company_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (request.job_title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (request.talent?.name || "").toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === "All" || request.status === statusFilter;
 
-      return matchesTab && matchesSearch && matchesStatus
-    })
-  }, [activeTab, searchQuery, statusFilter, tabs])
+      return matchesTab && matchesSearch && matchesStatus;
+    });
+  }, [activeTab, searchQuery, statusFilter, requests]);
 
   const { currentPage, totalPages, paginatedData, handlePrevious, handleNext } = usePagination({
     data: filteredRequests,
     itemsPerPage: 10,
-  })
+  });
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue)
-  }
+    setActiveTab(newValue);
+  };
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>, index: number) => {
-    setAnchorEl(event.currentTarget)
-    setSelectedRequestIndex(index)
-    setSelectedRequest(paginatedData[index])
-  }
+    setAnchorEl(event.currentTarget);
+    setSelectedRequestIndex(index);
+    setSelectedRequest(paginatedData[index]);
+  };
 
   const handleMenuClose = () => {
-    setAnchorEl(null)
-    setSelectedRequestIndex(null)
-  }
+    setAnchorEl(null);
+    setSelectedRequestIndex(null);
+  };
 
   const handleViewRequest = () => {
-    setViewModalOpen(true)
-    handleMenuClose()
-  }
+    if (selectedRequest?.id) {
+      setViewModalOpen(true);
+    }
+    handleMenuClose();
+  };
 
   const handleContactCompany = () => {
-    if (selectedRequest) {
+    if (selectedRequest?.client?.id && selectedRequest.id) {
       setContactModalData({
         title: "Contact Company",
-        name: selectedRequest.companyName,
-        email: selectedRequest.companyEmail,
-        phone: selectedRequest.companyPhone,
-      })
-      setContactModalOpen(true)
+        name: selectedRequest.client.company_name || "N/A",
+        email: selectedRequest.client.company_email_address || "N/A",
+        phone: selectedRequest.client.company_phone || "N/A",
+        receiverId: selectedRequest.client.id,
+        requestId: selectedRequest.id,
+      });
+      setContactModalOpen(true);
     }
-    handleMenuClose()
-  }
+    handleMenuClose();
+  };
 
   const handleContactTalent = () => {
-    if (selectedRequest) {
+    if (selectedRequest?.talent?.id && selectedRequest.id) {
       setContactModalData({
         title: "Contact Talent",
-        name: selectedRequest.talentName,
-        email: selectedRequest.talentEmail,
-        phone: selectedRequest.talentPhone,
-      })
-      setContactModalOpen(true)
+        name: selectedRequest.talent.name || "N/A",
+        email: selectedRequest.talent.email || "N/A",
+        phone: selectedRequest.talent.phone_number || "N/A",
+        receiverId: selectedRequest.talent.id,
+        requestId: selectedRequest.id, // Add requestId for talent
+      });
+      setContactModalOpen(true);
     }
-    handleMenuClose()
-  }
+    handleMenuClose();
+  };
 
   const handleScheduleInterview = () => {
-    setScheduleModalOpen(true)
-    handleMenuClose()
-  }
+    setScheduleModalOpen(true);
+    handleMenuClose();
+  };
 
   const handleCancelRequest = () => {
-    setCancelModalOpen(true)
-    handleMenuClose()
-  }
+    setCancelModalOpen(true);
+    handleMenuClose();
+  };
 
-  const handleConfirmCancel = () => {
-    // Here you would update the request status to "Cancelled"
-    console.log("Request cancelled:", selectedRequest?.id)
-    setCancelModalOpen(false)
-    setSelectedRequest(null)
-  }
+  const handleConfirmCancel = async (reason: string) => {
+    if (selectedRequest?.id) {
+      try {
+        setLoading(true);
+        await updateRequestStatus(selectedRequest.id, "Cancelled");
+        const data = await getAdminRequests();
+        setRequests(data.requests || []);
+        setCancelModalOpen(false);
+        setSelectedRequest(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to cancel request");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Hired":
-        return { bgcolor: "#ECFDF5", color: "#065F46" }
+        return { bgcolor: "#ECFDF5", color: "#065F46" };
       case "Processing":
-        return { bgcolor: "#EFF6FF", color: "#1E40AF" }
+        return { bgcolor: "#EFF6FF", color: "#1E40AF" };
       case "Cancelled":
-        return { bgcolor: "#FEF2F2", color: "#991B1B" }
+        return { bgcolor: "#FEF2F2", color: "#991B1B" };
       default:
-        return { bgcolor: "#F3F4F6", color: "#374151" }
+        return { bgcolor: "#F3F4F6", color: "#374151" };
     }
-  }
+  };
+
+  if (loading) return <Typography>Loading...</Typography>;
+  if (error) return <Typography color="error">{error}</Typography>;
 
   return (
     <Box sx={{ width: "100%" }}>
-      {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h1" sx={{ mb: 1 }}>
+        <Typography variant="h3" sx={{ mb: 1 }}>
           Requests
         </Typography>
         <Typography variant="body1" color="text.secondary">
@@ -208,7 +247,6 @@ export default function RequestsPage() {
         </Typography>
       </Box>
 
-      {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4, width: "100%" }}>
         {stats.map((stat, index) => (
           <Grid item xs={12} sm={6} lg={3} key={index} sx={{ display: "flex" }}>
@@ -219,10 +257,8 @@ export default function RequestsPage() {
         ))}
       </Grid>
 
-      {/* Requests Table */}
       <Card>
         <CardContent sx={{ p: 3 }}>
-          {/* Tab Filters */}
           <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
             <Tabs value={activeTab} onChange={handleTabChange}>
               {tabs.map((tab, index) => (
@@ -231,7 +267,6 @@ export default function RequestsPage() {
             </Tabs>
           </Box>
 
-          {/* Search and Filters */}
           <Box
             sx={{
               display: "flex",
@@ -243,7 +278,7 @@ export default function RequestsPage() {
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Typography variant="h3">Requests</Typography>
+              <Typography variant="h5">Requests</Typography>
               <Typography variant="body2" color="text.secondary">
                 {filteredRequests.length}
               </Typography>
@@ -280,7 +315,6 @@ export default function RequestsPage() {
             </Box>
           </Box>
 
-          {/* Table */}
           <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid #E5E7EB" }}>
             <Table>
               <TableHead sx={{ bgcolor: "#F9FAFB" }}>
@@ -298,10 +332,10 @@ export default function RequestsPage() {
                 {paginatedData.map((request, index) => (
                   <TableRow key={request.id} hover>
                     <TableCell>{(currentPage - 1) * 10 + index + 1}</TableCell>
-                    <TableCell sx={{ fontWeight: 500 }}>{request.companyName}</TableCell>
-                    <TableCell>{request.jobTitle}</TableCell>
-                    <TableCell>{request.talentName}</TableCell>
-                    <TableCell>{request.requestDate}</TableCell>
+                    <TableCell sx={{ fontWeight: 500 }}>{request.client?.company_name || "N/A"}</TableCell>
+                    <TableCell>{request.job_title || "N/A"}</TableCell>
+                    <TableCell>{request.talent?.name || "N/A"}</TableCell>
+                    <TableCell>{request.request_date || "N/A"}</TableCell>
                     <TableCell>
                       <Chip label={request.status} size="small" sx={getStatusColor(request.status)} />
                     </TableCell>
@@ -316,7 +350,6 @@ export default function RequestsPage() {
             </Table>
           </TableContainer>
 
-          {/* Pagination */}
           <CustomPagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -328,26 +361,24 @@ export default function RequestsPage() {
         </CardContent>
       </Card>
 
-      {/* Action Menu */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
         <MenuItemComponent onClick={handleViewRequest}>View</MenuItemComponent>
         <MenuItemComponent onClick={handleContactCompany}>Contact Company</MenuItemComponent>
-        <MenuItemComponent onClick={handleScheduleInterview}>Schedule Interview</MenuItemComponent>
         <MenuItemComponent onClick={handleContactTalent}>Contact Talent</MenuItemComponent>
+        <MenuItemComponent onClick={handleScheduleInterview}>Schedule Interview</MenuItemComponent>
         <MenuItemComponent onClick={handleCancelRequest} sx={{ color: "error.main" }}>
           Cancel
         </MenuItemComponent>
       </Menu>
 
-      {/* Modals */}
       {selectedRequest && (
         <>
           <RequestViewModal
             request={selectedRequest}
             open={viewModalOpen}
             onClose={() => {
-              setViewModalOpen(false)
-              setSelectedRequest(null)
+              setViewModalOpen(false);
+              setSelectedRequest(null);
             }}
           />
 
@@ -355,13 +386,15 @@ export default function RequestsPage() {
             <ContactModal
               open={contactModalOpen}
               onClose={() => {
-                setContactModalOpen(false)
-                setContactModalData(null)
+                setContactModalOpen(false);
+                setContactModalData(null);
               }}
               title={contactModalData.title}
               contactName={contactModalData.name}
               contactEmail={contactModalData.email}
               contactPhone={contactModalData.phone}
+              receiverId={contactModalData.receiverId}
+              requestId={contactModalData.requestId} // Pass requestId
             />
           )}
 
@@ -369,8 +402,8 @@ export default function RequestsPage() {
             request={selectedRequest}
             open={scheduleModalOpen}
             onClose={() => {
-              setScheduleModalOpen(false)
-              setSelectedRequest(null)
+              setScheduleModalOpen(false);
+              setSelectedRequest(null);
             }}
           />
 
@@ -378,13 +411,13 @@ export default function RequestsPage() {
             request={selectedRequest}
             open={cancelModalOpen}
             onClose={() => {
-              setCancelModalOpen(false)
-              setSelectedRequest(null)
+              setCancelModalOpen(false);
+              setSelectedRequest(null);
             }}
             onConfirm={handleConfirmCancel}
           />
         </>
       )}
     </Box>
-  )
+  );
 }

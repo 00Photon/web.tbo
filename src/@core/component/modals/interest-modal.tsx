@@ -1,13 +1,15 @@
-"use client"
+"use client";
 
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Box } from "@mui/material"
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Box } from "@mui/material";
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 
 interface InterestModalProps {
-  open: boolean
-  onClose: () => void
-  onNewJob: () => void
-  onExistingJob: () => void
-  talentName: string
+  open: boolean;
+  onClose: () => void;
+  onNewJob: () => void;
+  onExistingJob: () => void;
+  talentName: string;
 }
 
 export function InterestModal({ open, onClose, onNewJob, onExistingJob, talentName }: InterestModalProps) {
@@ -21,7 +23,10 @@ export function InterestModal({ open, onClose, onNewJob, onExistingJob, talentNa
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
           <Button
             variant="outlined"
-            onClick={onNewJob}
+            onClick={() => {
+              onNewJob();
+              toast.info("Selected interest for a new job", { toastId: "interest-new-job" });
+            }}
             sx={{
               p: 2,
               justifyContent: "flex-start",
@@ -44,7 +49,10 @@ export function InterestModal({ open, onClose, onNewJob, onExistingJob, talentNa
           </Button>
           <Button
             variant="outlined"
-            onClick={onExistingJob}
+            onClick={() => {
+              onExistingJob();
+              toast.info("Selected interest for an existing job", { toastId: "interest-existing-job" });
+            }}
             sx={{
               p: 2,
               justifyContent: "flex-start",
@@ -71,16 +79,24 @@ export function InterestModal({ open, onClose, onNewJob, onExistingJob, talentNa
         <Button onClick={onClose}>Cancel</Button>
       </DialogActions>
     </Dialog>
-  )
+  );
 }
 
-// Add new modal for "Please post a new job" message
 interface NewJobMessageModalProps {
-  open: boolean
-  onClose: () => void
+  open: boolean;
+  onClose: () => void;
+  onContinue: () => void; // Add onContinue prop
 }
 
-export function NewJobMessageModal({ open, onClose }: NewJobMessageModalProps) {
+export function NewJobMessageModal({ open, onClose, onContinue }: NewJobMessageModalProps) {
+  const router = useRouter();
+
+  const handleGoToJob = () => {
+    onClose();
+    router.push("/dashboard/applications");
+    toast.info("Navigating to job posting page", { toastId: "navigate-job-posting" });
+  };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Post a New Job</DialogTitle>
@@ -96,10 +112,10 @@ export function NewJobMessageModal({ open, onClose }: NewJobMessageModalProps) {
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
-        <Button variant="contained" onClick={onClose}>
+        <Button variant="contained" onClick={handleGoToJob}>
           Go to Job Posting
         </Button>
       </DialogActions>
     </Dialog>
-  )
+  );
 }

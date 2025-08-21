@@ -16,7 +16,54 @@ import {
   Alert,
 } from "@mui/material"
 import { Close as CloseIcon, ThumbUp as ThumbUpIcon } from "@mui/icons-material"
-import type { ApplicantData } from "@/data/applicant-data"
+
+// Define ApplicantData interface locally to match page.tsx
+interface ApplicantData {
+  id: string
+  name: string
+  email: string
+  jobTitle: string
+  applicationDate: string
+  type: string
+  status: string
+  phone?: string
+  experience?: string // Match page.tsx, where it's a string
+  location?: string
+  resume?: string
+  account_type?: string
+  company_logo?: string | null
+  company_name?: string | null
+  company_email_address?: string | null
+  industry?: string | null
+  number_of_employees?: string | null
+  type_of_employer?: string | null
+  company_address?: string | null
+  company_phone_number?: string | null
+  country?: string | null
+  company_website?: string | null
+  contact_person?: string | null
+  work_email?: string | null
+  position_in_company?: string | null
+  phone_number?: string | null
+  cv_upload?: string | null
+  cover_letter_upload?: string | null
+  id_upload?: string | null
+  video_url?: string | null
+  project_screenshots?: string[] | null
+  work_sample_upload?: string | null
+  portfolio_link?: string | null
+  profile_image?: string | null
+  designation?: string | null
+  email_verified_at?: string | null
+  otp?: string | null
+  otp_expires_at?: string | null
+  is_verified?: number
+  created_at?: string
+  updated_at?: string
+  deleted_at?: string | null
+  status_user?: string
+  reset_token?: string | null
+}
 
 interface RecommendationsModalProps {
   open: boolean
@@ -50,10 +97,12 @@ export function RecommendationsModal({ open, onClose, recommendedApplicants, job
   }
 
   const getDesignation = (applicant: ApplicantData) => {
-    // Generate designation based on experience
-    if (applicant.experience >= 7) return "Senior " + applicant.jobTitle
-    if (applicant.experience >= 4) return applicant.jobTitle
-    return "Junior " + applicant.jobTitle
+    // Parse experience as a number, default to 0 if undefined or invalid
+    const experience = applicant.experience ? parseInt(applicant.experience, 10) : 0
+    if (isNaN(experience)) return `Junior ${applicant.jobTitle}` // Fallback if parsing fails
+    if (experience >= 7) return `Senior ${applicant.jobTitle}`
+    if (experience >= 4) return applicant.jobTitle
+    return `Junior ${applicant.jobTitle}`
   }
 
   return (
@@ -125,7 +174,7 @@ export function RecommendationsModal({ open, onClose, recommendedApplicants, job
                     </Typography>
 
                     <Typography variant="caption" color="text.secondary" sx={{ mb: 3, display: "block" }}>
-                      {applicant.experience} years experience • {applicant.location}
+                      {applicant.experience || "Unknown"} years experience • {applicant.location || "Unknown"}
                     </Typography>
 
                     <Button

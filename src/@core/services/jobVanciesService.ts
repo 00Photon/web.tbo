@@ -255,12 +255,14 @@ export const fetchApplicationsForJob = async (id: number) => {
 };
 
 
-interface Job {
+ export interface Job {
   id: number;
   title: string;
   job_type: string;
   description: string;
   requirements: string;
+  responsibilities?: string;
+  benefits?: string;
   skill: string;
   currency: string;
   minimum_salary: string;

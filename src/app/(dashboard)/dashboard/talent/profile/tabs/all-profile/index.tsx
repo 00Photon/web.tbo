@@ -21,6 +21,9 @@ import {
   Paper,
   Stack,
   Skeleton,
+  List,
+  ListItem,
+  ListItemText,
 } from "@mui/material"
 import {
   Email,
@@ -35,6 +38,8 @@ import {
   Close,
   Person,
   Badge,
+  School,
+  Business,
 } from "@mui/icons-material"
 import { parseCloudinaryUrl, getPdfViewerUrl, canPreviewFile } from "@/@core/utils/cloudinary-helpers"
 
@@ -42,6 +47,12 @@ interface FileData {
   url: string
   name: string
   type: string
+}
+
+interface EducationEntry {
+  degree: string
+  institution: string
+  year: string
 }
 
 const AllProfile = () => {
@@ -56,10 +67,16 @@ const AllProfile = () => {
         setIsLoading(true)
         const response = await getCurrentUser()
         if (response?.user) {
-          setUserData(response.user)
+          // Parse education if it's a string
+          const user = {
+            ...response.user,
+            education: response.user.education ? JSON.parse(response.user.education) : [],
+          }
+          setUserData(user)
         }
       } catch (error) {
         console.error("Failed to fetch user:", error)
+        setUserData(null)
       } finally {
         setIsLoading(false)
       }
@@ -258,16 +275,28 @@ const AllProfile = () => {
             <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
               {userData.name}
             </Typography>
-            <Chip
-              icon={<Badge />}
-              label={userData.account_type}
-              sx={{
-                backgroundColor: "rgba(255,255,255,0.2)",
-                color: "white",
-                fontWeight: 600,
-                mb: 2,
-              }}
-            />
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap", mb: 2 }}>
+              <Chip
+                icon={<Badge />}
+                label={userData.account_type}
+                sx={{
+                  backgroundColor: "rgba(255,255,255,0.2)",
+                  color: "white",
+                  fontWeight: 600,
+                }}
+              />
+              {userData.designation && (
+                <Chip
+                  icon={<Work />}
+                  label={userData.designation}
+                  sx={{
+                    backgroundColor: "rgba(255,255,255,0.2)",
+                    color: "white",
+                    fontWeight: 600,
+                  }}
+                />
+              )}
+            </Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                 <Email fontSize="small" />
@@ -279,16 +308,78 @@ const AllProfile = () => {
                   <Typography variant="body2">{userData.phone_number}</Typography>
                 </Box>
               )}
+              {userData.current_company && (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                  <Business fontSize="small" />
+                  <Typography variant="body2">{userData.current_company}</Typography>
+                </Box>
+              )}
             </Box>
           </Grid>
         </Grid>
       </Paper>
 
+      {/* Professional Summary Section */}
+      {userData.professional_summary && (
+        <>
+          <Typography variant="h5" sx={{ fontWeight: 600, mb: 3, color: "#39353D" }}>
+            Professional Summary
+          </Typography>
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <Typography variant="body1" sx={{ color: "text.secondary" }}>
+                {userData.professional_summary}
+              </Typography>
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      {/* Skills Section */}
+      {userData.skills && userData.skills.length > 0 && (
+        <>
+          <Typography variant="h5" sx={{ fontWeight: 600, mb: 3, color: "#39353D" }}>
+            Skills
+          </Typography>
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                {userData.skills.map((skill: string, index: number) => (
+                  <Chip key={index} label={skill} sx={{ fontSize: "14px" }} />
+                ))}
+              </Box>
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      {/* Education Section */}
+      {userData.education && userData.education.length > 0 && (
+        <>
+          <Typography variant="h5" sx={{ fontWeight: 600, mb: 3, color: "#39353D" }}>
+            Education
+          </Typography>
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <List>
+                {userData.education.map((edu: EducationEntry, index: number) => (
+                  <ListItem key={index}>
+                    <ListItemText
+                      primary={`${edu.degree}, ${edu.institution}`}
+                      secondary={`Year: ${edu.year}`}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </CardContent>
+          </Card>
+        </>
+      )}
+
       {/* Documents Section */}
       <Typography variant="h5" sx={{ fontWeight: 600, mb: 3, color: "#39353D" }}>
         Documents & Files
       </Typography>
-
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {userData.cv_upload && (
           <Grid item xs={12} sm={6} md={4}>
@@ -301,7 +392,6 @@ const AllProfile = () => {
             />
           </Grid>
         )}
-
         {userData.cover_letter_upload && (
           <Grid item xs={12} sm={6} md={4}>
             <FilePreviewCard
@@ -313,19 +403,17 @@ const AllProfile = () => {
             />
           </Grid>
         )}
-
         {userData.id_upload && (
           <Grid item xs={12} sm={6} md={4}>
             <FilePreviewCard
               title="ID Document"
               url={userData.id_upload}
               icon={<Person color="info" />}
-              fileName="ID-Document.pdf"
-              fileType="application/pdf"
+              fileName="ID-Document.jpg"
+              fileType="image/jpeg"
             />
           </Grid>
         )}
-
         {userData.work_sample_upload && (
           <Grid item xs={12} sm={6} md={4}>
             <FilePreviewCard
@@ -345,7 +433,6 @@ const AllProfile = () => {
           <Typography variant="h5" sx={{ fontWeight: 600, mb: 3, color: "#39353D" }}>
             Media & Portfolio
           </Typography>
-
           <Grid container spacing={3} sx={{ mb: 4 }}>
             {userData.video_url && (
               <Grid item xs={12} sm={6} md={4}>
@@ -357,7 +444,6 @@ const AllProfile = () => {
                         Introduction Video
                       </Typography>
                     </Box>
-
                     <Box
                       sx={{
                         width: "100%",
@@ -376,7 +462,6 @@ const AllProfile = () => {
                     >
                       <VideoLibrary sx={{ fontSize: 48, color: "#666" }} />
                     </Box>
-
                     <Stack direction="row" spacing={1}>
                       <Button
                         size="small"
@@ -399,7 +484,6 @@ const AllProfile = () => {
                 </Card>
               </Grid>
             )}
-
             {userData.project_screenshots &&
               userData.project_screenshots.map((screenshot: string, index: number) => (
                 <Grid item xs={12} sm={6} md={4} key={index}>
@@ -422,7 +506,6 @@ const AllProfile = () => {
           <Typography variant="h5" sx={{ fontWeight: 600, mb: 3, color: "#39353D" }}>
             External Links
           </Typography>
-
           <Card sx={{ mb: 3 }}>
             <CardContent>
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>

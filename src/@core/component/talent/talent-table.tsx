@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   Table,
@@ -13,29 +13,29 @@ import {
   Button,
   Box,
   Typography,
-} from "@mui/material"
-import { Visibility as VisibilityIcon } from "@mui/icons-material"
+} from "@mui/material";
+import { Visibility as VisibilityIcon } from "@mui/icons-material";
 
 export interface TalentData {
-  id: string
-  firstName: string
-  lastName: string
-  designation: string
-  location: string
-  experience: number
-  status: string
-  avatar: string
-  email: string
-  phone: string
-  summary: string
-  skills: string[]
-  education: string
-  currentCompany: string
+  id: number; // Change to number
+  name: string;
+  designation: string;
+  location: string;
+  years_experience: number | null;
+  status: string;
+  avatar?: string;
+  email?: string;
+  phone?: string;
+  professional_summary?: string;
+  
+  skills?: string[];
+  education?: string;
+  current_company?: string;
 }
 
 interface TalentTableProps {
-  talents: TalentData[]
-  onViewProfile: (talent: TalentData) => void
+  talents: TalentData[];
+  onViewProfile: (id: number) => void; // Update to expect number
 }
 
 export function TalentTable({ talents, onViewProfile }: TalentTableProps) {
@@ -58,25 +58,37 @@ export function TalentTable({ talents, onViewProfile }: TalentTableProps) {
               <TableCell>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                   <Avatar sx={{ width: 32, height: 32 }}>
-                    {talent.firstName[0]}
-                    {talent.lastName[0]}
+                    {talent.name
+                      ? talent.name
+                          .split(" ")
+                          .filter((part) => part)
+                          .map((part) => part[0])
+                          .join("")
+                          .slice(0, 2)
+                      : "T"}
                   </Avatar>
                   <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {talent.firstName}
+                    {talent.name || "Unnamed Talent"}
                   </Typography>
                 </Box>
               </TableCell>
-              <TableCell>{talent.designation}</TableCell>
-              <TableCell>{talent.location}</TableCell>
-              <TableCell>{talent.experience} years</TableCell>
+              <TableCell>{talent.designation || "N/A"}</TableCell>
+              <TableCell>{talent.location || "N/A"}</TableCell>
+              <TableCell>
+                {talent.years_experience !== null && talent.years_experience !== undefined
+                  ? `${talent.years_experience} years`
+                  : "N/A"}
+              </TableCell>
               <TableCell>
                 <Chip
-                  label={talent.status}
-                  color={talent.status === "Open to work" ? "success" : "default"}
+                  label={talent.status || "N/A"}
+                  color={talent.status === "open_to_work" ? "success" : "default"}
                   size="small"
                   sx={{
-                    bgcolor: talent.status === "Open to work" ? "#ECFDF5" : "#F3F4F6",
-                    color: talent.status === "Open to work" ? "#065F46" : "#374151",
+                    bgcolor:
+                      talent.status === "open_to_work" ? "#ECFDF5" : "#F3F4F6",
+                    color:
+                      talent.status === "open_to_work" ? "#065F46" : "#374151",
                   }}
                 />
               </TableCell>
@@ -85,7 +97,8 @@ export function TalentTable({ talents, onViewProfile }: TalentTableProps) {
                   variant="outlined"
                   size="small"
                   startIcon={<VisibilityIcon />}
-                  onClick={() => onViewProfile(talent)}
+                  onClick={() => onViewProfile(Number(talent.id))} // Convert string to number
+                  disabled={!talent.id || isNaN(Number(talent.id))}
                 >
                   View Profile
                 </Button>
@@ -95,5 +108,5 @@ export function TalentTable({ talents, onViewProfile }: TalentTableProps) {
         </TableBody>
       </Table>
     </TableContainer>
-  )
+  );
 }

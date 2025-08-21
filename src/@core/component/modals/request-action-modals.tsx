@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   Dialog,
@@ -17,7 +17,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
-} from "@mui/material"
+} from "@mui/material";
 import {
   Business as BusinessIcon,
   Person as PersonIcon,
@@ -27,29 +27,50 @@ import {
   CalendarToday as CalendarIcon,
   Close as CloseIcon,
   Send as SendIcon,
-} from "@mui/icons-material"
-import type { RequestData } from "@/data/request-data"
-import { useState } from "react"
-
+} from "@mui/icons-material";
+import { useState } from "react";
+import type { AdminRequestsData } from "@/@core/services/AdminPool";
+import { sendMessage } from "@/@core/services/AdminPool";
+import { getSession } from "next-auth/react";
 interface RequestViewModalProps {
-  request: RequestData
-  open: boolean
-  onClose: () => void
+  request: AdminRequestsData["requests"][0];
+  open: boolean;
+  onClose: () => void;
 }
 
 export function RequestViewModal({ request, open, onClose }: RequestViewModalProps) {
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Hired":
-        return { bgcolor: "#ECFDF5", color: "#065F46" }
+        return { bgcolor: "#ECFDF5", color: "#065F46" };
       case "Processing":
-        return { bgcolor: "#EFF6FF", color: "#1E40AF" }
+        return { bgcolor: "#EFF6FF", color: "#1E40AF" };
       case "Cancelled":
-        return { bgcolor: "#FEF2F2", color: "#991B1B" }
+        return { bgcolor: "#FEF2F2", color: "#991B1B" };
       default:
-        return { bgcolor: "#F3F4F6", color: "#374151" }
+        return { bgcolor: "#F3F4F6", color: "#374151" };
     }
-  }
+  };
+
+  const handleSendMessage = async (receiverId: number) => {
+    if (!message.trim()) return;
+
+    try {
+      setLoading(true);
+      await sendMessage(request.id, receiverId, message);
+      setMessage("");
+      setError(null);
+      // Optionally refresh request data here if needed
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send message");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -63,26 +84,24 @@ export function RequestViewModal({ request, open, onClose }: RequestViewModalPro
       </DialogTitle>
       <DialogContent>
         <Box sx={{ py: 2 }}>
-          {/* Header */}
           <Box sx={{ mb: 3 }}>
             <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
-              {request.jobTitle}
+              {request.job_title || "N/A"}
             </Typography>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
               <Typography variant="body1" color="text.secondary">
-                {request.companyName} → {request.talentName}
+                {request.client?.company_name || "N/A"} → {request.talent?.name || "N/A"}
               </Typography>
               <Chip label={request.status} size="small" sx={getStatusColor(request.status)} />
             </Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
               <CalendarIcon sx={{ fontSize: 16, color: "text.secondary" }} />
               <Typography variant="body2" color="text.secondary">
-                Requested on {request.requestDate}
+                Requested on {request.request_date || "N/A"}
               </Typography>
             </Box>
           </Box>
 
-          {/* Company and Talent Info */}
           <Grid container spacing={3} sx={{ mb: 3 }}>
             <Grid item xs={12} md={6}>
               <Card>
@@ -93,15 +112,15 @@ export function RequestViewModal({ request, open, onClose }: RequestViewModalPro
                   </Box>
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      {request.companyName}
+                      {request.client?.company_name || "N/A"}
                     </Typography>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <EmailIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                      <Typography variant="body2">{request.companyEmail}</Typography>
+                      <Typography variant="body2">{request.client?.company_email_address || "N/A"}</Typography>
                     </Box>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <PhoneIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                      <Typography variant="body2">{request.companyPhone}</Typography>
+                      <Typography variant="body2">{request.client?.company_phone || "N/A"}</Typography>
                     </Box>
                   </Box>
                 </CardContent>
@@ -116,15 +135,15 @@ export function RequestViewModal({ request, open, onClose }: RequestViewModalPro
                   </Box>
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      {request.talentName}
+                      {request.talent?.name || "N/A"}
                     </Typography>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <EmailIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                      <Typography variant="body2">{request.talentEmail}</Typography>
+                      <Typography variant="body2">{request.talent?.email || "N/A"}</Typography>
                     </Box>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <PhoneIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                      <Typography variant="body2">{request.talentPhone}</Typography>
+                      <Typography variant="body2">{request.talent?.phone_number || "N/A"}</Typography>
                     </Box>
                   </Box>
                 </CardContent>
@@ -132,7 +151,6 @@ export function RequestViewModal({ request, open, onClose }: RequestViewModalPro
             </Grid>
           </Grid>
 
-          {/* Request Details */}
           <Card sx={{ mb: 3 }}>
             <CardContent>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
@@ -145,7 +163,7 @@ export function RequestViewModal({ request, open, onClose }: RequestViewModalPro
                     Request Type
                   </Typography>
                   <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {request.requestType}
+                    {request.request_date || "N/A"}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -153,24 +171,91 @@ export function RequestViewModal({ request, open, onClose }: RequestViewModalPro
                     Job Title
                   </Typography>
                   <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {request.jobTitle}
+                    {request.job_title || "N/A"}
                   </Typography>
                 </Grid>
               </Grid>
             </CardContent>
           </Card>
 
-          {/* Notes */}
           <Card>
+            <CardContent>
+              <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                Messages
+              </Typography>
+              {request.messages && request.messages.length > 0 ? (
+                request.messages.map((msg) => (
+                  <Box key={msg.id} sx={{ mb: 2, p: 2, bgcolor: "#F9FAFB", borderRadius: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {msg.message_text}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Sent on {new Date(msg.sent_at).toLocaleString()} - Status: {msg.status}
+                    </Typography>
+                  </Box>
+                ))
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  No messages available
+                </Typography>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card sx={{ mt: 3 }}>
+            <CardContent>
+              <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                Send New Message
+              </Typography>
+              <TextField
+                label="Message"
+                fullWidth
+                multiline
+                rows={3}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Type your message here..."
+                error={!!error}
+                helperText={error}
+                disabled={loading}
+                sx={{ mb: 2 }}
+              />
+              <Box sx={{ display: "flex", gap: 1 }}>
+                {request.client?.id !== undefined && (
+                  <Button
+                    variant="contained"
+                    onClick={() => handleSendMessage(request.client!.id)}
+                    startIcon={<SendIcon />}
+                    disabled={loading || !message.trim()}
+                  >
+                    Send to Company
+                  </Button>
+                )}
+                {request.talent?.id !== undefined && (
+                  <Button
+                    variant="contained"
+                    onClick={() => handleSendMessage(request.talent!.id)}
+                    startIcon={<SendIcon />}
+                    disabled={loading || !message.trim()}
+                  >
+                    Send to Talent
+                  </Button>
+                )}
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Notes section removed or replaced due to missing 'notes' property on request */}
+          {/* <Card sx={{ mt: 3 }}>
             <CardContent>
               <Typography variant="subtitle2" sx={{ mb: 2 }}>
                 Notes
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {request.notes}
+                {request.notes || "No notes available"}
               </Typography>
             </CardContent>
-          </Card>
+          </Card> */}
         </Box>
       </DialogContent>
       <DialogActions sx={{ p: 3, pt: 0 }}>
@@ -179,30 +264,56 @@ export function RequestViewModal({ request, open, onClose }: RequestViewModalPro
         </Button>
       </DialogActions>
     </Dialog>
-  )
+  );
 }
 
 interface ContactModalProps {
-  open: boolean
-  onClose: () => void
-  title: string
-  contactName: string
-  contactEmail: string
-  contactPhone: string
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  receiverId: number;
+  requestId: number; // Add request ID to props
 }
 
-export function ContactModal({ open, onClose, title, contactName, contactEmail, contactPhone }: ContactModalProps) {
-  const [message, setMessage] = useState("")
+export function ContactModal({
+  open,
+  onClose,
+  title,
+  contactName,
+  contactEmail,
+  contactPhone,
+  receiverId,
+  requestId,
+}: ContactModalProps) {
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSendMessage = () => {
-    // Here you would implement the actual message sending logic
-    console.log("Sending message to:", contactName)
-    console.log("Message:", message)
+  const handleSendMessage = async () => {
+    if (!message.trim()) return;
 
-    // Reset form and close modal
-    setMessage("")
-    onClose()
-  }
+    try {
+      setLoading(true);
+      const session = await getSession();
+      const senderId = session?.user?.id; // Get sender ID from session (admin ID)
+
+      if (!senderId) {
+        throw new Error("Sender not authenticated");
+      }
+
+      await sendMessage(requestId, receiverId, message); // Use requestId and receiverId
+      setMessage("");
+      setError(null);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send message");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -212,8 +323,6 @@ export function ContactModal({ open, onClose, title, contactName, contactEmail, 
           <Typography variant="body1" sx={{ mb: 3 }}>
             Send a message to {contactName}:
           </Typography>
-
-          {/* Contact Information */}
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 3 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <EmailIcon sx={{ color: "text.secondary" }} />
@@ -224,8 +333,6 @@ export function ContactModal({ open, onClose, title, contactName, contactEmail, 
               <Typography variant="body2">{contactPhone}</Typography>
             </Box>
           </Box>
-
-          {/* Message Input */}
           <TextField
             label="Message"
             fullWidth
@@ -234,34 +341,41 @@ export function ContactModal({ open, onClose, title, contactName, contactEmail, 
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Type your message here..."
-            variant="outlined"
+            error={!!error}
+            helperText={error}
+            disabled={loading}
           />
         </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={handleSendMessage} disabled={!message.trim()} startIcon={<SendIcon />}>
+        <Button
+          variant="contained"
+          onClick={handleSendMessage}
+          disabled={loading || !message.trim()}
+          startIcon={<SendIcon />}
+        >
           Send Message
         </Button>
       </DialogActions>
     </Dialog>
-  )
+  );
 }
 
 interface ScheduleInterviewModalProps {
-  open: boolean
-  onClose: () => void
-  request: RequestData
+  open: boolean;
+  onClose: () => void;
+  request: AdminRequestsData["requests"][0];
 }
 
 export function ScheduleInterviewModal({ open, onClose, request }: ScheduleInterviewModalProps) {
   const [formData, setFormData] = useState({
-    selectedJob: "",
-    selectedCandidate: "",
+    selectedJob: request.job_title || "",
+    selectedCandidate: request.talent?.name || "",
     interviewerName: "",
     department: "",
-    emailAddress: "",
-    phoneNumber: "",
+    emailAddress: request.client?.company_email_address || "",
+    phoneNumber: request.client?.company_phone || "",
     interviewDate: "",
     interviewTime: "",
     duration: "",
@@ -270,25 +384,31 @@ export function ScheduleInterviewModal({ open, onClose, request }: ScheduleInter
     tboEmail: "",
     tboPhone: "",
     additionalInfo: "",
-  })
+  });
 
   const jobs = [
     { id: "JOB001", title: "Senior Software Engineer" },
     { id: "JOB002", title: "UX Designer" },
     { id: "JOB003", title: "Data Scientist" },
     { id: "JOB004", title: "Product Manager" },
-  ]
+  ];
 
   const candidates = [
     { id: "CAND001", name: "Sarah Johnson" },
     { id: "CAND002", name: "Michael Chen" },
     { id: "CAND003", name: "Emily Rodriguez" },
     { id: "CAND004", name: "David Kim" },
-  ]
+    { id: request.talent?.id.toString(), name: request.talent?.name || "N/A" },
+  ];
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = () => {
+    console.log("Scheduling interview:", formData);
+    onClose();
+  };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -296,11 +416,10 @@ export function ScheduleInterviewModal({ open, onClose, request }: ScheduleInter
       <DialogContent>
         <Box sx={{ py: 2 }}>
           <Typography variant="body1" sx={{ mb: 3 }}>
-            Schedule an interview for {request.talentName} with {request.companyName}
+            Schedule an interview for {request.talent?.name || "N/A"} with {request.client?.company_name || "N/A"}
           </Typography>
 
           <Grid container spacing={3}>
-            {/* Row 1 */}
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
                 <InputLabel>Select Job</InputLabel>
@@ -309,7 +428,7 @@ export function ScheduleInterviewModal({ open, onClose, request }: ScheduleInter
                   label="Select Job"
                   onChange={(e) => handleInputChange("selectedJob", e.target.value)}
                 >
-                  {jobs.map((job) => (
+                  {jobs.concat({ id: request.job_title || "N/A", title: request.job_title || "N/A" }).map((job) => (
                     <MenuItem key={job.id} value={job.id}>
                       {job.title}
                     </MenuItem>
@@ -335,7 +454,6 @@ export function ScheduleInterviewModal({ open, onClose, request }: ScheduleInter
               </FormControl>
             </Grid>
 
-            {/* Row 2 */}
             <Grid item xs={12} md={6}>
               <TextField
                 label="Interviewer Name"
@@ -354,7 +472,6 @@ export function ScheduleInterviewModal({ open, onClose, request }: ScheduleInter
               />
             </Grid>
 
-            {/* Row 3 */}
             <Grid item xs={12} md={6}>
               <TextField
                 label="Email Address"
@@ -374,7 +491,6 @@ export function ScheduleInterviewModal({ open, onClose, request }: ScheduleInter
               />
             </Grid>
 
-            {/* Row 4 */}
             <Grid item xs={12} md={4}>
               <TextField
                 label="Interview Date"
@@ -414,7 +530,6 @@ export function ScheduleInterviewModal({ open, onClose, request }: ScheduleInter
               </FormControl>
             </Grid>
 
-            {/* Row 5 */}
             <Grid item xs={12}>
               <FormControl fullWidth>
                 <InputLabel>Interview Format</InputLabel>
@@ -431,7 +546,6 @@ export function ScheduleInterviewModal({ open, onClose, request }: ScheduleInter
               </FormControl>
             </Grid>
 
-            {/* TBO Representative Section */}
             <Grid item xs={12}>
               <Typography variant="subtitle2" sx={{ mb: 2, mt: 2, color: "primary.main" }}>
                 TBO Representative Details
@@ -466,7 +580,6 @@ export function ScheduleInterviewModal({ open, onClose, request }: ScheduleInter
               />
             </Grid>
 
-            {/* Additional Information */}
             <Grid item xs={12}>
               <TextField
                 label="Additional Information (Optional)"
@@ -483,43 +596,55 @@ export function ScheduleInterviewModal({ open, onClose, request }: ScheduleInter
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained">Schedule Interview</Button>
+        <Button variant="contained" onClick={handleSubmit}>
+          Schedule Interview
+        </Button>
       </DialogActions>
     </Dialog>
-  )
+  );
 }
 
 interface CancelRequestModalProps {
-  open: boolean
-  onClose: () => void
-  request: RequestData
-  onConfirm: () => void
+  open: boolean;
+  onClose: () => void;
+  request: AdminRequestsData["requests"][0];
+  onConfirm: (reason: string) => void;
 }
 
 export function CancelRequestModal({ open, onClose, request, onConfirm }: CancelRequestModalProps) {
+  const [reason, setReason] = useState("");
+
+  const handleConfirm = () => {
+    onConfirm(reason);
+    setReason("");
+  };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Cancel Request</DialogTitle>
       <DialogContent>
         <Box sx={{ py: 2 }}>
           <Typography variant="body1" sx={{ mb: 3 }}>
-            Are you sure you want to cancel the request for {request.talentName} at {request.companyName}?
+            Are you sure you want to cancel the request for <strong>{request.talent?.name || "N/A"}</strong> for the position of{" "}
+            <strong>{request.job_title || "N/A"}</strong> at <strong>{request.client?.company_name || "N/A"}</strong>?
           </Typography>
           <TextField
             label="Cancellation Reason"
             fullWidth
             multiline
             rows={3}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
             placeholder="Please provide a reason for cancellation..."
           />
         </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Keep Request</Button>
-        <Button variant="contained" color="error" onClick={onConfirm}>
+        <Button variant="contained" color="error" onClick={handleConfirm} disabled={!reason.trim()}>
           Cancel Request
         </Button>
       </DialogActions>
     </Dialog>
-  )
+  );
 }

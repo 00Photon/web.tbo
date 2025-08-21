@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   Dialog,
@@ -17,7 +17,7 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-} from "@mui/material"
+} from "@mui/material";
 import {
   Close as CloseIcon,
   Work as WorkIcon,
@@ -29,41 +29,154 @@ import {
   Schedule as ScheduleIcon,
   CheckCircle as CheckCircleIcon,
   Bookmark as BookmarkIcon,
-} from "@mui/icons-material"
-import type { OpportunityData } from "@/data/opportunity-data"
+} from "@mui/icons-material";
+import { useEffect, useState } from "react";
+import { fetchJobsClientsById } from "@/@core/services/jobService";
+import { applyJob, saveJob } from "@/@core/services/jobVanciesService";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { Job } from "@/@core/services/jobVanciesService";
 
-interface OpportunityDetailModalProps {
-  opportunity: OpportunityData | null
-  open: boolean
-  onClose: () => void
+interface Opportunity {
+  id: string;
+  title: string;
+  job_type: string;
+  location: string;
+  currency: string;
+  minimum_salary: number;
+  maximum_salary: number;
+  created_at: string;
+  application_deadline: string;
+  applicant_count?: number;
+  description: string;
+  additional_info?: string;
+  requirements?: string;
+  responsibilities?: string;
+  benefits?: string;
+  skill?: string;
+  client?: {
+    company_logo?: string;
+    company_name?: string;
+    industry?: string;
+  };
 }
 
-export function OpportunityDetailModal({ opportunity, open, onClose }: OpportunityDetailModalProps) {
-  if (!opportunity) return null
+interface OpportunityDetailModalProps {
+  opportunity: Opportunity | null;
+  open: boolean;
+  onClose: () => void;
+  onOpenApplyModal: (open: boolean) => void;
+  setSelectedJobId: (jobId: number | null) => void;
+}
 
-  const requirements = [
-    "Bachelor's degree in Computer Science or related field",
-    `3+ years of experience in ${opportunity.department.toLowerCase()} development`,
-    "Strong problem-solving and analytical skills",
-    "Excellent communication and teamwork abilities",
-    "Experience with modern development tools and practices",
-  ]
+export function OpportunityDetailModal({
+  opportunity: initialOpportunity,
+  open,
+  onClose,
+  onOpenApplyModal,
+  setSelectedJobId,
+}: OpportunityDetailModalProps) {
+  const [opportunity, setOpportunity] = useState<Opportunity | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const responsibilities = [
-    "Develop and maintain high-quality software solutions",
-    "Collaborate with cross-functional teams to deliver projects",
-    "Participate in code reviews and technical discussions",
-    "Contribute to system architecture and design decisions",
-    "Mentor junior team members and share knowledge",
-  ]
+  useEffect(() => {
+    const fetchJobDetails = async () => {
+      if (initialOpportunity?.id) {
+        try {
+          setLoading(true);
+          const data = await fetchJobsClientsById(initialOpportunity.id);
+          const job: Job = data.job;
+          const mappedOpportunity: Opportunity = {
+            id: job.id.toString(),
+            title: job.title,
+            job_type: job.job_type,
+            location: job.location,
+            currency: job.currency,
+            minimum_salary: parseFloat(job.minimum_salary),
+            maximum_salary: parseFloat(job.maximum_salary),
+            created_at: job.created_at,
+            application_deadline: job.application_deadline,
+            applicant_count: job.applicant_count,
+            description: job.description,
+            additional_info: job.additional_info || undefined,
+            requirements: job.requirements || undefined,
+            responsibilities: job.responsibilities || undefined,
+            benefits: job.benefits || undefined,
+            skill: job.skill || undefined,
+            client: {
+              company_logo: job.client.company_logo || undefined,
+              company_name: job.client.company_name || undefined,
+              industry: job.client.industry || undefined,
+            },
+          };
+          setOpportunity(mappedOpportunity);
+        } catch (error) {
+          console.error("Failed to fetch job details:", error);
+          toast.error("Failed to load job details.");
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setOpportunity(initialOpportunity);
+      }
+    };
+    fetchJobDetails();
+  }, [initialOpportunity]);
 
-  const benefits = [
-    "Competitive salary and performance bonuses",
-    "Comprehensive health insurance coverage",
-    "Flexible working hours and remote work options",
-    "Professional development and training opportunities",
-    "Modern office environment with latest technology",
-  ]
+  if (loading) {
+    return (
+      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+        <DialogContent>
+          <Typography>Loading job details...</Typography>
+        </DialogContent>
+        <ToastContainer />
+      </Dialog>
+    );
+  }
+
+  if (!opportunity) {
+    return (
+      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+        <DialogContent>
+          <Typography>No job details available.</Typography>
+        </DialogContent>
+        <ToastContainer />
+      </Dialog>
+    );
+  }
+
+  const requirements = opportunity.requirements?.split("\n").filter((req: string) => req.trim()) || [];
+  const responsibilities = opportunity.responsibilities?.split("\n").filter((resp: string) => resp.trim()) || [];
+  const benefits = opportunity.benefits?.split("\n").filter((ben: string) => ben.trim()) || [];
+
+  const handleSaveJob = async () => {
+    if (opportunity.id) {
+      try {
+        const id = parseInt(opportunity.id, 10);
+        if (isNaN(id)) {
+          throw new Error("Invalid job ID");
+        }
+        await saveJob(id);
+        toast.success("Job saved successfully!");
+      } catch (error: any) {
+        console.error("Failed to save job:", error);
+        const errorMessage = error?.response?.data?.message || error?.message || "Failed to save job. Please try again.";
+        toast.error(errorMessage);
+      }
+    }
+  };
+
+  const handleApplyJob = () => {
+    if (opportunity.id) {
+      const id = parseInt(opportunity.id, 10);
+      if (isNaN(id)) {
+        toast.error("Invalid job ID");
+        return;
+      }
+      setSelectedJobId(id);
+      onOpenApplyModal(true);
+    }
+  };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -80,12 +193,11 @@ export function OpportunityDetailModal({ opportunity, open, onClose }: Opportuni
 
       <DialogContent sx={{ p: 0 }}>
         <Box sx={{ p: 3 }}>
-          {/* Header Section */}
           <Card sx={{ mb: 3, bgcolor: "#FEF2F2" }}>
             <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: "flex", alignItems: "flex-start", gap: 3 }}>
-                <Avatar src={opportunity.companyLogo} sx={{ width: 80, height: 80 }}>
-                  {opportunity.companyName[0]}
+                <Avatar src={opportunity.client?.company_logo || ""} sx={{ width: 80, height: 80 }}>
+                  {opportunity.client?.company_name?.[0] || "C"}
                 </Avatar>
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="h4" sx={{ fontWeight: 600, mb: 1, color: "#E61C31" }}>
@@ -101,7 +213,7 @@ export function OpportunityDetailModal({ opportunity, open, onClose }: Opportuni
                             Job Type
                           </Typography>
                           <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {opportunity.jobType}
+                            {opportunity.job_type}
                           </Typography>
                         </Box>
                       </Box>
@@ -129,7 +241,7 @@ export function OpportunityDetailModal({ opportunity, open, onClose }: Opportuni
                             Salary
                           </Typography>
                           <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {opportunity.currency} {opportunity.salaryRange}
+                            {opportunity.currency} {opportunity.minimum_salary} - {opportunity.maximum_salary}
                           </Typography>
                         </Box>
                       </Box>
@@ -143,7 +255,7 @@ export function OpportunityDetailModal({ opportunity, open, onClose }: Opportuni
                             Posted
                           </Typography>
                           <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {opportunity.postedDate}
+                            {new Date(opportunity.created_at).toLocaleDateString()}
                           </Typography>
                         </Box>
                       </Box>
@@ -154,13 +266,17 @@ export function OpportunityDetailModal({ opportunity, open, onClose }: Opportuni
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                       <GroupIcon sx={{ fontSize: 16, color: "text.secondary" }} />
                       <Typography variant="body2" color="text.secondary">
-                        {opportunity.applicationsCount} Applied
+                        {opportunity.applicant_count || 0} Applied
                       </Typography>
                     </Box>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                       <ScheduleIcon sx={{ fontSize: 16, color: "text.secondary" }} />
                       <Typography variant="body2" color="text.secondary">
-                        {opportunity.daysLeft} Days Left
+                        {Math.ceil(
+                          (new Date(opportunity.application_deadline).getTime() - new Date().getTime()) /
+                            (1000 * 3600 * 24)
+                        )}{" "}
+                        Days Left
                       </Typography>
                     </Box>
                   </Box>
@@ -169,7 +285,6 @@ export function OpportunityDetailModal({ opportunity, open, onClose }: Opportuni
             </CardContent>
           </Card>
 
-          {/* Job Description */}
           <Card sx={{ mb: 3 }}>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: "#E61C31" }}>
@@ -179,21 +294,18 @@ export function OpportunityDetailModal({ opportunity, open, onClose }: Opportuni
                 {opportunity.description}
               </Typography>
               <Typography variant="body1" sx={{ lineHeight: 1.7, color: "text.secondary", mt: 2 }}>
-                We are looking for a talented professional to join our growing team. This role offers excellent
-                opportunities for career growth and the chance to work on exciting projects with cutting-edge
-                technologies. You'll be part of a collaborative environment where innovation and creativity are valued.
+                {opportunity.additional_info || "No additional information provided."}
               </Typography>
             </CardContent>
           </Card>
 
-          {/* Skills Required */}
           <Card sx={{ mb: 3 }}>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: "#E61C31" }}>
                 Skills Required
               </Typography>
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                {opportunity.skills.map((skill, index) => (
+                {JSON.parse(opportunity.skill || "[]").map((skill: string, index: number) => (
                   <Chip
                     key={index}
                     label={skill}
@@ -211,7 +323,6 @@ export function OpportunityDetailModal({ opportunity, open, onClose }: Opportuni
             </CardContent>
           </Card>
 
-          {/* Requirements, Responsibilities, Benefits */}
           <Grid container spacing={3}>
             <Grid item xs={12} md={4}>
               <Card sx={{ height: "100%" }}>
@@ -292,7 +403,6 @@ export function OpportunityDetailModal({ opportunity, open, onClose }: Opportuni
             </Grid>
           </Grid>
 
-          {/* Company Information */}
           <Card sx={{ mt: 3 }}>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: "#E61C31" }}>
@@ -302,7 +412,7 @@ export function OpportunityDetailModal({ opportunity, open, onClose }: Opportuni
                 <BusinessIcon sx={{ color: "#E61C31" }} />
                 <Box>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {opportunity.department} Department
+                    {opportunity.client?.industry || "Unknown Department"}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Professional Development Opportunity
@@ -310,9 +420,7 @@ export function OpportunityDetailModal({ opportunity, open, onClose }: Opportuni
                 </Box>
               </Box>
               <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-                We are a forward-thinking company committed to innovation and excellence. Our team is passionate about
-                creating solutions that make a difference. We believe in fostering a collaborative work environment
-                where every team member can thrive and contribute to our shared success.
+                {opportunity.additional_info || "No additional information provided."}
               </Typography>
             </CardContent>
           </Card>
@@ -324,6 +432,7 @@ export function OpportunityDetailModal({ opportunity, open, onClose }: Opportuni
           <Button
             variant="outlined"
             startIcon={<BookmarkIcon />}
+            onClick={handleSaveJob}
             sx={{
               flex: 1,
               color: "#E61C31",
@@ -338,6 +447,7 @@ export function OpportunityDetailModal({ opportunity, open, onClose }: Opportuni
           </Button>
           <Button
             variant="contained"
+            onClick={handleApplyJob}
             sx={{
               flex: 1,
               bgcolor: "#E61C31",
@@ -350,6 +460,18 @@ export function OpportunityDetailModal({ opportunity, open, onClose }: Opportuni
           </Button>
         </Box>
       </DialogActions>
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </Dialog>
-  )
+  );
 }

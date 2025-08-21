@@ -14,27 +14,42 @@ import {
   Select,
   InputLabel,
   Stack,
-  FormControl
-} from "@mui/material";
-import { Edit, DeleteOutlineOutlined, Save } from "@mui/icons-material";
-import {countryCodes} from "@/@core/utils/data"
+  FormControl,
+  Chip,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+} from '@mui/material';
+import { Edit, DeleteOutlineOutlined, Save, Add } from '@mui/icons-material';
+import { countryCodes } from '@/@core/utils/data';
 
+interface EducationEntry {
+  degree: string;
+  institution: string;
+  year: string;
+}
 
 const MyProfileTab = () => {
   const [userId, setUserId] = useState<number | null>(null);
   const [editable, setEditable] = useState(false);
-  const [selectedCountryCode, setSelectedCountryCode] = useState('+1'); // Default to +1
+  const [selectedCountryCode, setSelectedCountryCode] = useState('+1');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone_number: '',
     designation: '',
     profile_image: '',
-    account_type: 'TALENT' as const
+    account_type: 'TALENT' as const,
+    professional_summary: '',
+    skills: [] as string[],
+    education: [] as EducationEntry[],
   });
   const [tempImageUrl, setTempImageUrl] = useState<string | null>(null);
+  // Removed invalid state declaration here
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [newEducation, setNewEducation] = useState<EducationEntry>({ degree: '', institution: '', year: '' });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -45,13 +60,12 @@ const MyProfileTab = () => {
 
         if (user) {
           setUserId(user.id);
-          // Extract country code from phone number if it exists
           let phone = user.phone_number || '';
-          let code = '+1'; // Default
+          let code = '+1';
           for (const country of countryCodes) {
             if (phone.startsWith(country.code)) {
               code = country.code;
-              phone = phone.slice(country.code.length); // Remove country code from phone
+              phone = phone.slice(country.code.length);
               break;
             }
           }
@@ -62,11 +76,14 @@ const MyProfileTab = () => {
             designation: user.designation || '',
             phone_number: phone,
             profile_image: user.profile_image || '',
-            account_type: user.account_type || 'TALENT'
+            account_type: user.account_type || 'TALENT',
+            professional_summary: user.professional_summary || '',
+            skills: user.skills || [],
+            education: user.education ? JSON.parse(user.education) : [],
           });
         }
       } catch (error) {
-        console.error("Failed to fetch user:", error);
+        console.error('Failed to fetch user:', error);
       }
     };
 
@@ -74,14 +91,51 @@ const MyProfileTab = () => {
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     }));
   };
 
   const handleCountryCodeChange = (e: any) => {
     setSelectedCountryCode(e.target.value);
+  };
+
+  const handleSkillsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+    // Split by comma, trim whitespace, filter out empty strings
+    const skills = input
+      .split(',')
+      .map((skill) => skill.trim())
+      .filter((skill) => skill.length > 0);
+    setFormData((prev) => ({
+      ...prev,
+      skills,
+    }));
+  };
+
+  const handleEducationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewEducation((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  const addEducation = () => {
+    if (newEducation.degree && newEducation.institution && newEducation.year) {
+      setFormData((prev) => ({
+        ...prev,
+        education: [...prev.education, newEducation],
+      }));
+      setNewEducation({ degree: '', institution: '', year: '' });
+    }
+  };
+
+  const removeEducation = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      education: prev.education.filter((_, i) => i !== index),
+    }));
   };
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,7 +155,7 @@ const MyProfileTab = () => {
       try {
         const uploaded = await uploadFile(formData);
         if (uploaded?.url) {
-          setFormData(prev => ({
+          setFormData((prev) => ({
             ...prev,
             profile_image: uploaded.url,
           }));
@@ -124,14 +178,19 @@ const MyProfileTab = () => {
     if (!userId) return;
     try {
       const { profile_image, phone_number, ...personalInfo } = formData;
-      // Combine country code with phone number
       const fullPhoneNumber = `${selectedCountryCode}${phone_number}`.replace(/\s/g, '');
-      await updateUser(userId, { ...personalInfo, phone_number: fullPhoneNumber });
+      await updateUser(userId, {
+        ...personalInfo,
+        phone_number: fullPhoneNumber,
+        professional_summary: formData.professional_summary,
+        skills: formData.skills,
+        education: formData.education,
+      });
       setEditable(false);
-      setSuccess("Personal information updated successfully!");
+      setSuccess('Personal information updated successfully!');
     } catch (error) {
-      console.error("Failed to update user:", error);
-      setError("Failed to update profile. Please try again.");
+      console.error('Failed to update user:', error);
+      setError('Failed to update profile. Please try again.');
     }
   };
 
@@ -142,17 +201,17 @@ const MyProfileTab = () => {
   const removeImage = async () => {
     try {
       setTempImageUrl(null);
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        profile_image: ''
+        profile_image: '',
       }));
       if (userId) {
         await updateUser(userId, { profile_image: '' });
       }
       setSuccess('Profile image removed successfully!');
     } catch (error) {
-      console.error("Failed to remove image:", error);
-      setError("Failed to remove profile image.");
+      console.error('Failed to remove image:', error);
+      setError('Failed to remove profile image.');
     }
   };
 
@@ -176,18 +235,17 @@ const MyProfileTab = () => {
           <Box sx={{ width: 'fit-content' }}>
             <Typography sx={{ fontWeight: 600, color: '#39353D', fontSize: '16px' }}>Picture</Typography>
             <Typography sx={{ fontSize: '13px', mb: '10px' }}>This is displaying on your profile</Typography>
-            <Box sx={{
-              border: '1px dashed #D0D5DD',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              borderRadius: '16px',
-              padding: '20px'
-            }}>
-             <Avatar 
-                src={tempImageUrl || formData.profile_image} 
-                sx={{ width: '70px', height: '70px', mb: '10px' }} 
-              />
+            <Box
+              sx={{
+                border: '1px dashed #D0D5DD',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                borderRadius: '16px',
+                padding: '20px',
+              }}
+            >
+              <Avatar src={tempImageUrl || formData.profile_image} sx={{ width: '70px', height: '70px', mb: '10px' }} />
               <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', mt: 2 }}>
                 <input
                   type="file"
@@ -196,11 +254,7 @@ const MyProfileTab = () => {
                   accept="image/*"
                   onChange={handleImageChange}
                 />
-                <Button 
-                  variant="outlined" 
-                  sx={{ textTransform: 'none' }}
-                  onClick={triggerFileInput}
-                >
+                <Button variant="outlined" sx={{ textTransform: 'none' }} onClick={triggerFileInput}>
                   Upload
                 </Button>
                 <IconButton onClick={removeImage}>
@@ -215,65 +269,62 @@ const MyProfileTab = () => {
         <Grid lg={9.5} item>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Box>
-              <Typography sx={{ fontWeight: 600, color: '#39353D', fontSize: '16px' }}>Personal Information</Typography>
+              <Typography sx={{ fontWeight: 600, color: '#39353D', fontSize: '16px' }}>
+                Personal Information
+              </Typography>
               <Typography sx={{ fontSize: '13px', mb: '10px' }}>Details about yourself</Typography>
             </Box>
-         
-<Box>
-  {editable ? (
-    <Stack direction="row" spacing={1} alignItems="center">
-      {/* Cancel Button */}
-      <Button
-        variant="outlined"
-        size="small"
-        onClick={() => setEditable(false)}
-        startIcon={<DeleteOutlineOutlined />}
-        sx={{
-          fontSize: '12px',
-          textTransform: 'none',
-          borderColor: '#D0D5DD',
-          borderRadius: '8px',
-          padding: '4px 12px',
-          color: '#667085',
-        }}
-      >
-        Cancel
-      </Button>
-
-      {/* Save Button */}
-      <Button
-        variant="contained"
-        size="small"
-        onClick={savePersonalInfo}
-        startIcon={<Save />}
-        sx={{
-          fontSize: '12px',
-          textTransform: 'none',
-          borderRadius: '8px',
-          padding: '4px 12px',
-        }}
-      >
-        Save
-      </Button>
-    </Stack>
-  ) : (
-    <Button
-      variant="contained"
-      size="small"
-      onClick={() => setEditable(true)}
-      startIcon={<Edit />}
-      sx={{
-        fontSize: '12px',
-        textTransform: 'none',
-        borderRadius: '8px',
-        padding: '4px 12px',
-      }}
-    >
-      Edit
-    </Button>
-  )}
-</Box>
-
+            <Box>
+              {editable ? (
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => setEditable(false)}
+                    startIcon={<DeleteOutlineOutlined />}
+                    sx={{
+                      fontSize: '12px',
+                      textTransform: 'none',
+                      borderColor: '#D0D5DD',
+                      borderRadius: '8px',
+                      padding: '4px 12px',
+                      color: '#667085',
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={savePersonalInfo}
+                    startIcon={<Save />}
+                    sx={{
+                      fontSize: '12px',
+                      textTransform: 'none',
+                      borderRadius: '8px',
+                      padding: '4px 12px',
+                    }}
+                  >
+                    Save
+                  </Button>
+                </Stack>
+              ) : (
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={() => setEditable(true)}
+                  startIcon={<Edit />}
+                  sx={{
+                    fontSize: '12px',
+                    textTransform: 'none',
+                    borderRadius: '8px',
+                    padding: '4px 12px',
+                  }}
+                >
+                  Edit
+                </Button>
+              )}
+            </Box>
           </Box>
 
           <Grid columnSpacing={4} rowSpacing={3} container>
@@ -284,7 +335,7 @@ const MyProfileTab = () => {
                 value={firstName}
                 onChange={(e) => {
                   const newName = `${e.target.value} ${surname}`.trim();
-                  setFormData(prev => ({ ...prev, name: newName }));
+                  setFormData((prev) => ({ ...prev, name: newName }));
                 }}
                 placeholder="Enter First Name"
                 disabled={!editable}
@@ -299,7 +350,7 @@ const MyProfileTab = () => {
                 value={surname}
                 onChange={(e) => {
                   const newName = `${firstName} ${e.target.value}`.trim();
-                  setFormData(prev => ({ ...prev, name: newName }));
+                  setFormData((prev) => ({ ...prev, name: newName }));
                 }}
                 placeholder="Enter Surname"
                 disabled={!editable}
@@ -360,6 +411,131 @@ const MyProfileTab = () => {
               />
             </Grid>
           </Grid>
+
+          {/* Professional Summary Section */}
+          <Box mt={4}>
+            <Typography sx={{ fontWeight: 600, color: '#39353D', fontSize: '16px' }}>
+              Professional Summary
+            </Typography>
+            <Typography sx={{ fontSize: '13px', mb: '10px' }}>
+              A brief summary of your professional background
+            </Typography>
+            <TextField
+              name="professional_summary"
+              value={formData.professional_summary}
+              onChange={handleChange}
+              placeholder="Enter your professional summary"
+              disabled={!editable}
+              fullWidth
+              multiline
+              rows={4}
+              inputProps={{ style: { fontSize: '12px' } }}
+            />
+          </Box>
+
+          {/* Skills Section */}
+          <Box mt={4}>
+            <Typography sx={{ fontWeight: 600, color: '#39353D', fontSize: '16px' }}>Skills</Typography>
+            <Typography sx={{ fontSize: '13px', mb: '10px' }}>
+              List your skills (comma-separated)
+            </Typography>
+            <TextField
+              name="skills"
+              value={formData.skills.join(', ')}
+              onChange={handleSkillsChange}
+              placeholder="Enter skills (e.g., JavaScript, React, Python)"
+              disabled={!editable}
+              fullWidth
+              inputProps={{ style: { fontSize: '12px' } }}
+            />
+            {formData.skills.length > 0 && (
+              <Box mt={2}>
+                {formData.skills.map((skill, index) => (
+                  <Chip
+                    key={index}
+                    label={skill}
+                    onDelete={editable ? () => setFormData((prev) => ({
+                      ...prev,
+                      skills: prev.skills.filter((_, i) => i !== index),
+                    })) : undefined}
+                    sx={{ mr: 1, mb: 1 }}
+                  />
+                ))}
+              </Box>
+            )}
+          </Box>
+
+          {/* Education Section */}
+          <Box mt={4}>
+            <Typography sx={{ fontWeight: 600, color: '#39353D', fontSize: '16px' }}>Education</Typography>
+            <Typography sx={{ fontSize: '13px', mb: '10px' }}>
+              Add your educational background
+            </Typography>
+            {editable && (
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    name="degree"
+                    value={newEducation.degree}
+                    onChange={handleEducationChange}
+                    placeholder="Degree"
+                    fullWidth
+                    inputProps={{ style: { fontSize: '12px' } }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    name="institution"
+                    value={newEducation.institution}
+                    onChange={handleEducationChange}
+                    placeholder="Institution"
+                    fullWidth
+                    inputProps={{ style: { fontSize: '12px' } }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={2}>
+                  <TextField
+                    name="year"
+                    value={newEducation.year}
+                    onChange={handleEducationChange}
+                    placeholder="Year"
+                    fullWidth
+                    inputProps={{ style: { fontSize: '12px' } }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={2}>
+                  <Button
+                    variant="contained"
+                    startIcon={<Add />}
+                    onClick={addEducation}
+                    disabled={!newEducation.degree || !newEducation.institution || !newEducation.year}
+                    sx={{ textTransform: 'none' }}
+                  >
+                    Add
+                  </Button>
+                </Grid>
+              </Grid>
+            )}
+            {formData.education.length > 0 && (
+              <List sx={{ mt: 2 }}>
+                {formData.education.map((edu, index) => (
+                  <ListItem key={index}>
+                    <ListItemText
+                      primary={`${edu.degree}, ${edu.institution}`}
+                      secondary={`Year: ${edu.year}`}
+                    />
+                    {editable && (
+                      <ListItemSecondaryAction>
+                        <IconButton onClick={() => removeEducation(index)}>
+                          <DeleteOutlineOutlined />
+                        </IconButton>
+                      </ListItemSecondaryAction>
+                    )}
+                  </ListItem>
+                ))}
+              </List>
+            )}
+          </Box>
         </Grid>
       </Grid>
 

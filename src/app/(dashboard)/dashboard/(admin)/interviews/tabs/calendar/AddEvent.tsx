@@ -45,6 +45,9 @@ interface IFormInput {
   minSalary: string;
   maxSalary: string;
   information: string;
+  responsibilities: string; // Add this field
+  benefits: string; // Add this field
+  about_the_role: string; // Add this field
 }
 
 const defaultValues = {

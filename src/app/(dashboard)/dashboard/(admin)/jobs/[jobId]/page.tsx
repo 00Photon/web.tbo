@@ -28,8 +28,12 @@ import {
   Paper,
   Chip,
   IconButton,
-  Menu,
+  Menu as MuiMenu,
   MenuItem as MenuItemComponent,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material"
 import {
   ArrowBack as ArrowBackIcon,
@@ -44,7 +48,7 @@ import { RecommendationsModal } from "@/@core/component/modals/recommendations-m
 import { CustomPagination } from "@/@core/component/common/custom-pagination"
 import { usePagination } from "@/@core/component/hooks/use-pagination"
 import JobDetailsModal from "../JobDetailsModal"
-import { fetchJobsById, fetchApplications } from "@/@core/services/jobService"
+import { fetchJobsById, fetchApplications, updateApplicationStatus } from "@/@core/services/jobService"
 
 interface Job {
   id: number
@@ -52,7 +56,7 @@ interface Job {
   job_type: string
   description: string
   requirements: string
-  skill: string | string[] // Handle both string and array
+  skill: string | string[]
   currency: string
   salary_type: string
   minimum_salary: string
@@ -96,10 +100,42 @@ interface Application {
   created_at: string
   updated_at: string
   user: {
+    id: number
     name: string
-    email: string
     account_type: string
-    // Other user fields
+    company_logo: string | null
+    company_name: string | null
+    company_email_address: string | null
+    industry: string | null
+    number_of_employees: string | null
+    type_of_employer: string | null
+    company_address: string | null
+    company_phone_number: string | null
+    country: string | null
+    company_website: string | null
+    contact_person: string | null
+    work_email: string | null
+    position_in_company: string | null
+    phone_number: string | null
+    cv_upload: string | null
+    cover_letter_upload: string | null
+    id_upload: string | null
+    video_url: string | null
+    project_screenshots: string[] | null
+    work_sample_upload: string | null
+    portfolio_link: string | null
+    profile_image: string | null
+    designation: string | null
+    email: string
+    email_verified_at: string | null
+    otp: string | null
+    otp_expires_at: string | null
+    is_verified: number
+    created_at: string
+    updated_at: string
+    deleted_at: string | null
+    status: string
+    reset_token: string | null
   }
 }
 
@@ -111,6 +147,39 @@ interface ApplicantData {
   applicationDate: string
   type: string
   status: string
+  account_type?: string
+  company_logo?: string | null
+  company_name?: string | null
+  company_email_address?: string | null
+  industry?: string | null
+  number_of_employees?: string | null
+  type_of_employer?: string | null
+  company_address?: string | null
+  company_phone_number?: string | null
+  country?: string | null
+  company_website?: string | null
+  contact_person?: string | null
+  work_email?: string | null
+  position_in_company?: string | null
+  phone_number?: string | null
+  cv_upload?: string | null
+  cover_letter_upload?: string | null
+  id_upload?: string | null
+  video_url?: string | null
+  project_screenshots?: string[] | null
+  work_sample_upload?: string | null
+  portfolio_link?: string | null
+  profile_image?: string | null
+  designation?: string | null
+  email_verified_at?: string | null
+  otp?: string | null
+  otp_expires_at?: string | null
+  is_verified?: number
+  created_at?: string
+  updated_at?: string
+  deleted_at?: string | null
+  status_user?: string
+  reset_token?: string | null
 }
 
 export default function JobApplicationDetails() {
@@ -126,15 +195,17 @@ export default function JobApplicationDetails() {
   const [modalOpen, setModalOpen] = useState(false)
   const [recommendationsModalOpen, setRecommendationsModalOpen] = useState(false)
   const [jobDetailsModalOpen, setJobDetailsModalOpen] = useState(false)
+  const [statusModalOpen, setStatusModalOpen] = useState(false)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [selectedApplicantIndex, setSelectedApplicantIndex] = useState<number | null>(null)
   const [job, setJob] = useState<Job | null>(null)
   const [applicants, setApplicants] = useState<ApplicantData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [newStatus, setNewStatus] = useState<string>("")
 
   const tabs = ["All", "Shortlisted", "Hired"]
-  const statusFilters = ["All", "Submitted", "Shortlisted", "Interviewed", "Hired", "Rejected"]
+  const statusFilters = ["All", "PENDING", "SHORTLISTED", "SCHEDULED", "INTERVIEWED", "HIRED", "REJECTED"]
   const typeFilters = ["All", "Applied", "Interested", "Recommended"]
 
   // Fetch job and application data
@@ -142,9 +213,7 @@ export default function JobApplicationDetails() {
     const loadJobAndApplicants = async () => {
       try {
         setLoading(true)
-        // Fetch job details
         const jobResponse = await fetchJobsById(jobId)
-        console.log("Job Response:", jobResponse)
         if (jobResponse && jobResponse.status && jobResponse.job) {
           const fetchedJob: Job = {
             ...jobResponse.job,
@@ -152,11 +221,8 @@ export default function JobApplicationDetails() {
           }
           setJob(fetchedJob)
 
-          // Fetch applications
           const applicationsResponse = await fetchApplications()
-          console.log("Applications Response:", applicationsResponse)
           const applications: Application[] = applicationsResponse.applications || []
-          // Filter applications by jobId and map to ApplicantData
           const mappedApplicants: ApplicantData[] = applications
             .filter((app) => app.job_id === parseInt(jobId) && app.user?.name && app.user?.email)
             .map((app) => ({
@@ -169,8 +235,46 @@ export default function JobApplicationDetails() {
                 month: "short",
                 year: "numeric",
               }),
-              type: app.user.account_type === "TALENT" ? "Applied" : "Recommended", // Adjust based on account_type
-              status: app.status.toLowerCase() === "hired" ? "Hired" : app.status, // Normalize status
+              type: app.user.account_type === "TALENT" ? "Applied" : "Recommended",
+              status: app.status,
+              account_type: app.user.account_type,
+              company_logo: app.user.company_logo,
+              company_name: app.user.company_name,
+              company_email_address: app.user.company_email_address,
+              industry: app.user.industry,
+              number_of_employees: app.user.number_of_employees,
+              type_of_employer: app.user.type_of_employer,
+              company_address: app.user.company_address,
+              company_phone_number: app.user.company_phone_number,
+              country: app.user.country,
+              company_website: app.user.company_website,
+              contact_person: app.user.contact_person,
+              work_email: app.user.work_email,
+              position_in_company: app.user.position_in_company,
+              phone_number: app.user.phone_number,
+              cv_upload: app.user.cv_upload,
+              cover_letter_upload: app.user.cover_letter_upload,
+              id_upload: app.user.id_upload,
+              video_url: app.user.video_url,
+              project_screenshots: app.user.project_screenshots,
+              work_sample_upload: app.user.work_sample_upload,
+              portfolio_link: app.user.portfolio_link,
+              profile_image: app.user.profile_image,
+              designation: app.user.designation,
+              email_verified_at: app.user.email_verified_at,
+              otp: app.user.otp,
+              otp_expires_at: app.user.otp_expires_at,
+              is_verified: app.user.is_verified,
+              created_at: app.user.created_at,
+              updated_at: app.user.updated_at,
+              deleted_at: app.user.deleted_at,
+              status_user: app.user.status,
+              reset_token: app.user.reset_token,
+              // Add required fields for RecommendationsModal compatibility
+              phone: app.user.phone_number || "",
+              experience: "", // Set appropriately if available
+              location: app.user.country || "",
+              resume: app.user.cv_upload || "",
             }))
           setApplicants(mappedApplicants)
           if (mappedApplicants.length === 0) {
@@ -198,7 +302,6 @@ export default function JobApplicationDetails() {
     loadJobAndApplicants()
   }, [jobId])
 
-  // Get recommended applicants
   const recommendedApplicants = useMemo(() => {
     return applicants.filter((applicant) => applicant.type === "Recommended")
   }, [applicants])
@@ -207,9 +310,9 @@ export default function JobApplicationDetails() {
     return applicants.filter((applicant) => {
       let matchesTab = true
       if (activeTab === 1) {
-        matchesTab = applicant.status === "Shortlisted"
+        matchesTab = applicant.status === "SHORTLISTED"
       } else if (activeTab === 2) {
-        matchesTab = applicant.status === "Hired"
+        matchesTab = applicant.status === "HIRED"
       }
 
       const matchesSearch =
@@ -248,22 +351,60 @@ export default function JobApplicationDetails() {
     setSelectedApplicantIndex(null)
   }
 
+  const handleOpenStatusModal = () => {
+    if (selectedApplicantIndex !== null) {
+      setSelectedApplicant(paginatedData[selectedApplicantIndex])
+      setNewStatus(paginatedData[selectedApplicantIndex].status)
+      setStatusModalOpen(true)
+    }
+    handleMenuClose()
+  }
+
+  const handleCloseStatusModal = () => {
+    setStatusModalOpen(false)
+    setSelectedApplicant(null)
+    setNewStatus("")
+  }
+
+  const handleChangeStatus = async () => {
+    if (!selectedApplicant || !newStatus) return
+
+    try {
+      const response = await updateApplicationStatus(selectedApplicant.id, newStatus)
+      if (response.status) {
+        setApplicants((prev) =>
+          prev.map((app) =>
+            app.id === selectedApplicant.id ? { ...app, status: newStatus } : app
+          )
+        )
+        toast.success("Application status updated successfully")
+        handleCloseStatusModal()
+      } else {
+        throw new Error(response.message || "Failed to update status")
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update application status")
+    }
+  }
+
   const toggleJobDetailsModal = () => {
     setJobDetailsModalOpen(!jobDetailsModalOpen)
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Hired":
+      case "HIRED":
         return { bgcolor: "#ECFDF5", color: "#065F46" }
-      case "Interviewed":
+      case "INTERVIEWED":
         return { bgcolor: "#F0F9FF", color: "#0C4A6E" }
-      case "Shortlisted":
+      case "SHORTLISTED":
         return { bgcolor: "#FFFBEB", color: "#92400E" }
-      case "Rejected":
+      case "REJECTED":
         return { bgcolor: "#FEF2F2", color: "#991B1B" }
-      case "Submitted":
+      case "PENDING":
         return { bgcolor: "#F3F4F6", color: "#374151" }
+      case "SCHEDULED":
+        return { bgcolor: "#F0F9FF", color: "#0C4A6E" }
       default:
         return { bgcolor: "#F3F4F6", color: "#374151" }
     }
@@ -299,7 +440,6 @@ export default function JobApplicationDetails() {
         pauseOnHover
         theme="colored"
       />
-      {/* Header with Breadcrumbs */}
       <Box sx={{ mb: 4 }}>
         <Breadcrumbs sx={{ mb: 2 }}>
           <Link
@@ -343,7 +483,6 @@ export default function JobApplicationDetails() {
         </Box>
       </Box>
 
-      {/* Recommendations Card */}
       <Card
         sx={{
           mb: 4,
@@ -389,10 +528,8 @@ export default function JobApplicationDetails() {
         </CardContent>
       </Card>
 
-      {/* Applications Table */}
       <Card>
         <CardContent sx={{ p: 3 }}>
-          {/* Tab Filters */}
           <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
             <Tabs value={activeTab} onChange={handleTabChange}>
               {tabs.map((tab, index) => (
@@ -401,7 +538,6 @@ export default function JobApplicationDetails() {
             </Tabs>
           </Box>
 
-          {/* Search and Filters */}
           <Box
             sx={{
               display: "flex",
@@ -461,7 +597,6 @@ export default function JobApplicationDetails() {
             </Box>
           </Box>
 
-          {/* Table */}
           <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid #E5E7EB" }}>
             <Table>
               <TableHead sx={{ bgcolor: "#F9FAFB" }}>
@@ -509,7 +644,6 @@ export default function JobApplicationDetails() {
             </Table>
           </TableContainer>
 
-          {/* Pagination */}
           <CustomPagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -521,8 +655,7 @@ export default function JobApplicationDetails() {
         </CardContent>
       </Card>
 
-      {/* Action Menu */}
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+      <MuiMenu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
         <MenuItemComponent
           onClick={() => {
             if (selectedApplicantIndex !== null) {
@@ -535,9 +668,11 @@ export default function JobApplicationDetails() {
         <MenuItemComponent onClick={toggleJobDetailsModal}>
           View Job Details
         </MenuItemComponent>
-      </Menu>
+        <MenuItemComponent onClick={handleOpenStatusModal}>
+          Change Status
+        </MenuItemComponent>
+      </MuiMenu>
 
-      {/* Applicant View Modal */}
       {selectedApplicant && (
         <ApplicantViewModal
           applicant={selectedApplicant}
@@ -549,7 +684,6 @@ export default function JobApplicationDetails() {
         />
       )}
 
-      {/* Recommendations Modal */}
       <RecommendationsModal
         open={recommendationsModalOpen}
         onClose={() => setRecommendationsModalOpen(false)}
@@ -557,7 +691,6 @@ export default function JobApplicationDetails() {
         jobTitle={job?.title || "Unknown Job"}
       />
 
-      {/* Job Details Modal */}
       {job && (
         <JobDetailsModal
           open={jobDetailsModalOpen}
@@ -565,6 +698,39 @@ export default function JobApplicationDetails() {
           job={job}
         />
       )}
+
+      <Dialog open={statusModalOpen} onClose={handleCloseStatusModal}>
+        <DialogTitle>Update Application Status</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            Update status for {selectedApplicant?.name}'s application
+          </Typography>
+          <FormControl fullWidth>
+            <InputLabel>Status</InputLabel>
+            <Select
+              value={newStatus}
+              label="Status"
+              onChange={(e) => setNewStatus(e.target.value)}
+            >
+              {statusFilters.slice(1).map((status) => (
+                <MenuItem key={status} value={status}>
+                  {status}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseStatusModal}>Cancel</Button>
+          <Button
+            onClick={handleChangeStatus}
+            variant="contained"
+            disabled={!newStatus}
+          >
+            Update
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

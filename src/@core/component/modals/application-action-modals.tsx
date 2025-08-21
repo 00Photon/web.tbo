@@ -25,7 +25,7 @@ import {
   CalendarToday as CalendarIcon,
   Close as CloseIcon,
 } from "@mui/icons-material"
-import type { ApplicationData } from "@/data/application-data"
+import type { ApplicationData } from "@/@core/component/data/application-data"
 
 interface ApplicationViewModalProps {
   application: ApplicationData

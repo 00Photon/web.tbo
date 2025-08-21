@@ -45,7 +45,6 @@ export const companySchema = yup.object().shape({
   // company_logo is not included in the form as it appears to be auto-generated
 });
 
-
 export const passwordSchema = yup.object().shape({
   password: yup.string().required("Please enter your current password"),
   newPassword: yup
@@ -73,16 +72,19 @@ export const newJobSchema = yup.object().shape({
     .required(),
   description: yup.string().required(),
   requirement: yup.string().required(),
+  responsibilities: yup.string().required("Responsibilities are required"), // New field
+  benefits: yup.string().required("Benefits are required"), // New field
+  about_the_role: yup.string().required("About the role is required"), // New field
   skills: yup
     .array()
     .of(yup.string().max(255).required())
     .min(5)
     .max(10)
     .required(),
- location: yup
+  location: yup
     .string()
     .oneOf(["Hybrid", "Remote", "Onsite"], "Please select a valid location")
-    .required("Location is required"), // Updated validation
+    .required("Location is required"),
   currency: yup
     .mixed<"USD" | "EUR" | "GBP" | "NGN">()
     .oneOf(["USD", "EUR", "GBP", "NGN"])
@@ -97,7 +99,7 @@ export const newJobSchema = yup.object().shape({
       if (value != null && minSalary != null) {
         return value > minSalary;
       }
-      return true; // Skip this test if either value is missing; let other validators handle it
+      return true;
     }),
   salary_type: yup
     .mixed<"MONTHLY" | "ANNUALLY">()
@@ -113,8 +115,6 @@ export const newJobSchema = yup.object().shape({
   client_id: yup.string().required(),
 });
 
-
-
 export const newJobSchema2 = yup.object().shape({
   title: yup.string().max(255, "Title must be at most 255 characters").required(),
   type: yup
@@ -123,16 +123,19 @@ export const newJobSchema2 = yup.object().shape({
     .required(),
   description: yup.string().required(),
   requirement: yup.string().required(),
+  responsibilities: yup.string().required("Responsibilities are required"), // New field
+  benefits: yup.string().required("Benefits are required"), // New field
+  about_the_role: yup.string().required("About the role is required"), // New field
   skills: yup
     .array()
     .of(yup.string().max(255).required())
     .min(5)
     .max(10)
     .required(),
- location: yup
+  location: yup
     .string()
     .oneOf(["Hybrid", "Remote", "Onsite"], "Please select a valid location")
-    .required("Location is required"), // Updated validation
+    .required("Location is required"),
   currency: yup.mixed<"USD" | "EUR" | "GBP" | "NGN">().oneOf(["USD", "EUR", "GBP", "NGN"]).required(),
   minSalary: yup.number().min(0).defined(),
   maxSalary: yup
@@ -144,7 +147,7 @@ export const newJobSchema2 = yup.object().shape({
       if (value != null && minSalary != null) {
         return value > minSalary;
       }
-      return true; // Skip this test if either value is missing; let other validators handle it
+      return true;
     }),
   salary_type: yup.mixed<"MONTHLY" | "ANNUALLY">().oneOf(["MONTHLY", "ANNUALLY"]).required(),
   application_deadline: yup
@@ -156,12 +159,14 @@ export const newJobSchema2 = yup.object().shape({
   information: yup.string().nullable().defined(),
 });
 
-
 export const newJobSchemaClone = yup.object().shape({
   title: yup.string().required("Job title is required"),
   type: yup.string().required("Job type is required"),
   description: yup.string().required("Job description is required"),
   requirement: yup.string().required("Job requirement is required"),
+  responsibilities: yup.string().required("Responsibilities are required"), // New field
+  benefits: yup.string().required("Benefits are required"), // New field
+  about_the_role: yup.string().required("About the role is required"), // New field
   skills: yup.array().required("Please add at least one skill"),
   location: yup.string().required("Job location is required"),
   currency: yup.string().required("Job currency is required"),
@@ -169,8 +174,6 @@ export const newJobSchemaClone = yup.object().shape({
   maxSalary: yup.string().required("Maximum salary is required"),
   information: yup.string().required("Job information is required"),
 });
-
-
 
 export const interviewSchema = yup.object().shape({
   applicationId: yup.number().min(1, "Please select an application").required("Application is required"),
@@ -189,7 +192,6 @@ export const interviewSchema = yup.object().shape({
   tboRepEmail: yup.string().email("Invalid email format").required("TBO email is required"),
   tboRepPhone: yup.string().matches(/^\+?[1-9]\d{1,14}$/, "Invalid phone number").required("TBO phone number is required"),
 });
-
 
 export const newAdminSchema = yup.object().shape({
   name: yup
@@ -221,4 +223,3 @@ export const AdminProfileSchema = yup.object().shape({
   role: yup.string().required("Role is required"),
   adminPrivileges: yup.string().required("adminPrivileges is required"),
 });
-

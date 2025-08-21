@@ -50,7 +50,7 @@ const DashboardNav: React.FC<{ setOpenLogoutModal: () => void }> = ({
       <Box
         sx={{
           ml: '30px',
-          pt: '50px',
+          pt: '30px',
         }}
       >
         {navItemsData.map((item, index) => (
