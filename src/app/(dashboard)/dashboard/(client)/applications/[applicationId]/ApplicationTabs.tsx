@@ -249,7 +249,7 @@ const ApplicationTabs = ({ tab, applicationId }: TabProps) => {
                   </Grid>
                 </Box>
 
-                <Box sx={{ mt: { xs: 4, lg: 0 } }}>
+                {/* <Box sx={{ mt: { xs: 4, lg: 0 } }}>
                   {activeTab === "shortlisted" && (
                     <Button
                       variant="contained"
@@ -267,7 +267,7 @@ const ApplicationTabs = ({ tab, applicationId }: TabProps) => {
                       Hire Talents
                     </Button>
                   )}
-                </Box>
+                </Box> */}
               </Box>
 
               <Grid item xs={12}>

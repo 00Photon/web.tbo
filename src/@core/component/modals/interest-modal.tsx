@@ -85,16 +85,15 @@ export function InterestModal({ open, onClose, onNewJob, onExistingJob, talentNa
 interface NewJobMessageModalProps {
   open: boolean;
   onClose: () => void;
-  onContinue: () => void; // Add onContinue prop
+  onContinue: () => void;
 }
 
 export function NewJobMessageModal({ open, onClose, onContinue }: NewJobMessageModalProps) {
   const router = useRouter();
 
-  const handleGoToJob = () => {
-    onClose();
+  const handleContinue = () => {
+    onContinue();
     router.push("/dashboard/applications");
-    toast.info("Navigating to job posting page", { toastId: "navigate-job-posting" });
   };
 
   return (
@@ -112,7 +111,7 @@ export function NewJobMessageModal({ open, onClose, onContinue }: NewJobMessageM
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
-        <Button variant="contained" onClick={handleGoToJob}>
+        <Button variant="contained" onClick={handleContinue}>
           Go to Job Posting
         </Button>
       </DialogActions>

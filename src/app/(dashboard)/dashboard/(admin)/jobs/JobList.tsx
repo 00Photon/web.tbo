@@ -291,7 +291,7 @@ export default function JobApplications() {
       />
       {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h3" sx={{ mb: 1 }}>
+        <Typography variant="h4" sx={{ mb: 1 }}>
           Job List
         </Typography>
         <Typography variant="body1" color="text.secondary">
@@ -346,7 +346,7 @@ export default function JobApplications() {
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Typography variant="h3">Job List</Typography>
+              <Typography variant="h5">Job List</Typography>
               <Typography variant="body2" color="text.secondary">
                 {filteredJobs.length}
               </Typography>

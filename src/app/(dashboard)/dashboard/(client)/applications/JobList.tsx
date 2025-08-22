@@ -291,7 +291,7 @@ const JobListTable = () => {
       />
       {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h3" sx={{ mb: 1 }}>
+        <Typography variant="h4" sx={{ mb: 1 }}>
           Job List
         </Typography>
         <Typography variant="body1" color="text.secondary">
@@ -323,7 +323,7 @@ const JobListTable = () => {
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Typography variant="h3">Job List</Typography>
+              <Typography variant="h5">Job List</Typography>
               <Typography variant="body2" color="text.secondary">
                 {filteredJobs.length}
               </Typography>
@@ -391,7 +391,7 @@ const JobListTable = () => {
                     <TableRow key={job.id} hover>
                       <TableCell sx={{ fontWeight: 500 }}>{job.id}</TableCell>
                       <TableCell>
-                        <Link
+                        {/* <Link
                           href={`/dashboard/applications/${job.id}`}
                           style={{
                             textDecoration: "none",
@@ -399,9 +399,9 @@ const JobListTable = () => {
                             fontWeight: 500,
                             cursor: "pointer",
                           }}
-                        >
+                        > */}
                           {job.title}
-                        </Link>
+                        {/* </Link> */}
                       </TableCell>
                       <TableCell>{job.applicant_count}</TableCell>
                       <TableCell>{job.postingDate}</TableCell>
@@ -456,11 +456,11 @@ const JobListTable = () => {
         }}>
           Delete Job
         </MenuItem>
-        <MenuItem>
+        {/* <MenuItem>
           <Link href={`/dashboard/applications/${selectedJobId}`} style={{ textDecoration: "none", color: "inherit" }}>
             View Applications
           </Link>
-        </MenuItem>
+        </MenuItem> */}
       </Menu>
 
       {/* Modals */}

@@ -77,12 +77,10 @@ export default function HirePage() {
     severity: "success",
   });
   const router = useRouter();
-  const userCache = useRef<Map<number, User>>(new Map()); // Cache for getUserById results
+  const userCache = useRef<Map<number, User>>(new Map());
 
-  // Custom function to parse "21st August, 2025 01:06" format
   const parseCustomDate = (dateString: string): Date => {
     if (!dateString || typeof dateString !== "string") {
-      console.warn(`Invalid date string: ${dateString}, returning current date`);
       return new Date();
     }
 
@@ -93,17 +91,10 @@ export default function HirePage() {
       .replace("th ", " ");
 
     const [dayMonthYear, time] = cleanedDateString.split(",");
-
-    if (!dayMonthYear) {
-      console.warn(`Invalid date format, missing dayMonthYear: ${dateString}, returning current date`);
-      return new Date();
-    }
+    if (!dayMonthYear) return new Date();
 
     const [day, month, year] = dayMonthYear.trim().split(" ");
-    if (!day || !month || !year) {
-      console.warn(`Invalid date components: ${dayMonthYear}, returning current date`);
-      return new Date();
-    }
+    if (!day || !month || !year) return new Date();
 
     const monthMap: { [key: string]: string } = {
       January: "01",
@@ -129,34 +120,23 @@ export default function HirePage() {
       const timeParts = time.trim().split(":");
       if (timeParts.length >= 2) {
         [hour, minute] = timeParts.map((num) => num.padStart(2, "0"));
-      } else {
-        console.warn(`Invalid time format: ${time}, using default 00:00`);
       }
     }
 
     const isoDateString = `${year}-${monthNumber}-${formattedDay}T${hour}:${minute}:00`;
     const parsedDate = new Date(isoDateString);
 
-    if (isNaN(parsedDate.getTime())) {
-      console.warn(`Invalid date parsed from: ${dateString}, returning current date`);
-      return new Date();
-    }
-    return parsedDate;
+    return isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
   };
 
-  // Fetch and verify admin user
   useEffect(() => {
     const fetchUserData = async () => {
       setLoading(true);
       try {
         const session = await getSession();
         const userId = session?.user?.id;
-        if (!userId) {
-          throw new Error("No user ID found in session");
-        }
-        console.log("User ID from session:", userId); // Debug log
+        if (!userId) throw new Error("No user ID found in session");
         const userData = await getUserById(userId);
-        console.log("Fetched user data:", userData); // Debug log
         if (userData.account_type !== "ADMIN") {
           setToast({ open: true, message: "Access restricted to admin users", severity: "error" });
           router.push("/unauthorized");
@@ -175,58 +155,46 @@ export default function HirePage() {
     fetchUserData();
   }, [router]);
 
-  // Fetch conversations and verify client users
   useEffect(() => {
     const fetchInitialData = async () => {
       if (!user) return;
       setLoading(true);
       try {
         const data = await getAdminRequests();
-        console.log("Fetched admin requests:", data); // Debug log
         const clientConversations: ConversationData[] = [];
         for (const request of data.requests) {
           if (request.client?.id) {
-            try {
-              let clientUser = userCache.current.get(request.client.id);
-              if (!clientUser) {
-                clientUser = await getUserById(request.client.id);
-                userCache.current.set(request.client.id, clientUser);
-              }
-              console.log(`Verified client user for client ID ${request.client.id}:`, clientUser); // Debug log
-              if (clientUser.account_type === "CLIENT") {
-                const requestMessages = request.messages || [];
-                const lastMessage = requestMessages[requestMessages.length - 1];
-                clientConversations.push({
-                  id: request.id,
-                  jobTitle: request.job_title || "Untitled Job",
-                  companyName: request.client?.name || "Unknown Client",
-                  clientId: request.client.id,
-                  participants: [
-                    {
-                      id: request.client.id,
-                      role: "Client",
-                      name: request.client.name || "Unknown",
-                      avatar: request.client.company_logo || undefined,
-                      isOnline: false,
-                    },
-                  ],
-                  lastMessage: lastMessage?.message_text || "No messages yet",
-                  lastMessageTime: lastMessage?.sent_at || request.request_date || "",
-                  unreadCount: requestMessages.filter((m) => m.receiver_id === user.id && m.status === "sent").length || 0,
-                });
-              } else {
-                console.log(`Skipping request ${request.id}: client ID ${request.client.id} is not CLIENT`); // Debug log
-              }
-            } catch (error) {
-              console.error(`Failed to verify client ID ${request.client.id}:`, error);
+            let clientUser = userCache.current.get(request.client.id);
+            if (!clientUser) {
+              clientUser = await getUserById(request.client.id);
+              userCache.current.set(request.client.id, clientUser);
+            }
+            if (clientUser.account_type === "CLIENT") {
+              const requestMessages = request.messages || [];
+              const lastMessage = requestMessages[requestMessages.length - 1];
+              clientConversations.push({
+                id: request.id,
+                jobTitle: request.job_title || "Untitled Job",
+                companyName: request.client?.name || "Unknown Client",
+                clientId: request.client.id,
+                participants: [
+                  {
+                    id: request.client.id,
+                    role: "Client",
+                    name: request.client.name || "Unknown",
+                    avatar: request.client.company_logo || undefined,
+                    isOnline: false,
+                  },
+                ],
+                lastMessage: lastMessage?.message_text || "No messages yet",
+                lastMessageTime: lastMessage?.sent_at || request.request_date || "",
+                unreadCount: requestMessages.filter((m) => m.receiver_id === user.id && m.status === "sent").length || 0,
+              });
             }
           }
         }
-        console.log("Filtered conversations:", clientConversations); // Debug log
         setConversations(clientConversations);
-        if (clientConversations.length > 0) {
-          setSelectedConversation(clientConversations[0]);
-        }
+        if (clientConversations.length > 0) setSelectedConversation(clientConversations[0]);
       } catch (error) {
         console.error("Failed to fetch conversations:", error);
         setToast({ open: true, message: "Failed to fetch conversations", severity: "error" });
@@ -237,7 +205,6 @@ export default function HirePage() {
     fetchInitialData();
   }, [user]);
 
-  // Fetch messages for the selected conversation
   useEffect(() => {
     let isMounted = true;
 
@@ -246,41 +213,24 @@ export default function HirePage() {
         setLoading(true);
         try {
           const data = await fetchMessages(selectedConversation.id);
-          console.log("Fetched messages for request", selectedConversation.id, ":", data); // Debug log
           if (isMounted) {
             const mappedMessages: MessageData[] = [];
             for (const msg of data.messages) {
               let isValidMessage = false;
               if (msg.sender_role === "ADMIN" && msg.sender_id === user.id) {
-                // Admin sending to client
-                try {
-                  let receiverUser = userCache.current.get(msg.receiver_id);
-                  if (!receiverUser) {
-                    receiverUser = await getUserById(msg.receiver_id);
-                    userCache.current.set(msg.receiver_id, receiverUser);
-                  }
-                  console.log(`Verified receiver ID ${msg.receiver_id} for message ${msg.id}:`, receiverUser); // Debug log
-                  if (receiverUser.account_type === "CLIENT") {
-                    isValidMessage = true;
-                  }
-                } catch (error) {
-                  console.error(`Failed to verify receiver ID ${msg.receiver_id} for message ${msg.id}:`, error);
+                let receiverUser = userCache.current.get(msg.receiver_id);
+                if (!receiverUser) {
+                  receiverUser = await getUserById(msg.receiver_id);
+                  userCache.current.set(msg.receiver_id, receiverUser);
                 }
+                if (receiverUser.account_type === "CLIENT") isValidMessage = true;
               } else if (msg.sender_role === "CLIENT" && msg.receiver_id === user.id) {
-                // Client sending to admin
-                try {
-                  let senderUser = userCache.current.get(msg.sender_id);
-                  if (!senderUser) {
-                    senderUser = await getUserById(msg.sender_id);
-                    userCache.current.set(msg.sender_id, senderUser);
-                  }
-                  console.log(`Verified sender ID ${msg.sender_id} for message ${msg.id}:`, senderUser); // Debug log
-                  if (senderUser.account_type === "CLIENT") {
-                    isValidMessage = true;
-                  }
-                } catch (error) {
-                  console.error(`Failed to verify sender ID ${msg.sender_id} for message ${msg.id}:`, error);
+                let senderUser = userCache.current.get(msg.sender_id);
+                if (!senderUser) {
+                  senderUser = await getUserById(msg.sender_id);
+                  userCache.current.set(msg.sender_id, senderUser);
                 }
+                if (senderUser.account_type === "CLIENT") isValidMessage = true;
               }
               if (isValidMessage) {
                 mappedMessages.push({
@@ -291,11 +241,8 @@ export default function HirePage() {
                   timestamp: msg.sent_at,
                   isStarred: false,
                 });
-              } else {
-                console.log(`Skipping message ${msg.id}: invalid sender or receiver`); // Debug log
               }
             }
-            console.log("Filtered messages:", mappedMessages); // Debug log
             setMessages(mappedMessages);
           }
         } catch (error) {
@@ -325,16 +272,12 @@ export default function HirePage() {
       setLoading(true);
       try {
         const receiverId = selectedConversation.clientId;
-        // Verify receiver is a CLIENT
         let receiverUser = userCache.current.get(receiverId);
         if (!receiverUser) {
           receiverUser = await getUserById(receiverId);
           userCache.current.set(receiverId, receiverUser);
         }
-        console.log(`Verified receiver ID ${receiverId} for sending message:`, receiverUser); // Debug log
-        if (receiverUser.account_type !== "CLIENT") {
-          throw new Error("Recipient is not a client user");
-        }
+        if (receiverUser.account_type !== "CLIENT") throw new Error("Recipient is not a client user");
 
         const response = await sendMessage(selectedConversation.id, receiverId, newMessage, null, false);
         const newMsg: MessageData = {
@@ -351,11 +294,7 @@ export default function HirePage() {
         setConversations((prev) =>
           prev.map((conv) =>
             conv.id === selectedConversation.id
-              ? {
-                  ...conv,
-                  lastMessage: newMsg.content,
-                  lastMessageTime: newMsg.timestamp,
-                }
+              ? { ...conv, lastMessage: newMsg.content, lastMessageTime: newMsg.timestamp }
               : conv
           )
         );
@@ -515,7 +454,7 @@ export default function HirePage() {
                                 label={conversation.unreadCount}
                                 size="small"
                                 sx={{
-                                  bgcolor: "primary.main",
+                                  bgcolor: "#D32F2F",
                                   color: "white",
                                   fontSize: "0.75rem",
                                   height: 22,
@@ -598,7 +537,7 @@ export default function HirePage() {
                   </Box>
                 </Box>
 
-                <Box sx={{ flex: 1, overflow: "auto", p: 3, bgcolor: "#FAFAFA" }}>
+                <Box sx={{ flex: 1, overflow: "auto", p: 3, bgcolor: "#F9FAFB" }}>
                   {messages.map((message, index) => {
                     const isOwnMessage = message.senderName === "You";
                     const showDate =
@@ -624,12 +563,13 @@ export default function HirePage() {
                             display: "flex",
                             justifyContent: isOwnMessage ? "flex-end" : "flex-start",
                             mb: 2,
+                            px: 2,
                           }}
                         >
-                          <Box sx={{ maxWidth: "75%" }}>
+                          <Box sx={{ maxWidth: "60%", minWidth: "25%" }}>
                             {!isOwnMessage && (
                               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1, ml: 1 }}>
-                                <Avatar sx={{ width: 24, height: 24 }} src={message.senderAvatar}>
+                                <Avatar sx={{ width: 28, height: 28 }} src={message.senderAvatar}>
                                   {message.senderName[0]}
                                 </Avatar>
                                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
@@ -640,16 +580,18 @@ export default function HirePage() {
                             <Paper
                               elevation={1}
                               sx={{
-                                p: 2.5,
-                                bgcolor: isOwnMessage ? "primary.main" : "white",
+                                p: 2,
+                                bgcolor: isOwnMessage ? "#2979FF" : "white",
                                 color: isOwnMessage ? "white" : "text.primary",
-                                borderRadius: 3,
-                                borderTopRightRadius: isOwnMessage ? 1 : 3,
-                                borderTopLeftRadius: isOwnMessage ? 3 : 1,
+                                borderRadius: 10,
+                                borderTopRightRadius: isOwnMessage ? 4 : 10,
+                                borderTopLeftRadius: isOwnMessage ? 10 : 4,
                                 position: "relative",
+                                fontSize: "0.95rem",
+                                lineHeight: 1.5,
                               }}
                             >
-                              <Typography variant="body2" sx={{ lineHeight: 1.5 }}>
+                              <Typography variant="body1" sx={{ wordBreak: "break-word" }}>
                                 {message.content}
                               </Typography>
                               <Box
@@ -663,7 +605,7 @@ export default function HirePage() {
                                 <Typography
                                   variant="caption"
                                   sx={{
-                                    color: isOwnMessage ? "rgba(255,255,255,0.8)" : "text.secondary",
+                                    color: isOwnMessage ? "rgba(255,255,255,0.7)" : "text.secondary",
                                     fontSize: "0.75rem",
                                   }}
                                 >
@@ -673,7 +615,7 @@ export default function HirePage() {
                                   <StarIcon
                                     sx={{
                                       fontSize: 16,
-                                      color: isOwnMessage ? "rgba(255,255,255,0.8)" : "primary.main",
+                                      color: isOwnMessage ? "rgba(255,255,255,0.7)" : "primary.main",
                                     }}
                                   />
                                 )}
@@ -698,8 +640,9 @@ export default function HirePage() {
                       maxRows={4}
                       sx={{
                         "& .MuiOutlinedInput-root": {
-                          borderRadius: 3,
+                          borderRadius: 8,
                           bgcolor: "#F5F5F5",
+                          "& fieldset": { borderWidth: 1 },
                         },
                       }}
                       onKeyPress={(e) => {
@@ -714,11 +657,11 @@ export default function HirePage() {
                       onClick={handleSendMessage}
                       disabled={!newMessage.trim() || loading}
                       sx={{
-                        bgcolor: "primary.main",
+                        bgcolor: "#2979FF",
                         color: "white",
                         mb: 0.5,
                         "&:hover": {
-                          bgcolor: "primary.dark",
+                          bgcolor: "#1565C0",
                         },
                         "&:disabled": {
                           bgcolor: "grey.300",

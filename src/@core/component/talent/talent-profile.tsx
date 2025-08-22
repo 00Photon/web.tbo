@@ -24,10 +24,18 @@ import {
   Favorite as FavoriteIcon,
   Close as CloseIcon,
 } from "@mui/icons-material";
+import { toast } from "react-toastify";
 import { InterestModal, NewJobMessageModal } from "@/@core/component/modals/interest-modal";
 import { JobSelectionModal } from "@/@core/component/modals/job-selection-modal";
 import { SuccessModal } from "@/@core/component/modals/success-modal";
-import type { TalentDetailsData } from "@/@core/services/clientTalent"; // Adjust import
+import type { TalentDetailsData } from "@/@core/services/clientTalent";
+
+// Define interface for education data
+interface Education {
+  degree: string;
+  institution: string;
+  year: string;
+}
 
 interface JobData {
   id: string;
@@ -81,6 +89,7 @@ export function TalentProfile({
       });
       setJobSelectionModalOpen(false);
       setShowSuccessMessage(true);
+      toast.success(`Successfully added ${talent.name} to an existing job`, { toastId: "add-existing-job" });
       setTimeout(() => {
         setShowSuccessMessage(false);
         onClose();
@@ -92,10 +101,11 @@ export function TalentProfile({
     onInterested({
       interested: true,
       interest_type: "new_job",
-      job_title: "New Job Title", // Replace with dynamic input if needed
+      job_title: "New Job Title",
     });
     setNewJobMessageModalOpen(false);
     setShowSuccessMessage(true);
+    toast.success(`Successfully expressed interest in ${talent.name} for a new job`, { toastId: "add-new-job" });
     setTimeout(() => {
       setShowSuccessMessage(false);
       onClose();
@@ -110,6 +120,14 @@ export function TalentProfile({
     setShowSuccessMessage(false);
     onClose();
   };
+
+  // Parse education JSON string
+  let educationData: Education[] = [];
+  try {
+    educationData = JSON.parse(talent.education || "[]");
+  } catch (error) {
+    console.error("Failed to parse education JSON:", error);
+  }
 
   return (
     <>
@@ -168,8 +186,8 @@ export function TalentProfile({
                     <Typography
                       variant="body2"
                       sx={{
-                        filter: talent.contact_email ? "none" : "blur(2px)",
-                        color: talent.contact_email ? "text.primary" : "text.disabled",
+                        filter: "blur(2px)",
+                        color: "text.disabled",
                       }}
                     >
                       {talent.contact_email || "████████@email.com"}
@@ -180,18 +198,16 @@ export function TalentProfile({
                     <Typography
                       variant="body2"
                       sx={{
-                        filter: talent.contact_phone ? "none" : "blur(2px)",
-                        color: talent.contact_phone ? "text.primary" : "text.disabled",
+                        filter: "blur(2px)",
+                        color: "text.disabled",
                       }}
                     >
                       {talent.contact_phone || "+1 (███) ███-████"}
                     </Typography>
                   </Box>
-                  {!talent.contact_email && (
-                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-                      Contact information available after expressing interest
-                    </Typography>
-                  )}
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                    Contact information available after expressing interest
+                  </Typography>
                 </Box>
               </CardContent>
             </Card>
@@ -239,9 +255,19 @@ export function TalentProfile({
                     <Typography variant="subtitle2" sx={{ mb: 1 }}>
                       Education
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {talent.education}
-                    </Typography>
+                    {educationData.length > 0 ? (
+                      educationData.map((edu: Education, index: number) => (
+                        <Box key={index} sx={{ mb: 1 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            {edu.degree} - {edu.institution} ({edu.year})
+                          </Typography>
+                        </Box>
+                      ))
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        No education listed
+                      </Typography>
+                    )}
                   </CardContent>
                 </Card>
               </Grid>

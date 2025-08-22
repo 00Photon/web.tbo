@@ -339,9 +339,7 @@ export default function TalentPool() {
               <Button variant="outlined" startIcon={<FilterIcon />} size="small">
                 Filter
               </Button>
-              <Button onClick={() => toast.success("Test toast", { toastId: "test-toast" })}>
-                Test Toast
-              </Button>
+            
             </Box>
           </Box>
 
