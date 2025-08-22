@@ -46,10 +46,10 @@ const MyProfileTab = () => {
     education: [] as EducationEntry[],
   });
   const [tempImageUrl, setTempImageUrl] = useState<string | null>(null);
-  // Removed invalid state declaration here
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [newEducation, setNewEducation] = useState<EducationEntry>({ degree: '', institution: '', year: '' });
+  const [newSkill, setNewSkill] = useState<string>(''); // New state for skill input
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -102,16 +102,25 @@ const MyProfileTab = () => {
   };
 
   const handleSkillsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value;
-    // Split by comma, trim whitespace, filter out empty strings
-    const skills = input
-      .split(',')
-      .map((skill) => skill.trim())
-      .filter((skill) => skill.length > 0);
-    setFormData((prev) => ({
-      ...prev,
-      skills,
-    }));
+    setNewSkill(e.target.value);
+  };
+
+  const addSkill = () => {
+    const trimmedSkill = newSkill.trim();
+    if (trimmedSkill) {
+      setFormData((prev) => ({
+        ...prev,
+        skills: [...prev.skills, trimmedSkill],
+      }));
+      setNewSkill('');
+    }
+  };
+
+  const handleSkillsKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addSkill();
+    }
   };
 
   const handleEducationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -184,7 +193,7 @@ const MyProfileTab = () => {
         phone_number: fullPhoneNumber,
         professional_summary: formData.professional_summary,
         skills: formData.skills,
-        education: formData.education,
+        education: JSON.stringify(formData.education), // Stringify the education array
       });
       setEditable(false);
       setSuccess('Personal information updated successfully!');
@@ -437,27 +446,44 @@ const MyProfileTab = () => {
           <Box mt={4}>
             <Typography sx={{ fontWeight: 600, color: '#39353D', fontSize: '16px' }}>Skills</Typography>
             <Typography sx={{ fontSize: '13px', mb: '10px' }}>
-              List your skills (comma-separated)
+              List your skills (type a skill and press Enter or click Add)
             </Typography>
-            <TextField
-              name="skills"
-              value={formData.skills.join(', ')}
-              onChange={handleSkillsChange}
-              placeholder="Enter skills (e.g., JavaScript, React, Python)"
-              disabled={!editable}
-              fullWidth
-              inputProps={{ style: { fontSize: '12px' } }}
-            />
+            <Box sx={{ display: 'flex', gap: '10px' }}>
+              <TextField
+                name="skills"
+                value={newSkill}
+                onChange={handleSkillsChange}
+                onKeyDown={handleSkillsKeyDown}
+                placeholder="Enter a skill (e.g., JavaScript)"
+                disabled={!editable}
+                fullWidth
+                inputProps={{ style: { fontSize: '12px' } }}
+              />
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={addSkill}
+                disabled={!newSkill.trim()}
+                sx={{ textTransform: 'none' }}
+              >
+                Add
+              </Button>
+            </Box>
             {formData.skills.length > 0 && (
               <Box mt={2}>
                 {formData.skills.map((skill, index) => (
                   <Chip
                     key={index}
                     label={skill}
-                    onDelete={editable ? () => setFormData((prev) => ({
-                      ...prev,
-                      skills: prev.skills.filter((_, i) => i !== index),
-                    })) : undefined}
+                    onDelete={
+                      editable
+                        ? () =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              skills: prev.skills.filter((_, i) => i !== index),
+                            }))
+                        : undefined
+                    }
                     sx={{ mr: 1, mb: 1 }}
                   />
                 ))}

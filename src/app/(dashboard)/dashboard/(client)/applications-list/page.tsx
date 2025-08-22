@@ -1,8 +1,7 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState, useMemo } from "react"
+import type React from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -28,7 +27,8 @@ import {
   IconButton,
   Menu,
   MenuItem as MenuItemComponent,
-} from "@mui/material"
+  CircularProgress,
+} from "@mui/material";
 import {
   Description as AllIcon,
   Send as AppliedIcon,
@@ -36,102 +36,279 @@ import {
   Recommend as RecommendedIcon,
   Search as SearchIcon,
   MoreHoriz as MoreHorizIcon,
-} from "@mui/icons-material"
-import { StatsCard } from "@/@core/component/common/stats-card"
-import { CustomPagination } from "@/@core/component/common/custom-pagination"
-import  { usePagination }  from "@/@core/component/hooks/use-pagination"
-import { ApplicationViewModal, ApplicationActionModal } from "@/@core/component/modals/application-action-modals"
-import { applicationData } from "@/@core/component/data/application-data"
-import type { ApplicationData } from "@/@core/component/data/application-data"
+} from "@mui/icons-material";
+import { StatsCard } from "@/@core/component/common/stats-card";
+import { CustomPagination } from "@/@core/component/common/custom-pagination";
+import { usePagination } from "@/@core/component/hooks/use-pagination";
+import { ApplicationViewModal, ApplicationActionModal } from "@/@core/component/modals/application-action-modals";
+import { fetchClientApplications } from "@/@core/services/jobService";
+
+interface Application {
+  id: number;
+  job_id: number;
+  job_title: string;
+  applicant_id: number;
+  applicant_name: string;
+  email: string;
+  status: string;
+  applied_date: string;
+  cv_upload: string | null;
+  cover_letter_upload: string | null;
+  skills: string[];
+  years_experience: number | null;
+  location: string | null;
+  category: string;
+}
+
+interface Interest {
+  id: number;
+  talent_id: number;
+  talent_name: string;
+  designation: string | null;
+  location: string | null;
+  years_experience: number | null;
+  status: string;
+  job_title: string;
+  request_type: string;
+  notes: string | null;
+  request_date: string;
+  skills: string[];
+  category: string;
+}
+
+interface Recommendation {
+  job_id: number;
+  job_title: string;
+  talent_id: number;
+  name: string;
+  email: string;
+  designation: string | null;
+  location: string | null;
+  years_experience: number | null;
+  skills: string[];
+  professional_summary: string | null;
+  cv_upload: string | null;
+  profile_image: string | null;
+  category: string;
+}
+
+interface UnifiedApplication {
+  id: number; // Keep as number to match API
+  companyName: string;
+  roleAppliedFor: string;
+  dateOfApplication: string;
+  applicationType: string;
+  status: string;
+  location: string | null;
+  category: string;
+  skills?: string[];
+  years_experience?: number | null;
+  cv_upload?: string | null;
+  cover_letter_upload?: string | null;
+  notes?: string | null;
+  professional_summary?: string | null;
+  profile_image?: string | null;
+  designation?: string | null;
+  email?: string;
+  companyLogo?: string;
+  jobDescription?: string;
+  salary?: string;
+  companyEmail?: string;
+  companyPhone?: string;
+  applicationNotes?: string;
+  // Fields for recommendations
+  job_id?: number;
+  talent_id?: number;
+  name?: string;
+}
 
 export default function ApplicationsPage() {
-  const [activeTab, setActiveTab] = useState(0)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState("All")
-  const [selectedApplication, setSelectedApplication] = useState<ApplicationData | null>(null)
-  const [viewModalOpen, setViewModalOpen] = useState(false)
-  const [actionModalOpen, setActionModalOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [selectedApplication, setSelectedApplication] = useState<UnifiedApplication | null>(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [actionModalOpen, setActionModalOpen] = useState(false);
   const [actionModalData, setActionModalData] = useState<{
-    title: string
-    message: string
-    confirmText: string
-    confirmColor: "primary" | "success" | "error"
-    action: string
-  } | null>(null)
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-  const [selectedApplicationIndex, setSelectedApplicationIndex] = useState<number | null>(null)
+    title: string;
+    message: string;
+    confirmText: string;
+    confirmColor: "primary" | "success" | "error";
+    action: string;
+  } | null>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedApplicationIndex, setSelectedApplicationIndex] = useState<number | null>(null);
+  const [data, setData] = useState<{
+    applicants: Application[];
+    interests: Interest[];
+    recommendations: Recommendation[];
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const tabs = ["All", "Applied", "Invited", "Recommended"]
-  const statusFilters = ["All", "Pending", "Shortlisted", "Interviewed", "Hired"]
+  const tabs = ["All", "Applied", "Invited", "Recommended"];
+  const statusFilters = ["All", "Pending", "Shortlisted", "Interviewed", "Hired"];
+
+  // Fetch data from API
+  useEffect(() => {
+    async function loadApplications() {
+      try {
+        setLoading(true);
+        const response = await fetchClientApplications();
+        if (response.status) {
+          const applicants = response.data.applicants.map((item: Application) => ({
+            ...item,
+            category: "Applied",
+          }));
+          const interests = response.data.interests.map((item: Interest) => ({
+            ...item,
+            category: "Invited",
+          }));
+          const recommendations = response.data.recommendations.map((item: Recommendation) => ({
+            ...item,
+            category: "Recommended",
+          }));
+          setData({
+            applicants,
+            interests,
+            recommendations,
+          });
+        } else {
+          setError("Failed to load applications");
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadApplications();
+  }, []);
+
+  // Combine all data for filtering
+  const allData = useMemo(() => {
+    if (!data) return [];
+    return [
+      ...data.applicants.map((applicant) => ({
+        ...applicant,
+        companyName: applicant.job_title,
+        roleAppliedFor: applicant.job_title,
+        dateOfApplication: applicant.applied_date,
+        applicationType: "Direct Application",
+        status: applicant.status,
+        companyLogo: "",
+        jobDescription: "No description available",
+        salary: "Not specified",
+        companyEmail: applicant.email,
+        companyPhone: "Not specified",
+        applicationNotes: "No notes available",
+      })),
+      ...data.interests.map((interest) => ({
+        ...interest,
+        id: interest.id,
+        companyName: interest.job_title,
+        roleAppliedFor: interest.job_title,
+        dateOfApplication: interest.request_date,
+        applicationType: interest.request_type,
+        status: interest.status,
+        companyLogo: "",
+        jobDescription: interest.notes || "No description available",
+        salary: "Not specified",
+        companyEmail: "",
+        companyPhone: "Not specified",
+        applicationNotes: interest.notes || "No notes available",
+      })),
+      ...data.recommendations.map((recommendation) => ({
+        ...recommendation,
+        id: recommendation.talent_id,
+        companyName: recommendation.job_title,
+        roleAppliedFor: recommendation.job_title,
+        dateOfApplication: new Date().toISOString().split("T")[0],
+        applicationType: "Recommendation",
+        status: "Recommended",
+        companyLogo: recommendation.profile_image || "",
+        jobDescription: recommendation.professional_summary || "No description available",
+        salary: "Not specified",
+        companyEmail: recommendation.email,
+        companyPhone: "Not specified",
+        applicationNotes: recommendation.professional_summary || "No notes available",
+      })),
+    ];
+  }, [data]);
 
   // Calculate stats
-  const stats = [
-    {
-      title: "All",
-      value: applicationData.length.toString(),
-      icon: AllIcon,
-      color: "#3B82F6",
-      bgcolor: "#EFF6FF",
-    },
-    {
-      title: "Applied",
-      value: applicationData.filter((a) => a.category === "Applied").length.toString(),
-      icon: AppliedIcon,
-      color: "#10B981",
-      bgcolor: "#ECFDF5",
-    },
-    {
-      title: "Invited",
-      value: applicationData.filter((a) => a.category === "Invited").length.toString(),
-      icon: InvitedIcon,
-      color: "#F59E0B",
-      bgcolor: "#FFFBEB",
-    },
-    {
-      title: "Recommended",
-      value: applicationData.filter((a) => a.category === "Recommended").length.toString(),
-      icon: RecommendedIcon,
-      color: "#8B5CF6",
-      bgcolor: "#F3E8FF",
-    },
-  ]
+  const stats = useMemo(
+    () => [
+      {
+        title: "All",
+        value: allData.length.toString(),
+        icon: AllIcon,
+        color: "#3B82F6",
+        bgcolor: "#EFF6FF",
+      },
+      {
+        title: "Applied",
+        value: data?.applicants.length.toString() || "0",
+        icon: AppliedIcon,
+        color: "#10B981",
+        bgcolor: "#ECFDF5",
+      },
+      {
+        title: "Invited",
+        value: data?.interests.length.toString() || "0",
+        icon: InvitedIcon,
+        color: "#F59E0B",
+        bgcolor: "#FFFBEB",
+      },
+      {
+        title: "Recommended",
+        value: data?.recommendations.length.toString() || "0",
+        icon: RecommendedIcon,
+        color: "#8B5CF6",
+        bgcolor: "#F3E8FF",
+      },
+    ],
+    [allData, data],
+  );
 
+  // Filter data based on tab, search, and status
   const filteredApplications = useMemo(() => {
-    return applicationData.filter((application) => {
-      const matchesTab = activeTab === 0 || application.category === tabs[activeTab]
+    const filtered = allData.filter((application) => {
+      const matchesTab = activeTab === 0 || application.category === tabs[activeTab];
       const matchesSearch =
-        application.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        application.roleAppliedFor.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesStatus = statusFilter === "All" || application.status === statusFilter
-
-      return matchesTab && matchesSearch && matchesStatus
-    })
-  }, [activeTab, searchQuery, statusFilter, tabs])
+        (application.companyName?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+        (application.roleAppliedFor?.toLowerCase() || "").includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === "All" || application.status.toLowerCase() === statusFilter.toLowerCase();
+      return matchesTab && matchesSearch && matchesStatus;
+    });
+    console.log("Filtered Applications:", filtered, { activeTab, searchQuery, statusFilter });
+    return filtered;
+  }, [activeTab, searchQuery, statusFilter, allData, tabs]);
 
   const { currentPage, totalPages, paginatedData, handlePrevious, handleNext } = usePagination({
     data: filteredApplications,
     itemsPerPage: 10,
-  })
+  });
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue)
-  }
+    setActiveTab(newValue);
+  };
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>, index: number) => {
-    setAnchorEl(event.currentTarget)
-    setSelectedApplicationIndex(index)
-    setSelectedApplication(paginatedData[index])
-  }
+    setAnchorEl(event.currentTarget);
+    setSelectedApplicationIndex(index);
+    setSelectedApplication(paginatedData[index]);
+  };
 
   const handleMenuClose = () => {
-    setAnchorEl(null)
-    setSelectedApplicationIndex(null)
-  }
+    setAnchorEl(null);
+    setSelectedApplicationIndex(null);
+  };
 
   const handleViewApplication = () => {
-    setViewModalOpen(true)
-    handleMenuClose()
-  }
+    setViewModalOpen(true);
+    handleMenuClose();
+  };
 
   const handleAcceptApplication = () => {
     setActionModalData({
@@ -140,10 +317,10 @@ export default function ApplicationsPage() {
       confirmText: "Accept",
       confirmColor: "success",
       action: "accept",
-    })
-    setActionModalOpen(true)
-    handleMenuClose()
-  }
+    });
+    setActionModalOpen(true);
+    handleMenuClose();
+  };
 
   const handleRejectApplication = () => {
     setActionModalData({
@@ -152,10 +329,10 @@ export default function ApplicationsPage() {
       confirmText: "Reject",
       confirmColor: "error",
       action: "reject",
-    })
-    setActionModalOpen(true)
-    handleMenuClose()
-  }
+    });
+    setActionModalOpen(true);
+    handleMenuClose();
+  };
 
   const handleCancelApplication = () => {
     setActionModalData({
@@ -164,54 +341,76 @@ export default function ApplicationsPage() {
       confirmText: "Cancel Application",
       confirmColor: "error",
       action: "cancel",
-    })
-    setActionModalOpen(true)
-    handleMenuClose()
-  }
+    });
+    setActionModalOpen(true);
+    handleMenuClose();
+  };
 
   const handleConfirmAction = () => {
     if (selectedApplication && actionModalData) {
-      console.log(`${actionModalData.action} application:`, selectedApplication.id)
-      // Here you would update the application status
+      console.log(`${actionModalData.action} application:`, selectedApplication.id);
+      // TODO: Implement API call to update application status
     }
-    setActionModalOpen(false)
-    setActionModalData(null)
-    setSelectedApplication(null)
-  }
+    setActionModalOpen(false);
+    setActionModalData(null);
+    setSelectedApplication(null);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Hired":
-        return { bgcolor: "#ECFDF5", color: "#065F46" }
+        return { bgcolor: "#ECFDF5", color: "#065F46" };
       case "Interviewed":
-        return { bgcolor: "#F0F9FF", color: "#0C4A6E" }
+        return { bgcolor: "#F0F9FF", color: "#0C4A6E" };
       case "Shortlisted":
-        return { bgcolor: "#FFFBEB", color: "#92400E" }
+        return { bgcolor: "#FFFBEB", color: "#92400E" };
       case "Pending":
-        return { bgcolor: "#F3F4F6", color: "#374151" }
+        return { bgcolor: "#F3F4F6", color: "#374151" };
+      case "Recommended":
+        return { bgcolor: "#F3E8FF", color: "#6B46C1" };
+      case "Processing":
+        return { bgcolor: "#FEF3C7", color: "#92400E" };
       default:
-        return { bgcolor: "#F3F4F6", color: "#374151" }
+        return { bgcolor: "#F3F4F6", color: "#374151" };
     }
-  }
+  };
 
   const getTypeColor = (type: string) => {
     switch (type) {
+      case "Direct Hire":
       case "Direct Application":
-        return { bgcolor: "#EFF6FF", color: "#1E40AF" }
+        return { bgcolor: "#EFF6FF", color: "#1E40AF" };
       case "Recommendation":
-        return { bgcolor: "#ECFDF5", color: "#065F46" }
+        return { bgcolor: "#ECFDF5", color: "#065F46" };
+      case "Contract":
       case "Interest":
-        return { bgcolor: "#FEF3C7", color: "#92400E" }
+        return { bgcolor: "#FEF3C7", color: "#92400E" };
       default:
-        return { bgcolor: "#F3F4F6", color: "#374151" }
+        return { bgcolor: "#F3F4F6", color: "#374151" };
     }
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography color="error">{error}</Typography>
+      </Box>
+    );
   }
 
   return (
     <Box sx={{ width: "100%" }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h1" sx={{ mb: 1 }}>
+        <Typography variant="h4" sx={{ mb: 1 }}>
           My Applications
         </Typography>
         <Typography variant="body1" color="text.secondary">
@@ -305,28 +504,36 @@ export default function ApplicationsPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {paginatedData.map((application, index) => (
-                  <TableRow key={application.id} hover>
-                    <TableCell sx={{ fontWeight: 500 }}>{application.companyName}</TableCell>
-                    <TableCell>{application.roleAppliedFor}</TableCell>
-                    <TableCell>{application.dateOfApplication}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={application.applicationType}
-                        size="small"
-                        sx={getTypeColor(application.applicationType)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip label={application.status} size="small" sx={getStatusColor(application.status)} />
-                    </TableCell>
-                    <TableCell>
-                      <IconButton size="small" onClick={(e) => handleMenuClick(e, index)}>
-                        <MoreHorizIcon />
-                      </IconButton>
+                {paginatedData.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center">
+                      No applications found
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  paginatedData.map((application, index) => (
+                    <TableRow key={`${application.category}-${application.id}`} hover>
+                      <TableCell sx={{ fontWeight: 500 }}>{application.companyName}</TableCell>
+                      <TableCell>{application.roleAppliedFor}</TableCell>
+                      <TableCell>{application.dateOfApplication}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={application.applicationType}
+                          size="small"
+                          sx={getTypeColor(application.applicationType)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip label={application.status} size="small" sx={getStatusColor(application.status)} />
+                      </TableCell>
+                      <TableCell>
+                        <IconButton size="small" onClick={(e) => handleMenuClick(e, index)}>
+                          <MoreHorizIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </TableContainer>
@@ -346,15 +553,19 @@ export default function ApplicationsPage() {
       {/* Action Menu */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
         <MenuItemComponent onClick={handleViewApplication}>View</MenuItemComponent>
-        <MenuItemComponent onClick={handleAcceptApplication} sx={{ color: "success.main" }}>
-          Accept
-        </MenuItemComponent>
-        <MenuItemComponent onClick={handleRejectApplication} sx={{ color: "error.main" }}>
-          Reject
-        </MenuItemComponent>
-        <MenuItemComponent onClick={handleCancelApplication} sx={{ color: "error.main" }}>
-          Cancel
-        </MenuItemComponent>
+        {selectedApplication?.category === "Applied" && (
+          <>
+            <MenuItemComponent onClick={handleAcceptApplication} sx={{ color: "success.main" }}>
+              Accept
+            </MenuItemComponent>
+            <MenuItemComponent onClick={handleRejectApplication} sx={{ color: "error.main" }}>
+              Reject
+            </MenuItemComponent>
+            <MenuItemComponent onClick={handleCancelApplication} sx={{ color: "error.main" }}>
+              Cancel
+            </MenuItemComponent>
+          </>
+        )}
       </Menu>
 
       {/* Modals */}
@@ -364,18 +575,17 @@ export default function ApplicationsPage() {
             application={selectedApplication}
             open={viewModalOpen}
             onClose={() => {
-              setViewModalOpen(false)
-              setSelectedApplication(null)
+              setViewModalOpen(false);
+              setSelectedApplication(null);
             }}
           />
-
           {actionModalData && (
             <ApplicationActionModal
               open={actionModalOpen}
               onClose={() => {
-                setActionModalOpen(false)
-                setActionModalData(null)
-                setSelectedApplication(null)
+                setActionModalOpen(false);
+                setActionModalData(null);
+                setSelectedApplication(null);
               }}
               onConfirm={handleConfirmAction}
               title={actionModalData.title}
@@ -388,5 +598,5 @@ export default function ApplicationsPage() {
         </>
       )}
     </Box>
-  )
+  );
 }

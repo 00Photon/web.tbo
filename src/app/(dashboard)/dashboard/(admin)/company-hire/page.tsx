@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Typography,
@@ -18,37 +19,44 @@ import {
   IconButton,
   Paper,
   Divider,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import {
   Search as SearchIcon,
   Star as StarIcon,
   Send as SendIcon,
-  Attachment as AttachmentIcon,
   MoreVert as MoreVertIcon,
 } from "@mui/icons-material";
 import { fetchMessages, sendMessage, getAdminRequests } from "@/@core/services/AdminPool";
+import { getUserById } from "@/@core/services/user";
 import { getSession } from "next-auth/react";
 
 export interface ConversationData {
   id: number;
   jobTitle: string;
   companyName: string;
+  clientId: number;
   participants: { id: number; role: string; name: string; avatar?: string; isOnline: boolean }[];
   lastMessage: string;
   lastMessageTime: string;
   unreadCount: number;
-  messages: { id: number; senderName: string; senderAvatar?: string; content: string; timestamp: string; isStarred: boolean }[];
 }
 
-export interface Message {
+export interface MessageData {
   id: number;
-  sender_id: number;
-  sender_name: string;
-  sender_role: string;
-  receiver_id: number;
-  message_text: string;
-  sent_at: string;
-  status: string;
+  senderName: string;
+  senderAvatar?: string;
+  content: string;
+  timestamp: string;
+  isStarred: boolean;
+}
+
+interface User {
+  id: number;
+  name: string;
+  account_type: string;
+  profile_image?: string | null;
 }
 
 export default function HirePage() {
@@ -56,78 +64,256 @@ export default function HirePage() {
   const [selectedConversation, setSelectedConversation] = useState<ConversationData | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [newMessage, setNewMessage] = useState("");
-  const [messages, setMessages] = useState<{ id: number; senderName: string; senderAvatar?: string; content: string; timestamp: string; isStarred: boolean }[]>([]);
+  const [messages, setMessages] = useState<MessageData[]>([]);
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [toast, setToast] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "error";
+  }>({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+  const router = useRouter();
+  const userCache = useRef<Map<number, User>>(new Map()); // Cache for getUserById results
 
-  // Fetch initial conversations from admin requests
+  // Custom function to parse "21st August, 2025 01:06" format
+  const parseCustomDate = (dateString: string): Date => {
+    if (!dateString || typeof dateString !== "string") {
+      console.warn(`Invalid date string: ${dateString}, returning current date`);
+      return new Date();
+    }
+
+    const cleanedDateString = dateString
+      .replace("st ", " ")
+      .replace("nd ", " ")
+      .replace("rd ", " ")
+      .replace("th ", " ");
+
+    const [dayMonthYear, time] = cleanedDateString.split(",");
+
+    if (!dayMonthYear) {
+      console.warn(`Invalid date format, missing dayMonthYear: ${dateString}, returning current date`);
+      return new Date();
+    }
+
+    const [day, month, year] = dayMonthYear.trim().split(" ");
+    if (!day || !month || !year) {
+      console.warn(`Invalid date components: ${dayMonthYear}, returning current date`);
+      return new Date();
+    }
+
+    const monthMap: { [key: string]: string } = {
+      January: "01",
+      February: "02",
+      March: "03",
+      April: "04",
+      May: "05",
+      June: "06",
+      July: "07",
+      August: "08",
+      September: "09",
+      October: "10",
+      November: "11",
+      December: "12",
+    };
+
+    const monthNumber = monthMap[month] || "01";
+    const formattedDay = day.padStart(2, "0");
+
+    let hour = "00";
+    let minute = "00";
+    if (time && time.trim()) {
+      const timeParts = time.trim().split(":");
+      if (timeParts.length >= 2) {
+        [hour, minute] = timeParts.map((num) => num.padStart(2, "0"));
+      } else {
+        console.warn(`Invalid time format: ${time}, using default 00:00`);
+      }
+    }
+
+    const isoDateString = `${year}-${monthNumber}-${formattedDay}T${hour}:${minute}:00`;
+    const parsedDate = new Date(isoDateString);
+
+    if (isNaN(parsedDate.getTime())) {
+      console.warn(`Invalid date parsed from: ${dateString}, returning current date`);
+      return new Date();
+    }
+    return parsedDate;
+  };
+
+  // Fetch and verify admin user
   useEffect(() => {
-    const fetchInitialData = async () => {
+    const fetchUserData = async () => {
       setLoading(true);
       try {
         const session = await getSession();
+        const userId = session?.user?.id;
+        if (!userId) {
+          throw new Error("No user ID found in session");
+        }
+        console.log("User ID from session:", userId); // Debug log
+        const userData = await getUserById(userId);
+        console.log("Fetched user data:", userData); // Debug log
+        if (userData.account_type !== "ADMIN") {
+          setToast({ open: true, message: "Access restricted to admin users", severity: "error" });
+          router.push("/unauthorized");
+          return;
+        }
+        userCache.current.set(userId, userData);
+        setUser(userData);
+      } catch (error) {
+        console.error("Failed to fetch user data:", error);
+        setToast({ open: true, message: "Failed to fetch user data", severity: "error" });
+        router.push("/unauthorized");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUserData();
+  }, [router]);
+
+  // Fetch conversations and verify client users
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      if (!user) return;
+      setLoading(true);
+      try {
         const data = await getAdminRequests();
-        const adminId = session?.user?.id;
-        const adminConversations = data.requests.map((request) => ({
-          id: request.id,
-          jobTitle: request.job_title || "Untitled Job",
-          companyName: request.client?.company_name || "Unknown Company",
-          participants: [
-            { id: request.client?.id || 0, role: "Company", name: request.client?.company_name || "Unknown", isOnline: false },
-          ],
-          lastMessage: request.messages?.[request.messages.length - 1]?.message_text || "No messages yet",
-          lastMessageTime: request.messages?.[request.messages.length - 1]?.sent_at || "",
-          unreadCount: request.messages?.filter((m) => m.receiver_id === adminId && !m.status.includes("read")).length || 0,
-          messages: [],
-        }));
-        setConversations(adminConversations);
+        console.log("Fetched admin requests:", data); // Debug log
+        const clientConversations: ConversationData[] = [];
+        for (const request of data.requests) {
+          if (request.client?.id) {
+            try {
+              let clientUser = userCache.current.get(request.client.id);
+              if (!clientUser) {
+                clientUser = await getUserById(request.client.id);
+                userCache.current.set(request.client.id, clientUser);
+              }
+              console.log(`Verified client user for client ID ${request.client.id}:`, clientUser); // Debug log
+              if (clientUser.account_type === "CLIENT") {
+                const requestMessages = request.messages || [];
+                const lastMessage = requestMessages[requestMessages.length - 1];
+                clientConversations.push({
+                  id: request.id,
+                  jobTitle: request.job_title || "Untitled Job",
+                  companyName: request.client?.name || "Unknown Client",
+                  clientId: request.client.id,
+                  participants: [
+                    {
+                      id: request.client.id,
+                      role: "Client",
+                      name: request.client.name || "Unknown",
+                      avatar: request.client.company_logo || undefined,
+                      isOnline: false,
+                    },
+                  ],
+                  lastMessage: lastMessage?.message_text || "No messages yet",
+                  lastMessageTime: lastMessage?.sent_at || request.request_date || "",
+                  unreadCount: requestMessages.filter((m) => m.receiver_id === user.id && m.status === "sent").length || 0,
+                });
+              } else {
+                console.log(`Skipping request ${request.id}: client ID ${request.client.id} is not CLIENT`); // Debug log
+              }
+            } catch (error) {
+              console.error(`Failed to verify client ID ${request.client.id}:`, error);
+            }
+          }
+        }
+        console.log("Filtered conversations:", clientConversations); // Debug log
+        setConversations(clientConversations);
+        if (clientConversations.length > 0) {
+          setSelectedConversation(clientConversations[0]);
+        }
       } catch (error) {
         console.error("Failed to fetch conversations:", error);
+        setToast({ open: true, message: "Failed to fetch conversations", severity: "error" });
       } finally {
         setLoading(false);
       }
     };
     fetchInitialData();
-  }, []);
+  }, [user]);
 
-useEffect(() => {
-  let isMounted = true; // Flag to prevent state updates on unmounted component
+  // Fetch messages for the selected conversation
+  useEffect(() => {
+    let isMounted = true;
 
-  const fetchMessagesForConversation = async () => {
-    if (selectedConversation) {
-      setLoading(true);
-      try {
-        const session = await getSession();
-        const adminId = session?.user?.id;
-        const data = await fetchMessages(selectedConversation.id);
-        if (isMounted) {
-          const mappedMessages = data.messages
-            .filter((msg) => msg.receiver_id === adminId) // Only messages sent to admin (from clients)
-            .map((msg) => ({
-              id: msg.id,
-              senderName: msg.sender_role === "ADMIN" ? "You" : msg.sender_name,
-              senderAvatar: msg.sender_role === "ADMIN" ? session?.user?.image ?? undefined : undefined, // Convert null to undefined
-              content: msg.message_text,
-              timestamp: msg.sent_at,
-              isStarred: false,
-            }));
-          setMessages(mappedMessages);
-          setSelectedConversation((prev) => prev ? { ...prev, messages: mappedMessages } : prev);
+    const fetchMessagesForConversation = async () => {
+      if (selectedConversation && user) {
+        setLoading(true);
+        try {
+          const data = await fetchMessages(selectedConversation.id);
+          console.log("Fetched messages for request", selectedConversation.id, ":", data); // Debug log
+          if (isMounted) {
+            const mappedMessages: MessageData[] = [];
+            for (const msg of data.messages) {
+              let isValidMessage = false;
+              if (msg.sender_role === "ADMIN" && msg.sender_id === user.id) {
+                // Admin sending to client
+                try {
+                  let receiverUser = userCache.current.get(msg.receiver_id);
+                  if (!receiverUser) {
+                    receiverUser = await getUserById(msg.receiver_id);
+                    userCache.current.set(msg.receiver_id, receiverUser);
+                  }
+                  console.log(`Verified receiver ID ${msg.receiver_id} for message ${msg.id}:`, receiverUser); // Debug log
+                  if (receiverUser.account_type === "CLIENT") {
+                    isValidMessage = true;
+                  }
+                } catch (error) {
+                  console.error(`Failed to verify receiver ID ${msg.receiver_id} for message ${msg.id}:`, error);
+                }
+              } else if (msg.sender_role === "CLIENT" && msg.receiver_id === user.id) {
+                // Client sending to admin
+                try {
+                  let senderUser = userCache.current.get(msg.sender_id);
+                  if (!senderUser) {
+                    senderUser = await getUserById(msg.sender_id);
+                    userCache.current.set(msg.sender_id, senderUser);
+                  }
+                  console.log(`Verified sender ID ${msg.sender_id} for message ${msg.id}:`, senderUser); // Debug log
+                  if (senderUser.account_type === "CLIENT") {
+                    isValidMessage = true;
+                  }
+                } catch (error) {
+                  console.error(`Failed to verify sender ID ${msg.sender_id} for message ${msg.id}:`, error);
+                }
+              }
+              if (isValidMessage) {
+                mappedMessages.push({
+                  id: msg.id,
+                  senderName: msg.sender_id === user.id ? "You" : msg.sender_name || "Unknown",
+                  senderAvatar: msg.sender_id === user.id ? user.profile_image ?? undefined : selectedConversation.participants.find((p) => p.id === msg.sender_id)?.avatar,
+                  content: msg.message_text,
+                  timestamp: msg.sent_at,
+                  isStarred: false,
+                });
+              } else {
+                console.log(`Skipping message ${msg.id}: invalid sender or receiver`); // Debug log
+              }
+            }
+            console.log("Filtered messages:", mappedMessages); // Debug log
+            setMessages(mappedMessages);
+          }
+        } catch (error) {
+          console.error("Failed to fetch messages:", error);
+          setToast({ open: true, message: "Failed to fetch messages", severity: "error" });
+        } finally {
+          if (isMounted) setLoading(false);
         }
-      } catch (error) {
-        console.error("Failed to fetch messages:", error);
-      } finally {
-        if (isMounted) setLoading(false);
       }
-    }
-  };
+    };
 
-  fetchMessagesForConversation();
+    fetchMessagesForConversation();
 
-  // Cleanup function to prevent state updates after unmount
-  return () => {
-    isMounted = false;
-  };
-}, [selectedConversation?.id]); // Only re-run when selectedConversation.id changes
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedConversation?.id, user?.id]);
+
   const filteredConversations = conversations.filter(
     (conversation) =>
       conversation.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -135,43 +321,66 @@ useEffect(() => {
   );
 
   const handleSendMessage = async () => {
-    if (newMessage.trim() && selectedConversation) {
+    if (newMessage.trim() && selectedConversation && user) {
       setLoading(true);
       try {
-        const session = await getSession();
-        const senderId = session?.user?.id;
-        const receiverId = selectedConversation.participants.find((p) => p.role === "Company")?.id || 1; // Client ID
-        await sendMessage(selectedConversation.id, receiverId, newMessage);
-        const data = await fetchMessages(selectedConversation.id);
-        const newMsg = data.messages.find((msg) => msg.sender_id === senderId && msg.message_text === newMessage);
-        if (newMsg) {
-          const mappedNewMsg = {
-            id: newMsg.id,
-            senderName: "You",
-            senderAvatar: session?.user?.image ?? undefined, // Convert null to undefined
-            content: newMsg.message_text,
-            timestamp: newMsg.sent_at,
-            isStarred: false,
-          };
-          setMessages((prev) => [...prev, mappedNewMsg]);
-          setNewMessage("");
-          setSelectedConversation((prev) => prev ? { ...prev, messages: [...prev.messages, mappedNewMsg], lastMessage: newMsg.message_text, lastMessageTime: newMsg.sent_at } : prev);
+        const receiverId = selectedConversation.clientId;
+        // Verify receiver is a CLIENT
+        let receiverUser = userCache.current.get(receiverId);
+        if (!receiverUser) {
+          receiverUser = await getUserById(receiverId);
+          userCache.current.set(receiverId, receiverUser);
         }
+        console.log(`Verified receiver ID ${receiverId} for sending message:`, receiverUser); // Debug log
+        if (receiverUser.account_type !== "CLIENT") {
+          throw new Error("Recipient is not a client user");
+        }
+
+        const response = await sendMessage(selectedConversation.id, receiverId, newMessage, null, false);
+        const newMsg: MessageData = {
+          id: response?.data.id || Date.now(),
+          senderName: "You",
+          senderAvatar: user.profile_image ?? undefined,
+          content: newMessage,
+          timestamp: new Date().toISOString(),
+          isStarred: false,
+        };
+
+        setMessages((prev) => [...prev, newMsg]);
+        setNewMessage("");
+        setConversations((prev) =>
+          prev.map((conv) =>
+            conv.id === selectedConversation.id
+              ? {
+                  ...conv,
+                  lastMessage: newMsg.content,
+                  lastMessageTime: newMsg.timestamp,
+                }
+              : conv
+          )
+        );
+
+        setToast({ open: true, message: `Message sent to ${selectedConversation.companyName} successfully`, severity: "success" });
       } catch (error) {
         console.error("Failed to send message:", error);
+        setToast({ open: true, message: `Failed to send message`, severity: "error" });
       } finally {
         setLoading(false);
       }
     }
   };
 
+  const handleToastClose = () => {
+    setToast({ ...toast, open: false });
+  };
+
   const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
+    const date = parseCustomDate(timestamp);
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
   const formatDate = (timestamp: string) => {
-    const date = new Date(timestamp);
+    const date = parseCustomDate(timestamp);
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
@@ -181,10 +390,20 @@ useEffect(() => {
     else return date.toLocaleDateString();
   };
 
+  if (!user) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+        <Typography variant="h6" color="text.secondary">
+          Loading user data...
+        </Typography>
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ width: "100%" }}>
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h1" sx={{ mb: 1 }}>
+        <Typography variant="h5" sx={{ mb: 1 }}>
           Hiring
         </Typography>
         <Typography variant="body1" color="text.secondary">
@@ -197,7 +416,7 @@ useEffect(() => {
           <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
             <CardContent sx={{ p: 3, pb: 2 }}>
               <TextField
-                placeholder="Search jobs or companies..."
+                placeholder="Search jobs or clients..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 size="small"
@@ -218,7 +437,7 @@ useEffect(() => {
               <List sx={{ p: 0 }}>
                 {filteredConversations.map((conversation) => {
                   const isSelected = selectedConversation?.id === conversation.id;
-                  const company = conversation.participants.find((p) => p.role === "Company");
+                  const client = conversation.participants.find((p) => p.role === "Client");
 
                   return (
                     <ListItem key={conversation.id} sx={{ p: 0 }}>
@@ -241,15 +460,15 @@ useEffect(() => {
                             variant="dot"
                             sx={{
                               "& .MuiBadge-badge": {
-                                backgroundColor: company?.isOnline ? "#44b700" : "#bdbdbd",
-                                color: company?.isOnline ? "#44b700" : "#bdbdbd",
+                                backgroundColor: client?.isOnline ? "#44b700" : "#bdbdbd",
+                                color: client?.isOnline ? "#44b700" : "#bdbdbd",
                                 width: 12,
                                 height: 12,
                                 border: "2px solid white",
                               },
                             }}
                           >
-                            <Avatar src={company?.avatar} sx={{ width: 48, height: 48 }}>
+                            <Avatar src={client?.avatar} sx={{ width: 48, height: 48 }}>
                               {conversation.jobTitle[0]}
                             </Avatar>
                           </Badge>
@@ -271,7 +490,7 @@ useEffect(() => {
                               {conversation.jobTitle}
                             </Typography>
                             <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
-                              {conversation.lastMessageTime}
+                              {conversation.lastMessageTime ? formatDate(conversation.lastMessageTime) : ""}
                             </Typography>
                           </Box>
 
@@ -342,11 +561,10 @@ useEffect(() => {
                         variant="dot"
                         sx={{
                           "& .MuiBadge-badge": {
-                            backgroundColor: selectedConversation.participants.find((p) => p.role === "Company")
-                              ?.isOnline
+                            backgroundColor: selectedConversation.participants.find((p) => p.role === "Client")?.isOnline
                               ? "#44b700"
                               : "#bdbdbd",
-                            color: selectedConversation.participants.find((p) => p.role === "Company")?.isOnline
+                            color: selectedConversation.participants.find((p) => p.role === "Client")?.isOnline
                               ? "#44b700"
                               : "#bdbdbd",
                             width: 12,
@@ -356,7 +574,7 @@ useEffect(() => {
                         }}
                       >
                         <Avatar
-                          src={selectedConversation.participants.find((p) => p.role === "Company")?.avatar}
+                          src={selectedConversation.participants.find((p) => p.role === "Client")?.avatar}
                           sx={{ width: 48, height: 48 }}
                         >
                           {selectedConversation.jobTitle[0]}
@@ -368,7 +586,7 @@ useEffect(() => {
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                           {selectedConversation.companyName} •{" "}
-                          {selectedConversation.participants.find((p) => p.role === "Company")?.isOnline
+                          {selectedConversation.participants.find((p) => p.role === "Client")?.isOnline
                             ? "Online"
                             : "Offline"}
                         </Typography>
@@ -491,9 +709,6 @@ useEffect(() => {
                         }
                       }}
                     />
-                    <IconButton sx={{ mb: 0.5 }}>
-                      <AttachmentIcon />
-                    </IconButton>
                     <IconButton
                       color="primary"
                       onClick={handleSendMessage}
@@ -539,6 +754,17 @@ useEffect(() => {
           </Card>
         </Box>
       </Box>
+
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={6000}
+        onClose={handleToastClose}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert onClose={handleToastClose} severity={toast.severity} sx={{ width: "100%" }}>
+          {toast.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

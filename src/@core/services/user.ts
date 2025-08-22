@@ -94,11 +94,7 @@ export interface UpdateUserPayload {
   profile_image?: string;
   professional_summary?: string; // Add professional summary
   skills?: string[]; // Skills as an array of strings
-  education?: Array<{
-    degree: string;
-    institution: string;
-    year: string;
-  }>; // Education as an array of objects
+  education?: string;
   company_logo?: File | string;
   company_name?: string;
   company_email_address?: string;
@@ -376,6 +372,34 @@ export const getAllUser = async (): Promise<any> => {
   return data;
 };
 
+
+export const getUserById = async (userId: number): Promise<CurrentUser> => {
+  const session = await getSession();
+  const token = session?.user?.accessToken;
+
+  if (!token) throw new Error("Missing token");
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/users/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await res.json();
+    console.log("Get user by ID response:", data);
+
+    if (!res.ok) {
+      throw new Error(data.message || "Failed to fetch user");
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error fetching user by ID:", error);
+    throw new Error("Failed to fetch user");
+  }
+};
+
 export const getAlljobs = async (): Promise<any> => {
   
   const res = await fetch(`${API_BASE_URL}/jobs`, {
@@ -439,4 +463,7 @@ export const GoogleAuthService = {
     });
     return response.data;
   }
+
+
+  
 };

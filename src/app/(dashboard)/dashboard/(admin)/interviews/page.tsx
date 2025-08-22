@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useRef } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import {
   Box,
   Typography,
@@ -14,19 +14,21 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Chip,
   IconButton,
   FormControl,
   Select,
   MenuItem,
+  CircularProgress,
 } from "@mui/material"
 import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
   Refresh as RefreshIcon,
   Edit as EditIcon,
+  Add as AddIcon,
 } from "@mui/icons-material"
-import { interviewData } from "@/@core/component/data/interview-data"
+import NewInterview from "./NewInterview" // Adjust the import path as needed
+import { fetchInterviews, updateInterviewStatus } from "@/@core/services/interviewService"
 
 const monthNames = [
   "January",
@@ -45,57 +47,121 @@ const monthNames = [
 
 const dayNames = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
 
+interface Interview {
+  id: number
+  job_id: number
+  application_id: number
+  user_id: number
+  jobTitle: string
+  candidateName: string
+  interview_date: string
+  interview_time: string
+  interview_location: string
+  interviewer_name: string
+  status: string
+}
+
+// Format date to YYYY-MM-DD in local time zone
+const formatLocalDate = (date: Date): string => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
 export default function InterviewsPage() {
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 6, 24)) 
-  const [selectedDate, setSelectedDate] = useState("2025-07-24")
+  const [currentDate, setCurrentDate] = useState(new Date()) // Use current date
+  const [selectedDate, setSelectedDate] = useState(formatLocalDate(new Date())) // Use current date in YYYY-MM-DD format
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [currentPage, setCurrentPage] = useState(1)
+  const [openModal, setOpenModal] = useState(false)
+  const [interviews, setInterviews] = useState<Interview[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  // Debug component rendering
+  useEffect(() => {
+    console.log("InterviewsPage component rendered")
+  }, [])
+
+  // Fetch interviews on mount and when needed
+  const fetchInterviewData = async () => {
+    setLoading(true)
+    try {
+      const response = await fetchInterviews()
+      const fetchedInterviews = response.interviews.map((interview: any) => ({
+        id: interview.id,
+        job_id: interview.job_id || 0, // Fallback if job_id is missing
+        application_id: interview.application_id || 0, // Fallback if application_id is missing
+        user_id: interview.qualified_user?.id || 0, // Use qualified_user.id
+        jobTitle: interview.job || "Unknown Job", // Use job directly
+        candidateName: interview.qualified_user?.name || "Unknown Candidate", // Use qualified_user.name
+        interview_date: interview.interview_date,
+        interview_time: interview.interview_time,
+        interview_location: interview.interview_location || interview.address || "Unknown Location", // Fallback to address
+        interviewer_name: interview.interviewer?.name || "Unknown Interviewer", // Use interviewer.name
+        status: interview.status.charAt(0).toUpperCase() + interview.status.slice(1).toLowerCase(), // Capitalize status
+      }))
+      setInterviews(fetchedInterviews)
+      console.log("Fetched interviews:", fetchedInterviews)
+      setError(null)
+    } catch (err: any) {
+      setError(err.message)
+      console.error("Error fetching interviews:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchInterviewData()
+  }, [])
 
   // Filter interviews by selected date
   const filteredInterviews = useMemo(() => {
-    return interviewData.filter((interview) => interview.interviewDate === selectedDate)
-  }, [selectedDate])
+    console.log("Filtering interviews for selectedDate:", selectedDate)
+    return interviews.filter((interview) => interview.interview_date === selectedDate)
+  }, [interviews, selectedDate])
 
   // Calculate pagination
-  const totalInterviews = interviewData.length
+  const totalInterviews = filteredInterviews.length
   const startIndex = (currentPage - 1) * rowsPerPage
   const endIndex = Math.min(startIndex + rowsPerPage, totalInterviews)
 
-  // Generate calendar days for horizontal carousel (show 3 months worth of days)
+  // Generate calendar days for horizontal carousel (90 days before and 90 days after currentDate, total 181 days)
   const generateCarouselDays = () => {
     const days = []
-    const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
+    const startDate = new Date(currentDate)
+    startDate.setDate(startDate.getDate() - 90) // 90 days before currentDate
 
-    // Generate 90 days (approximately 3 months)
-    for (let i = 0; i < 90; i++) {
+    for (let i = 0; i < 181; i++) { // 90 before + current + 90 after = 181 days
       const date = new Date(startDate)
       date.setDate(startDate.getDate() + i)
-
-      const dayOfWeek = (date.getDay() + 6) % 7 // Convert Sunday=0 to Monday=0
+      const dayOfWeek = (date.getDay() + 6) % 7
       const dayName = dayNames[dayOfWeek]
-
+      const dateString = formatLocalDate(date) // Use local date formatting
       days.push({
-        date: date,
+        date,
         day: date.getDate(),
-        dayName: dayName,
-        dateString: date.toISOString().split("T")[0],
+        dayName,
+        dateString,
         isCurrentMonth: date.getMonth() === currentDate.getMonth(),
       })
     }
-
+    console.log("Generated carousel days:", days.map((d) => ({ day: d.day, dateString: d.dateString })))
     return days
   }
 
   const handleDateClick = (dateString: string) => {
+    console.log("Date clicked:", dateString)
     setSelectedDate(dateString)
+    setCurrentPage(1) // Reset to first page when date changes
   }
 
   const handlePrevMonth = () => {
     const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
     setCurrentDate(newDate)
-
-    // Scroll the container left
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({ left: -300, behavior: "smooth" })
     }
@@ -104,25 +170,51 @@ export default function InterviewsPage() {
   const handleNextMonth = () => {
     const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
     setCurrentDate(newDate)
-
-    // Scroll the container right
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({ left: 300, behavior: "smooth" })
     }
   }
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Completed":
+    switch (status.toLowerCase()) { // Handle case-insensitive status
+      case "completed":
         return { bgcolor: "#ECFDF5", color: "#065F46" }
-      case "Scheduled":
+      case "scheduled":
         return { bgcolor: "#EFF6FF", color: "#1E40AF" }
-      case "In Progress":
+      case "in progress":
         return { bgcolor: "#FFFBEB", color: "#92400E" }
-      case "Cancelled":
+      case "cancelled":
         return { bgcolor: "#FEF2F2", color: "#991B1B" }
       default:
         return { bgcolor: "#F3F4F6", color: "#374151" }
+    }
+  }
+
+  const handleOpenModal = () => {
+    console.log("Opening modal")
+    setOpenModal(true)
+  }
+
+  const handleCloseModal = () => {
+    setOpenModal(false)
+    fetchInterviewData() // Refresh interviews after closing modal
+  }
+
+  const handleRefresh = () => {
+    fetchInterviewData()
+  }
+
+  const handleStatusChange = async (interviewId: number, newStatus: string) => {
+    try {
+      await updateInterviewStatus(interviewId, newStatus.toLowerCase()) // Send lowercase status to API
+      setInterviews((prev) =>
+        prev.map((interview) =>
+          interview.id === interviewId ? { ...interview, status: newStatus } : interview
+        )
+      )
+    } catch (err) {
+      console.error("Error updating status:", err)
+      setError("Failed to update interview status")
     }
   }
 
@@ -131,16 +223,40 @@ export default function InterviewsPage() {
   return (
     <Box sx={{ width: "100%" }}>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 2, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}>
         <Typography variant="h4" sx={{ mb: 1 }}>
           Interview Calendar
         </Typography>
       </Box>
 
+      {/* Schedule Button */}
+      <Box sx={{ mb: 4, display: "flex", justifyContent: "flex-end" }}>
+     
+      </Box>
+   <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          sx={{
+            bgcolor: "#E61C31",
+            "&:hover": {
+              bgcolor: "#C91A2A",
+            },
+            zIndex: 10, // Ensure button is not obscured
+          }}
+          onClick={handleOpenModal}
+        >
+          Schedule New Interview
+        </Button>
+      {/* Error Message */}
+      {error && (
+        <Typography color="error" sx={{ mb: 2 }}>
+          {error}
+        </Typography>
+      )}
+
       {/* Calendar Carousel Section */}
       <Card sx={{ mb: 4 }}>
         <CardContent sx={{ p: 4 }}>
-          {/* Calendar Header */}
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
             <Typography variant="h4" sx={{ fontWeight: 600 }}>
               {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
@@ -155,7 +271,6 @@ export default function InterviewsPage() {
             </Box>
           </Box>
 
-          {/* Horizontal Calendar Carousel */}
           <Box
             ref={scrollContainerRef}
             sx={{
@@ -164,26 +279,17 @@ export default function InterviewsPage() {
               gap: 2,
               pb: 2,
               scrollBehavior: "smooth",
-              "&::-webkit-scrollbar": {
-                height: 6,
-              },
-              "&::-webkit-scrollbar-track": {
-                background: "#f1f1f1",
-                borderRadius: 3,
-              },
-              "&::-webkit-scrollbar-thumb": {
-                background: "#c1c1c1",
-                borderRadius: 3,
-              },
-              "&::-webkit-scrollbar-thumb:hover": {
-                background: "#a8a8a8",
-              },
+              "&::-webkit-scrollbar": { height: 6 },
+              "&::-webkit-scrollbar-track": { background: "#f1f1f1", borderRadius: 3 },
+              "&::-webkit-scrollbar-thumb": { background: "#c1c1c1", borderRadius: 3 },
+              "&::-webkit-scrollbar-thumb:hover": { background: "#a8a8a8" },
             }}
           >
             {carouselDays.map((dayInfo, index) => {
               const isSelected = dayInfo.dateString === selectedDate
-              const hasInterview = interviewData.some((interview) => interview.interviewDate === dayInfo.dateString)
-
+              const hasInterview = interviews.some(
+                (interview) => interview.interview_date === dayInfo.dateString
+              )
               return (
                 <Box
                   key={index}
@@ -208,14 +314,7 @@ export default function InterviewsPage() {
                     },
                   }}
                 >
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      fontWeight: 500,
-                      color: "text.secondary",
-                      mb: 0.5,
-                    }}
-                  >
+                  <Typography variant="caption" sx={{ fontWeight: 500, color: "text.secondary", mb: 0.5 }}>
                     {dayInfo.dayName}
                   </Typography>
                   <Typography
@@ -229,15 +328,7 @@ export default function InterviewsPage() {
                     {dayInfo.day}
                   </Typography>
                   {hasInterview && (
-                    <Box
-                      sx={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: "50%",
-                        bgcolor: "#E61C31",
-                        mt: 0.5,
-                      }}
-                    />
+                    <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "#E61C31", mt: 0.5 }} />
                   )}
                 </Box>
               )
@@ -249,7 +340,6 @@ export default function InterviewsPage() {
       {/* Interviews Section */}
       <Card>
         <CardContent sx={{ p: 4 }}>
-          {/* Interviews Header */}
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
             <Typography variant="h5" sx={{ fontWeight: 600, color: "#E61C31" }}>
               Interviews
@@ -260,17 +350,15 @@ export default function InterviewsPage() {
               sx={{
                 color: "#E61C31",
                 borderColor: "#E61C31",
-                "&:hover": {
-                  borderColor: "#E61C31",
-                  bgcolor: "#FEF2F2",
-                },
+                "&:hover": { borderColor: "#E61C31", bgcolor: "#FEF2F2" },
               }}
+              onClick={handleRefresh}
+              disabled={loading}
             >
               Refresh
             </Button>
           </Box>
 
-          {/* Interviews Table */}
           <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid #E5E7EB" }}>
             <Table>
               <TableHead sx={{ bgcolor: "#FEF2F2" }}>
@@ -286,17 +374,33 @@ export default function InterviewsPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredInterviews.length > 0 ? (
-                  filteredInterviews.map((interview) => (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={8} sx={{ textAlign: "center", py: 4 }}>
+                      <CircularProgress />
+                    </TableCell>
+                  </TableRow>
+                ) : filteredInterviews.length > 0 ? (
+                  filteredInterviews.slice(startIndex, endIndex).map((interview) => (
                     <TableRow key={interview.id} hover>
                       <TableCell sx={{ fontWeight: 500 }}>{interview.jobTitle}</TableCell>
                       <TableCell>{interview.candidateName}</TableCell>
-                      <TableCell>{interview.interviewDate}</TableCell>
-                      <TableCell>{interview.time}</TableCell>
-                      <TableCell>{interview.location}</TableCell>
-                      <TableCell>{interview.interviewer}</TableCell>
+                      <TableCell>{interview.interview_date}</TableCell>
+                      <TableCell>{interview.interview_time}</TableCell>
+                      <TableCell>{interview.interview_location}</TableCell>
+                      <TableCell>{interview.interviewer_name}</TableCell>
                       <TableCell>
-                        <Chip label={interview.status} size="small" sx={getStatusColor(interview.status)} />
+                        <Select
+                          value={interview.status}
+                          onChange={(e) => handleStatusChange(interview.id, e.target.value)}
+                          size="small"
+                          sx={{ ...getStatusColor(interview.status), fontSize: "0.875rem" }}
+                        >
+                          <MenuItem value="Scheduled">Scheduled</MenuItem>
+                          <MenuItem value="In Progress">In Progress</MenuItem>
+                          <MenuItem value="Completed">Completed</MenuItem>
+                          <MenuItem value="Cancelled">Cancelled</MenuItem>
+                        </Select>
                       </TableCell>
                       <TableCell>
                         <IconButton size="small" sx={{ color: "#E61C31" }}>
@@ -318,7 +422,6 @@ export default function InterviewsPage() {
             </Table>
           </TableContainer>
 
-          {/* Pagination */}
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 3 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <Typography variant="body2">Rows per page:</Typography>
@@ -349,6 +452,8 @@ export default function InterviewsPage() {
           </Box>
         </CardContent>
       </Card>
+
+      <NewInterview open={openModal} close={handleCloseModal} selectedDate={selectedDate} />
     </Box>
   )
 }

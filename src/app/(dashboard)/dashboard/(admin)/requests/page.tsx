@@ -26,6 +26,8 @@ import {
   IconButton,
   Menu,
   MenuItem as MenuItemComponent,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import {
   Assignment as AssignmentIcon,
@@ -47,7 +49,6 @@ import {
 import {
   getAdminRequests,
   updateRequestStatus,
-  sendMessage,
   AdminRequestsData,
 } from "@/@core/services/AdminPool";
 
@@ -65,7 +66,8 @@ export default function RequestsPage() {
     email: string;
     phone: string;
     receiverId: number;
-    requestId: number; // Ensure requestId is part of the type
+    requestId: number;
+    isTalent: boolean;
   } | null>(null);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
@@ -73,6 +75,15 @@ export default function RequestsPage() {
   const [selectedRequestIndex, setSelectedRequestIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "error";
+  }>({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   const tabs = ["All", "Processing", "Hired", "Cancelled"];
   const statusFilters = ["All", "Processing", "Hired", "Cancelled"];
@@ -172,6 +183,7 @@ export default function RequestsPage() {
         phone: selectedRequest.client.company_phone || "N/A",
         receiverId: selectedRequest.client.id,
         requestId: selectedRequest.id,
+        isTalent: false,
       });
       setContactModalOpen(true);
     }
@@ -186,7 +198,8 @@ export default function RequestsPage() {
         email: selectedRequest.talent.email || "N/A",
         phone: selectedRequest.talent.phone_number || "N/A",
         receiverId: selectedRequest.talent.id,
-        requestId: selectedRequest.id, // Add requestId for talent
+        requestId: selectedRequest.id,
+        isTalent: true,
       });
       setContactModalOpen(true);
     }
@@ -212,12 +225,22 @@ export default function RequestsPage() {
         setRequests(data.requests || []);
         setCancelModalOpen(false);
         setSelectedRequest(null);
+        setToast({ open: true, message: "Request cancelled successfully", severity: "success" });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to cancel request");
+        setToast({ open: true, message: "Failed to cancel request", severity: "error" });
       } finally {
         setLoading(false);
       }
     }
+  };
+
+  const handleToastClose = () => {
+    setToast({ ...toast, open: false });
+  };
+
+  const handleMessageSent = (success: boolean, message: string) => {
+    setToast({ open: true, message, severity: success ? "success" : "error" });
   };
 
   const getStatusColor = (status: string) => {
@@ -371,6 +394,17 @@ export default function RequestsPage() {
         </MenuItemComponent>
       </Menu>
 
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={6000}
+        onClose={handleToastClose}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert onClose={handleToastClose} severity={toast.severity} sx={{ width: "100%" }}>
+          {toast.message}
+        </Alert>
+      </Snackbar>
+
       {selectedRequest && (
         <>
           <RequestViewModal
@@ -394,7 +428,9 @@ export default function RequestsPage() {
               contactEmail={contactModalData.email}
               contactPhone={contactModalData.phone}
               receiverId={contactModalData.receiverId}
-              requestId={contactModalData.requestId} // Pass requestId
+              requestId={contactModalData.requestId}
+              isTalent={contactModalData.isTalent}
+              onMessageSent={handleMessageSent} // Pass callback for toast
             />
           )}
 

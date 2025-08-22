@@ -14,8 +14,8 @@ export interface TalentPoolData {
   talents: {
     id: number;
     name: string;
-    designation: string;
-    location: string;
+    designation: string | null;
+    location: string | null;
     years_experience: number | null;
     status: string;
   }[];
@@ -27,8 +27,8 @@ export interface TalentDetailsData {
   talent: {
     id: number;
     name: string;
-    designation: string;
-    location: string;
+    designation: string | null;
+    location: string | null;
     years_experience: number | null;
     status: string;
     professional_summary: string | null;
@@ -59,6 +59,41 @@ export interface ExpressInterestData {
     request_date: string | null;
     status: string;
   };
+}
+
+// Interface for Client Interest Data
+export interface ClientRequestData {
+  status: boolean;
+  interests: {
+    id: number;
+    talent: {
+      id: number;
+      name: string;
+      designation: string | null;
+      location: string | null;
+      years_experience: number | null;
+      status: string;
+      profile_image: string | null;
+    };
+    job_title: string;
+    request_type: string;
+    notes: string | null;
+    status: string;
+    request_date: string;
+    messages?: Message[];
+  }[];
+}
+
+// Interface for Message Data
+export interface Message {
+  id: number;
+  sender_id: number;
+  sender_name: string;
+  sender_role: string;
+  receiver_id: number;
+  message_text: string;
+  sent_at: string;
+  status: string;
 }
 
 export const getTalentPool = async (): Promise<TalentPoolData> => {
@@ -122,5 +157,55 @@ export const expressInterest = async (
     }
   );
 
+  return response.data;
+};
+
+export const getClientInterests = async (): Promise<ClientRequestData> => {
+  const session = await getSession();
+  const token = session?.user?.accessToken;
+  if (!token) throw new Error("Missing token");
+
+  const response: AxiosResponse<ClientRequestData> = await axios.get(
+    `${API_BASE_URL}/client/interests`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+  return response.data;
+};
+
+export const fetchMessages = async (requestId: number): Promise<{ messages: Message[] }> => {
+  const session = await getSession();
+  const token = session?.user?.accessToken;
+  if (!token) throw new Error("Missing token");
+
+  const response: AxiosResponse<{ messages: Message[] }> = await axios.get(
+    `${API_BASE_URL}/client/requests/${requestId}/messages`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+  return response.data;
+};
+
+export const sendMessage = async (
+  requestId: number,
+  receiverId: number,
+  message: string
+): Promise<Message> => {
+  const session = await getSession();
+  const token = session?.user?.accessToken;
+  if (!token) throw new Error("Missing token");
+
+  const response: AxiosResponse<Message> = await axios.post(
+    `${API_BASE_URL}/client/talents/${requestId}/send-message`,
+    {
+      receiver_id: receiverId,
+      message_text: message,
+    },
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
   return response.data;
 };

@@ -10,6 +10,7 @@ export interface Message {
   sender_role: string;
   receiver_id: number;
   message_text: string;
+  attachment_url?: string | null;
   sent_at: string;
   status: string;
 }
@@ -34,17 +35,11 @@ export interface AdminRequestsData {
     client: {
       id: number;
       name: string;
-      company_name: string;
-      company_email_address: string;
-      company_logo: string | null;
-      company_phone: string | null;
-      industry: string | null;
-      number_of_employees: string | null;
-      type_of_employer: string | null;
-      company_address: string | null;
-      company_website: string | null;
+      company_logo?: string | null;
+      company_email_address?: string | null;
+      company_phone?: string | null;
+      company_name?: string | null;
     } | null;
-    job_title: string;
     talent: {
       id: number;
       name: string;
@@ -69,6 +64,7 @@ export interface AdminRequestsData {
       education: string | null;
       created_at: string | null;
     } | null;
+    job_title: string;
     request_date: string | null;
     status: string;
     messages?: Message[];
@@ -111,6 +107,7 @@ export interface UpdateStatusData {
 
 // Interface for Send Message Response
 export interface SendMessageData {
+  id: number;
   status: boolean;
   message: string;
   data: Message;
@@ -188,7 +185,9 @@ export const updateRequestStatus = async (
 export const sendMessage = async (
   id: number,
   receiverId: number,
-  messageText: string
+  messageText: string,
+  attachmentUrl?: string | null,
+  sendEmail?: boolean
 ): Promise<SendMessageData> => {
   const session = await getSession();
   const token = session?.user?.accessToken;
@@ -200,6 +199,8 @@ export const sendMessage = async (
     {
       receiver_id: receiverId,
       message_text: messageText,
+      attachment_url: attachmentUrl,
+      send_email: sendEmail,
     },
     {
       headers: { Authorization: `Bearer ${token}` },

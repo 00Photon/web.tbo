@@ -66,6 +66,27 @@ export const fetchApplicationById = async (id: string) => {
   const data = await response.json();
   return data;
 };
+export const fetchClientApplications = async () => {
+  const session = await getSession();
+  if (!session || !session.user) throw new Error("User is not authenticated");
+
+  const token = session.user.accessToken;
+
+  const response = await fetch(`${API_BASE_URL}/client/applications`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch client applications");
+  }
+
+  const data = await response.json();
+  return data;
+};
 
 export const fetchJobsClients = async () => {
   const session = await getSession();
@@ -466,7 +487,7 @@ export const deleteJob = async (jobId: number) => {
   return response.json();
 };
 
-export const updateApplicationStatus = async (applicationId: string, status: string) => {
+export const updateApplicationStatus = async (applicationId: number, status: string) => {
   const session = await getSession();
   if (!session || !session.user) throw new Error("User is not authenticated");
 

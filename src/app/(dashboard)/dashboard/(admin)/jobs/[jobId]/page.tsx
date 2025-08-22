@@ -49,6 +49,7 @@ import { CustomPagination } from "@/@core/component/common/custom-pagination"
 import { usePagination } from "@/@core/component/hooks/use-pagination"
 import JobDetailsModal from "../JobDetailsModal"
 import { fetchJobsById, fetchApplications, updateApplicationStatus } from "@/@core/services/jobService"
+import { sendApplicationToClient } from "@/@core/services/jobVanciesService";
 
 interface Job {
   id: number
@@ -90,6 +91,7 @@ interface Job {
     updated_at: string
     status: string
   }
+  recommendations?: ApplicantData[] // Added to include recommendations from API
 }
 
 interface Application {
@@ -140,7 +142,7 @@ interface Application {
 }
 
 interface ApplicantData {
-  id: string
+  id: number
   name: string
   email: string
   jobTitle: string
@@ -180,6 +182,22 @@ interface ApplicantData {
   deleted_at?: string | null
   status_user?: string
   reset_token?: string | null
+  phone?: string
+  experience?: string
+  location?: string
+  resume?: string
+  years_experience?: number | null // Added for full profile
+  availability_status?: string | null // Added for full profile
+  professional_summary?: string | null // Added for full profile
+  skills?: string[] // Added for full profile
+  current_company?: string | null // Added for full profile
+  education?: string | null // Added for full profile
+}
+
+interface SendToClientRequest {
+  job_id: number
+  client_id: number
+  applications: string[]
 }
 
 export default function JobApplicationDetails() {
@@ -218,6 +236,7 @@ export default function JobApplicationDetails() {
           const fetchedJob: Job = {
             ...jobResponse.job,
             skill: typeof jobResponse.job.skill === "string" ? JSON.parse(jobResponse.job.skill || "[]") : jobResponse.job.skill,
+            recommendations: jobResponse.recommendations || [], // Include recommendations
           }
           setJob(fetchedJob)
 
@@ -226,7 +245,7 @@ export default function JobApplicationDetails() {
           const mappedApplicants: ApplicantData[] = applications
             .filter((app) => app.job_id === parseInt(jobId) && app.user?.name && app.user?.email)
             .map((app) => ({
-              id: app.id.toString(),
+              id: app.id,
               name: app.user.name || "Unknown Applicant",
               email: app.user.email || "unknown@example.com",
               jobTitle: fetchedJob.title,
@@ -270,16 +289,21 @@ export default function JobApplicationDetails() {
               deleted_at: app.user.deleted_at,
               status_user: app.user.status,
               reset_token: app.user.reset_token,
-              // Add required fields for RecommendationsModal compatibility
               phone: app.user.phone_number || "",
-              experience: "", // Set appropriately if available
+              experience: "", // Not provided in applications
               location: app.user.country || "",
               resume: app.user.cv_upload || "",
+              years_experience: null, // Not provided in applications
+              availability_status: null, // Not provided in applications
+              professional_summary: null, // Not provided in applications
+              skills: [], // Not provided in applications
+              current_company: null, // Not provided in applications
+              education: null, // Not provided in applications
             }))
           setApplicants(mappedApplicants)
-          if (mappedApplicants.length === 0) {
-            setError("No valid applicants available for this job.")
-            toast.info("No valid applicants available for this job.")
+          if (mappedApplicants.length === 0 && (!fetchedJob.recommendations || fetchedJob.recommendations.length === 0)) {
+            setError("No valid applicants or recommendations available for this job.")
+            toast.info("No valid applicants or recommendations available for this job.")
           }
         } else {
           setError("Job not found")
@@ -303,8 +327,8 @@ export default function JobApplicationDetails() {
   }, [jobId])
 
   const recommendedApplicants = useMemo(() => {
-    return applicants.filter((applicant) => applicant.type === "Recommended")
-  }, [applicants])
+    return job?.recommendations || [] // Use recommendations from API
+  }, [job])
 
   const filteredApplicants = useMemo(() => {
     return applicants.filter((applicant) => {
@@ -385,6 +409,30 @@ export default function JobApplicationDetails() {
     } catch (error: any) {
       toast.error(error.message || "Failed to update application status")
     }
+  }
+
+  const handleSendToClient = async () => {
+    if (selectedApplicantIndex === null || !paginatedData[selectedApplicantIndex]) {
+      toast.error("No applicant selected")
+      return
+    }
+    if (!job?.client_id) {
+      toast.error("Client ID is missing for this job")
+      return
+    }
+
+    const applicant = paginatedData[selectedApplicantIndex]
+    try {
+      await sendApplicationToClient({
+        job_id: parseInt(jobId),
+        client_id: job.client_id,
+        applications: [applicant.id],
+      })
+      toast.success("Application sent to client successfully")
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send application to client")
+    }
+    handleMenuClose()
   }
 
   const toggleJobDetailsModal = () => {
@@ -671,6 +719,11 @@ export default function JobApplicationDetails() {
         <MenuItemComponent onClick={handleOpenStatusModal}>
           Change Status
         </MenuItemComponent>
+        {activeTab === 1 && selectedApplicantIndex !== null && paginatedData[selectedApplicantIndex]?.status === "SHORTLISTED" && (
+          <MenuItemComponent onClick={handleSendToClient}>
+            Send to Client
+          </MenuItemComponent>
+        )}
       </MuiMenu>
 
       {selectedApplicant && (

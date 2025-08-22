@@ -31,7 +31,7 @@ import { InterestReceivedModal } from "./interest-received-modal"
 import DocumentUpload from "./document-upload"
 
 interface ApplicantData {
-  id: string
+  id: number
   name: string
   email: string
   jobTitle: string

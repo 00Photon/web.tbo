@@ -233,9 +233,10 @@ const defaultValues: IFormInput = {
 interface Props {
   open: boolean;
   close: () => void;
+  selectedDate: string;
 }
 
-const NewInterview = ({ open, close }: Props) => {
+const NewInterview = ({ open, close, selectedDate }: Props) => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<number>(0);
   const [loading, setLoading] = useState(false);
