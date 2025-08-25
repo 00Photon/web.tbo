@@ -203,7 +203,7 @@ const SignUpForm: React.FC = () => {
     mutationFn: registerUser,
     onSuccess: (data) => {
       setShowSuccess(true);
-      setTimeout(() => router.push(`/verify-otp?email=${formEmail}`), 2000);
+      setTimeout(() => router.push(`/verifyOtp?email=${formEmail}`), 2000);
     },
     onError: (error: any) => {
       console.error('Registration failed:', error);

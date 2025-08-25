@@ -13,44 +13,13 @@ import {
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { API_BASE_URL } from "@/@core/utils/constants";
-
-const verifyOtp = async ({ email, otp }: { email: string; otp: string }) => {
-  const response = await fetch(`${API_BASE_URL}/verify-otp`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, otp }),
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || 'OTP verification failed');
-  }
-
-  return data;
-};
-
-const resendOtp = async ({ email }: { email: string }) => {
-  const response = await fetch(`${API_BASE_URL}/resend-otp`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email }),
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || 'Failed to resend OTP');
-  }
-
-  return data;
-};
+import { verifyOtp, resendOtp } from '@/@core/services/user'; // Adjust import path to your service file
 
 const VerifyOtpForm = () => {
   const [otp, setOtp] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [resendSuccessMsg, setResendSuccessMsg] = useState('');
+  const [resendDisabled, setResendDisabled] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
@@ -58,8 +27,8 @@ const VerifyOtpForm = () => {
   const verifyMutation = useMutation({
     mutationFn: verifyOtp,
     onSuccess: (data) => {
-      setSuccessMsg(data.message);
-      setTimeout(() => router.push('/signin'), 1500);
+      setSuccessMsg(data.message || 'OTP verified successfully');
+      setTimeout(() => router.push('/signin'), 1500); // Redirect to sign-in after verification
     },
     onError: (error: any) => {
       console.error('OTP verification error:', error);
@@ -70,6 +39,8 @@ const VerifyOtpForm = () => {
     mutationFn: resendOtp,
     onSuccess: (data) => {
       setResendSuccessMsg(data.message || 'OTP resent successfully');
+      setResendDisabled(true);
+      setTimeout(() => setResendDisabled(false), 30000); // Disable resend for 30 seconds
     },
     onError: (error: any) => {
       console.error('Resend OTP error:', error);
@@ -80,6 +51,10 @@ const VerifyOtpForm = () => {
     e.preventDefault();
     if (!email) {
       alert('Missing email');
+      return;
+    }
+    if (!/^\d{6}$/.test(otp)) {
+      alert('OTP must be a 6-digit number');
       return;
     }
     verifyMutation.mutate({ email, otp });
@@ -128,7 +103,7 @@ const VerifyOtpForm = () => {
               label="OTP Code"
               variant="outlined"
               value={otp}
-              onChange={(e) => setOtp(e.target.value)}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} // Allow only digits
               inputProps={{ maxLength: 6 }}
               sx={{ mb: 3 }}
               required
@@ -167,7 +142,7 @@ const VerifyOtpForm = () => {
               variant="text"
               color="primary"
               fullWidth
-              disabled={resendMutation.isPending}
+              disabled={resendMutation.isPending || resendDisabled}
               sx={{ py: 1, borderRadius: '8px' }}
               aria-label="Resend OTP"
             >

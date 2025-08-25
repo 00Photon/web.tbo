@@ -251,6 +251,22 @@ export const requestPasswordReset = async (email: string): Promise<ResetRequestR
   }
 };
 
+
+export const verifyOtp = async ({ email, otp }: { email: string; otp: string }) => {
+  const response = await fetch(`${API_BASE_URL}/verify-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, otp }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || 'OTP verification failed');
+  }
+  return data;
+};
+
 export const verifyResetOtp = async (data: {
   email: string;
   otp: string;
