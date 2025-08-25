@@ -27,8 +27,27 @@ import {
   Edit as EditIcon,
   Add as AddIcon,
 } from "@mui/icons-material"
-import NewInterview from "./NewInterview" // Adjust the import path as needed
+import NewInterview from "./NewInterview" 
 import { fetchInterviews, updateInterviewStatus } from "@/@core/services/interviewService"
+
+// Define types for API responses
+interface InterviewRaw {
+  id: number
+  job_id?: number
+  application_id?: number
+  qualified_user?: { id: number; name: string }
+  job: string
+  interview_date: string
+  interview_time: string
+  interview_location?: string
+  address?: string
+  interviewer?: { name: string }
+  status: string
+}
+
+interface FetchInterviewsResponse {
+  interviews: InterviewRaw[]
+}
 
 const monthNames = [
   "January",
@@ -63,6 +82,10 @@ interface Interview {
 
 // Format date to YYYY-MM-DD in local time zone
 const formatLocalDate = (date: Date): string => {
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
+    console.error("Invalid date provided to formatLocalDate:", date)
+    return ""
+  }
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, "0")
   const day = String(date.getDate()).padStart(2, "0")
@@ -89,25 +112,25 @@ export default function InterviewsPage() {
   const fetchInterviewData = async () => {
     setLoading(true)
     try {
-      const response = await fetchInterviews()
-      const fetchedInterviews = response.interviews.map((interview: any) => ({
+      const response = (await fetchInterviews()) as FetchInterviewsResponse
+      const fetchedInterviews: Interview[] = response.interviews.map((interview) => ({
         id: interview.id,
-        job_id: interview.job_id || 0, // Fallback if job_id is missing
-        application_id: interview.application_id || 0, // Fallback if application_id is missing
-        user_id: interview.qualified_user?.id || 0, // Use qualified_user.id
-        jobTitle: interview.job || "Unknown Job", // Use job directly
-        candidateName: interview.qualified_user?.name || "Unknown Candidate", // Use qualified_user.name
+        job_id: interview.job_id ?? 0,
+        application_id: interview.application_id ?? 0,
+        user_id: interview.qualified_user?.id ?? 0,
+        jobTitle: interview.job || "Unknown Job",
+        candidateName: interview.qualified_user?.name || "Unknown Candidate",
         interview_date: interview.interview_date,
         interview_time: interview.interview_time,
-        interview_location: interview.interview_location || interview.address || "Unknown Location", // Fallback to address
-        interviewer_name: interview.interviewer?.name || "Unknown Interviewer", // Use interviewer.name
-        status: interview.status.charAt(0).toUpperCase() + interview.status.slice(1).toLowerCase(), // Capitalize status
+        interview_location: interview.interview_location || interview.address || "Unknown Location",
+        interviewer_name: interview.interviewer?.name || "Unknown Interviewer",
+        status: interview.status.charAt(0).toUpperCase() + interview.status.slice(1).toLowerCase(),
       }))
       setInterviews(fetchedInterviews)
       console.log("Fetched interviews:", fetchedInterviews)
       setError(null)
     } catch (err: any) {
-      setError(err.message)
+      setError(err.message || "Failed to fetch interviews")
       console.error("Error fetching interviews:", err)
     } finally {
       setLoading(false)
@@ -135,12 +158,13 @@ export default function InterviewsPage() {
     const startDate = new Date(currentDate)
     startDate.setDate(startDate.getDate() - 90) // 90 days before currentDate
 
-    for (let i = 0; i < 181; i++) { // 90 before + current + 90 after = 181 days
+    for (let i = 0; i < 181; i++) {
       const date = new Date(startDate)
       date.setDate(startDate.getDate() + i)
       const dayOfWeek = (date.getDay() + 6) % 7
       const dayName = dayNames[dayOfWeek]
-      const dateString = formatLocalDate(date) // Use local date formatting
+      const dateString = formatLocalDate(date)
+      if (!dateString) continue // Skip invalid dates
       days.push({
         date,
         day: date.getDate(),
@@ -156,27 +180,63 @@ export default function InterviewsPage() {
   const handleDateClick = (dateString: string) => {
     console.log("Date clicked:", dateString)
     setSelectedDate(dateString)
+    const clickedDate = new Date(dateString)
+    if (isNaN(clickedDate.getTime())) {
+      console.error("Invalid date clicked:", dateString)
+      setError("Invalid date selected")
+      return
+    }
+    setCurrentDate(new Date(clickedDate.getFullYear(), clickedDate.getMonth(), 1))
     setCurrentPage(1) // Reset to first page when date changes
+
+    // Scroll to the selected date
+    if (scrollContainerRef.current && scrollContainerRef.current.offsetWidth > 0) {
+      const carouselDays = generateCarouselDays()
+      const selectedIndex = carouselDays.findIndex((day) => day.dateString === dateString)
+      if (selectedIndex !== -1) {
+        const dayWidth = 80 + 16 // Width of each day box (80px) + gap (16px from gap: 2)
+        const scrollPosition = selectedIndex * dayWidth - scrollContainerRef.current.offsetWidth / 2 + dayWidth / 2
+        scrollContainerRef.current.scrollTo({ left: scrollPosition, behavior: "smooth" })
+      }
+    }
   }
 
   const handlePrevMonth = () => {
     const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
     setCurrentDate(newDate)
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: -300, behavior: "smooth" })
-    }
+    const currentDay = new Date(selectedDate).getDate()
+    const daysInNewMonth = new Date(newDate.getFullYear(), newDate.getMonth() + 1, 0).getDate()
+    const newDay = Math.min(currentDay, daysInNewMonth) // Preserve day if possible, else use last day of month
+    setSelectedDate(formatLocalDate(new Date(newDate.getFullYear(), newDate.getMonth(), newDay)))
+    setCurrentPage(1) // Reset to first page
   }
 
   const handleNextMonth = () => {
     const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
     setCurrentDate(newDate)
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: 300, behavior: "smooth" })
-    }
+    const currentDay = new Date(selectedDate).getDate()
+    const daysInNewMonth = new Date(newDate.getFullYear(), newDate.getMonth() + 1, 0).getDate()
+    const newDay = Math.min(currentDay, daysInNewMonth) // Preserve day if possible, else use last day of month
+    setSelectedDate(formatLocalDate(new Date(newDate.getFullYear(), newDate.getMonth(), newDay)))
+    setCurrentPage(1) // Reset to first page
   }
 
+  // Scroll to center the current month's first day when currentDate changes
+  useEffect(() => {
+    if (scrollContainerRef.current && scrollContainerRef.current.offsetWidth > 0) {
+      const carouselDays = generateCarouselDays()
+      const firstDayOfMonth = formatLocalDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), 1))
+      const selectedIndex = carouselDays.findIndex((day) => day.dateString === firstDayOfMonth)
+      if (selectedIndex !== -1) {
+        const dayWidth = 80 + 16 // Width of each day box (80px) + gap (16px from gap: 2)
+        const scrollPosition = selectedIndex * dayWidth - scrollContainerRef.current.offsetWidth / 2 + dayWidth / 2
+        scrollContainerRef.current.scrollTo({ left: scrollPosition, behavior: "smooth" })
+      }
+    }
+  }, [currentDate])
+
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) { // Handle case-insensitive status
+    switch (status.toLowerCase()) {
       case "completed":
         return { bgcolor: "#ECFDF5", color: "#065F46" }
       case "scheduled":
@@ -206,13 +266,13 @@ export default function InterviewsPage() {
 
   const handleStatusChange = async (interviewId: number, newStatus: string) => {
     try {
-      await updateInterviewStatus(interviewId, newStatus.toLowerCase()) // Send lowercase status to API
+      await updateInterviewStatus(interviewId, newStatus.toLowerCase())
       setInterviews((prev) =>
         prev.map((interview) =>
           interview.id === interviewId ? { ...interview, status: newStatus } : interview
         )
       )
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error updating status:", err)
       setError("Failed to update interview status")
     }
@@ -231,9 +291,7 @@ export default function InterviewsPage() {
 
       {/* Schedule Button */}
       <Box sx={{ mb: 4, display: "flex", justifyContent: "flex-end" }}>
-     
-      </Box>
-   <Button
+        <Button
           variant="contained"
           startIcon={<AddIcon />}
           sx={{
@@ -241,12 +299,14 @@ export default function InterviewsPage() {
             "&:hover": {
               bgcolor: "#C91A2A",
             },
-            zIndex: 10, // Ensure button is not obscured
+            zIndex: 10,
           }}
           onClick={handleOpenModal}
         >
           Schedule New Interview
         </Button>
+      </Box>
+
       {/* Error Message */}
       {error && (
         <Typography color="error" sx={{ mb: 2 }}>

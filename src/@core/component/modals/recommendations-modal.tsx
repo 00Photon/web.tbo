@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -14,13 +15,12 @@ import {
   CardContent,
   IconButton,
   Alert,
-  Divider,
   Chip,
   Link,
+  Pagination,
 } from "@mui/material"
 import { Close as CloseIcon, ThumbUp as ThumbUpIcon } from "@mui/icons-material"
 
-// Define ApplicantData interface locally to match page.tsx
 interface ApplicantData {
   id: number
   name: string
@@ -30,48 +30,12 @@ interface ApplicantData {
   type: string
   status: string
   phone?: string
-  experience?: string
   location?: string
   resume?: string
-  account_type?: string
-  company_logo?: string | null
-  company_name?: string | null
-  company_email_address?: string | null
-  industry?: string | null
-  number_of_employees?: string | null
-  type_of_employer?: string | null
-  company_address?: string | null
-  company_phone_number?: string | null
-  country?: string | null
-  company_website?: string | null
-  contact_person?: string | null
-  work_email?: string | null
-  position_in_company?: string | null
-  phone_number?: string | null
-  cv_upload?: string | null
-  cover_letter_upload?: string | null
-  id_upload?: string | null
-  video_url?: string | null
-  project_screenshots?: string[] | null
-  work_sample_upload?: string | null
-  portfolio_link?: string | null
   profile_image?: string | null
   designation?: string | null
-  email_verified_at?: string | null
-  otp?: string | null
-  otp_expires_at?: string | null
-  is_verified?: number
-  created_at?: string
-  updated_at?: string
-  deleted_at?: string | null
-  status_user?: string
-  reset_token?: string | null
   years_experience?: number | null
-  availability_status?: string | null
-  professional_summary?: string | null
   skills?: string[]
-  current_company?: string | null
-  education?: string | null
 }
 
 interface RecommendationsModalProps {
@@ -85,16 +49,14 @@ export function RecommendationsModal({ open, onClose, recommendedApplicants, job
   const [interestedApplicants, setInterestedApplicants] = useState<Set<number>>(new Set())
   const [showSuccessMessage, setShowSuccessMessage] = useState(false)
   const [lastInterestedName, setLastInterestedName] = useState("")
+  const [page, setPage] = useState(1)
+  const itemsPerPage = 6 // Default: Show 6 candidates per page. Adjust this number to change the default.
 
   const handleInterested = (applicant: ApplicantData) => {
     setInterestedApplicants((prev) => new Set(prev).add(applicant.id))
-    setLastInterestedName(applicant.name.split(" ")[0]) // Get first name
+    setLastInterestedName(applicant.name.split(" ")[0])
     setShowSuccessMessage(true)
-
-    // Hide success message after 3 seconds
-    setTimeout(() => {
-      setShowSuccessMessage(false)
-    }, 3000)
+    setTimeout(() => setShowSuccessMessage(false), 3000)
   }
 
   const getInitials = (name: string) => {
@@ -104,6 +66,15 @@ export function RecommendationsModal({ open, onClose, recommendedApplicants, job
       .join("")
       .toUpperCase()
   }
+
+  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+    setPage(value)
+  }
+
+  const paginatedApplicants = recommendedApplicants.slice(
+    (page - 1) * itemsPerPage,
+    page * itemsPerPage
+  )
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
@@ -133,9 +104,8 @@ export function RecommendationsModal({ open, onClose, recommendedApplicants, job
           </Alert>
         )}
 
-        <Grid container spacing={3}>
-          {recommendedApplicants.map((applicant) => {
-            const firstName = applicant.name.split(" ")[0]
+        <Grid container spacing={2}>
+          {paginatedApplicants.map((applicant) => {
             const isInterested = interestedApplicants.has(applicant.id)
 
             return (
@@ -150,163 +120,76 @@ export function RecommendationsModal({ open, onClose, recommendedApplicants, job
                     },
                   }}
                 >
-                  <CardContent sx={{ p: 3 }}>
-                    <Box sx={{ textAlign: "center", mb: 2 }}>
+                  <CardContent sx={{ p: 2 }}>
+                    <Box sx={{ textAlign: "center", mb: 1 }}>
                       <Avatar
                         src={applicant.profile_image || undefined}
                         sx={{
-                          width: 80,
-                          height: 80,
+                          width: 60,
+                          height: 60,
                           mx: "auto",
-                          mb: 2,
+                          mb: 1,
                           bgcolor: "primary.main",
-                          fontSize: "1.5rem",
+                          fontSize: "1.2rem",
                           fontWeight: "bold",
                         }}
                       >
                         {!applicant.profile_image && getInitials(applicant.name)}
                       </Avatar>
-                      <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
+                      <Typography variant="h6" sx={{ fontSize: "1.1rem", fontWeight: 600 }}>
                         {applicant.name}
                       </Typography>
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                         {applicant.designation || "N/A"}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: "block" }}>
-                        {applicant.years_experience ? `${applicant.years_experience} years experience` : "Experience not specified"} • {applicant.location || "Location not specified"}
+                      <Typography variant="caption" color="text.secondary">
+                        {applicant.years_experience ? `${applicant.years_experience} yrs exp` : "N/A"} • {applicant.location || "N/A"}
                       </Typography>
                     </Box>
 
-                    <Divider sx={{ mb: 2 }} />
-
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="subtitle2" sx={{ mb: 1 }}>Contact Information</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Email:</strong> {applicant.email}
+                    <Box sx={{ mb: 1 }}>
+                      <Typography variant="subtitle2" sx={{ mb: 0.5, fontSize: "0.9rem" }}>
+                        Key Skills
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Phone:</strong> {applicant.phone_number || "N/A"}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Location:</strong> {applicant.location || "N/A"}
-                      </Typography>
-                    </Box>
-
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="subtitle2" sx={{ mb: 1 }}>Professional Details</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Current Company:</strong> {applicant.current_company || "N/A"}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Professional Summary:</strong> {applicant.professional_summary || "Not provided"}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Availability:</strong> {applicant.availability_status || "N/A"}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Education:</strong> {applicant.education || "N/A"}
-                      </Typography>
-                    </Box>
-
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="subtitle2" sx={{ mb: 1 }}>Skills</Typography>
                       {applicant.skills && applicant.skills.length > 0 ? (
-                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                          {applicant.skills.map((skill, index) => (
+                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                          {applicant.skills.slice(0, 3).map((skill, index) => (
                             <Chip key={index} label={skill} size="small" />
                           ))}
                         </Box>
                       ) : (
-                        <Typography variant="body2" color="text.secondary">No skills listed</Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.8rem" }}>
+                          No skills listed
+                        </Typography>
                       )}
                     </Box>
 
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="subtitle2" sx={{ mb: 1 }}>Portfolio & Documents</Typography>
-                      {applicant.cv_upload && (
-                        <Typography variant="body2" color="text.secondary">
-                          <strong>Resume:</strong>{" "}
-                          <Link href={applicant.cv_upload} target="_blank" rel="noopener">
-                            View Resume
-                          </Link>
-                        </Typography>
-                      )}
-                      {applicant.cover_letter_upload && (
-                        <Typography variant="body2" color="text.secondary">
-                          <strong>Cover Letter:</strong>{" "}
-                          <Link href={applicant.cover_letter_upload} target="_blank" rel="noopener">
-                            View Cover Letter
-                          </Link>
-                        </Typography>
-                      )}
-                      {applicant.id_upload && (
-                        <Typography variant="body2" color="text.secondary">
-                          <strong>ID:</strong>{" "}
-                          <Link href={applicant.id_upload} target="_blank" rel="noopener">
-                            View ID
-                          </Link>
-                        </Typography>
-                      )}
-                      {applicant.video_url && (
-                        <Typography variant="body2" color="text.secondary">
-                          <strong>Video:</strong>{" "}
-                          <Link href={applicant.video_url} target="_blank" rel="noopener">
-                            View Video
-                          </Link>
-                        </Typography>
-                      )}
-                      {applicant.work_sample_upload && (
-                        <Typography variant="body2" color="text.secondary">
-                          <strong>Work Sample:</strong>{" "}
-                          <Link href={applicant.work_sample_upload} target="_blank" rel="noopener">
-                            View Work Sample
-                          </Link>
-                        </Typography>
-                      )}
-                      {applicant.portfolio_link && (
-                        <Typography variant="body2" color="text.secondary">
-                          <strong>Portfolio:</strong>{" "}
-                          <Link href={applicant.portfolio_link} target="_blank" rel="noopener">
-                            View Portfolio
-                          </Link>
-                        </Typography>
-                      )}
-                      {applicant.project_screenshots && applicant.project_screenshots.length > 0 && (
-                        <Box sx={{ mt: 1 }}>
-                          <Typography variant="body2" color="text.secondary">
-                            <strong>Project Screenshots:</strong>
-                          </Typography>
-                          {applicant.project_screenshots.map((screenshot, index) => (
-                            <Link key={index} href={screenshot} target="_blank" rel="noopener" sx={{ display: "block" }}>
-                              Screenshot {index + 1}
-                            </Link>
-                          ))}
-                        </Box>
-                      )}
-                    </Box>
+                    {applicant.resume && (
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontSize: "0.8rem" }}>
+                        <Link href={applicant.resume} target="_blank" rel="noopener">
+                          View Resume
+                        </Link>
+                      </Typography>
+                    )}
 
-                    <Button
-                      variant={isInterested ? "outlined" : "contained"}
-                      startIcon={<ThumbUpIcon />}
-                      onClick={() => handleInterested(applicant)}
-                      disabled={isInterested}
-                      fullWidth
-                      sx={{
-                        mt: 2,
-                        ...(isInterested && {
-                          color: "success.main",
-                          borderColor: "success.main",
-                        }),
-                      }}
-                    >
-                      {isInterested ? "Interest Sent" : "I'm Interested"}
-                    </Button>
+                  
                   </CardContent>
                 </Card>
               </Grid>
             )
           })}
         </Grid>
+
+        {recommendedApplicants.length > itemsPerPage && (
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+            <Pagination
+              count={Math.ceil(recommendedApplicants.length / itemsPerPage)}
+              page={page}
+              onChange={handlePageChange}
+              color="primary"
+            />
+          </Box>
+        )}
 
         {recommendedApplicants.length === 0 && (
           <Box sx={{ textAlign: "center", py: 4 }}>

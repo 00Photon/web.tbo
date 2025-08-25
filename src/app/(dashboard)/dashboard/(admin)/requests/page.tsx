@@ -388,10 +388,10 @@ export default function RequestsPage() {
         <MenuItemComponent onClick={handleViewRequest}>View</MenuItemComponent>
         <MenuItemComponent onClick={handleContactCompany}>Contact Company</MenuItemComponent>
         <MenuItemComponent onClick={handleContactTalent}>Contact Talent</MenuItemComponent>
-        <MenuItemComponent onClick={handleScheduleInterview}>Schedule Interview</MenuItemComponent>
-        <MenuItemComponent onClick={handleCancelRequest} sx={{ color: "error.main" }}>
+        {/* <MenuItemComponent onClick={handleScheduleInterview}>Schedule Interview</MenuItemComponent> */}
+        {/* <MenuItemComponent onClick={handleCancelRequest} sx={{ color: "error.main" }}>
           Cancel
-        </MenuItemComponent>
+        </MenuItemComponent> */}
       </Menu>
 
       <Snackbar

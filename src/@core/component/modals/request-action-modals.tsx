@@ -18,7 +18,7 @@ import {
   Select,
   FormControlLabel,
   MenuItem,
-  Checkbox
+  Checkbox,
 } from "@mui/material";
 import {
   Business as BusinessIcon,
@@ -33,8 +33,9 @@ import {
 import { useState } from "react";
 import type { AdminRequestsData } from "@/@core/services/AdminPool";
 import { sendMessage } from "@/@core/services/AdminPool";
-import {uploadFile} from "@/@core/services/user"
+import { uploadFile } from "@/@core/services/user";
 import { getSession } from "next-auth/react";
+
 interface RequestViewModalProps {
   request: AdminRequestsData["requests"][0];
   open: boolean;
@@ -42,9 +43,10 @@ interface RequestViewModalProps {
 }
 
 export function RequestViewModal({ request, open, onClose }: RequestViewModalProps) {
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [contactModalOpen, setContactModalOpen] = useState(false);
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [contactType, setContactType] = useState<"client" | "talent" | null>(null);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -59,25 +61,23 @@ export function RequestViewModal({ request, open, onClose }: RequestViewModalPro
     }
   };
 
-  const handleSendMessage = async (receiverId: number) => {
-    if (!message.trim()) return;
+  const handleOpenContactModal = (type: "client" | "talent") => {
+    setContactType(type);
+    setContactModalOpen(true);
+  };
 
-    try {
-      setLoading(true);
-      await sendMessage(request.id, receiverId, message);
-      setMessage("");
-      setError(null);
-      // Optionally refresh request data here
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send message");
-    } finally {
-      setLoading(false);
-    }
+  const handleMessageSent = (success: boolean, message: string) => {
+    console.log("Message sent:", { success, message });
+  };
+
+  const handleCancelConfirm = (reason: string) => {
+    console.log("Request cancelled with reason:", reason);
+    onClose();
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth aria-labelledby="request-view-dialog-title">
+      <DialogTitle id="request-view-dialog-title">
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span>Request Details</span>
           <Button onClick={onClose} sx={{ minWidth: "auto", p: 1 }}>
@@ -87,45 +87,183 @@ export function RequestViewModal({ request, open, onClose }: RequestViewModalPro
       </DialogTitle>
       <DialogContent>
         <Box sx={{ py: 2 }}>
-          {/* ... existing code ... */}
-          <Card>
-            <CardContent>
-              <Typography variant="subtitle2" sx={{ mb: 2 }}>
-                Messages
-              </Typography>
-              {request.messages && request.messages.length > 0 ? (
-                request.messages.map((msg) => (
-                  <Box key={msg.id} sx={{ mb: 2, p: 2, bgcolor: "#F9FAFB", borderRadius: 1 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      {msg.message_text}
+          <Grid container spacing={3}>
+            {/* Request Details */}
+            <Grid item xs={12}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    Request Information
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <WorkIcon sx={{ color: "text.secondary" }} />
+                        <Typography variant="body2">
+                          <strong>Job Title:</strong> {request.job_title || ""}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <CalendarIcon sx={{ color: "text.secondary" }} />
+                        <Typography variant="body2">
+                          <strong>Created At:</strong>{" "}
+                          {request.request_date
+                            ? new Date(request.request_date).toLocaleDateString()
+                            : ""}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <BusinessIcon sx={{ color: "text.secondary" }} />
+                        <Typography variant="body2">
+                          <strong>Client:</strong>{" "}
+                          {request.client?.company_name || ""}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <PersonIcon sx={{ color: "text.secondary" }} />
+                        <Typography variant="body2">
+                          <strong>Talent:</strong> {request.talent?.name || ""}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Chip
+                        label={request.status || "Unknown"}
+                        sx={{
+                          ...getStatusColor(request.status || ""),
+                          fontWeight: "bold",
+                        }}
+                      />
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Messages Section */}
+            <Grid item xs={12}>
+              <Card>
+                <CardContent>
+                  <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                    Messages
+                  </Typography>
+                  {request.messages && request.messages.length > 0 ? (
+                    request.messages.map((msg) => (
+                      <Box
+                        key={msg.id}
+                        sx={{ mb: 2, p: 2, bgcolor: "#F9FAFB", borderRadius: 1 }}
+                      >
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {msg.message_text}
+                        </Typography>
+                        {msg.attachment_url && (
+                          <Typography variant="body2" sx={{ mt: 1 }}>
+                            <a
+                              href={msg.attachment_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              View Attachment (PDF)
+                            </a>
+                          </Typography>
+                        )}
+                        <Typography variant="caption" color="text.secondary">
+                          Sent on {new Date(msg.sent_at).toLocaleString()} - Status: {msg.status}
+                        </Typography>
+                      </Box>
+                    ))
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      No messages available
                     </Typography>
-                    {msg.attachment_url && (
-                      <Typography variant="body2" sx={{ mt: 1 }}>
-                        <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer">
-                          View Attachment (PDF)
-                        </a>
-                      </Typography>
-                    )}
-                    <Typography variant="caption" color="text.secondary">
-                      Sent on {new Date(msg.sent_at).toLocaleString()} - Status: {msg.status}
-                    </Typography>
-                  </Box>
-                ))
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  No messages available
-                </Typography>
-              )}
-            </CardContent>
-          </Card>
-          {/* ... existing send message section ... */}
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
         </Box>
       </DialogContent>
       <DialogActions sx={{ p: 3, pt: 0 }}>
+        <Button
+          variant="outlined"
+          onClick={() => handleOpenContactModal("client")}
+          disabled={!request.client}
+        >
+          Contact Client
+        </Button>
+        <Button
+          variant="outlined"
+          onClick={() => handleOpenContactModal("talent")}
+          disabled={!request.talent}
+        >
+          Contact Talent
+        </Button>
+        {/* <Button
+          variant="outlined"
+          onClick={() => setScheduleModalOpen(true)}
+          disabled={!request.talent || !request.client}
+        >
+          Schedule Interview
+        </Button> */}
+        {/* <Button
+          variant="outlined"
+          color="error"
+          onClick={() => setCancelModalOpen(true)}
+          disabled={request.status === "Cancelled"}
+        >
+          Cancel Request
+        </Button> */}
         <Button variant="outlined" onClick={onClose}>
           Close
         </Button>
       </DialogActions>
+
+      {/* Related Modals */}
+      {contactType && (
+        <ContactModal
+          open={contactModalOpen}
+          onClose={() => setContactModalOpen(false)}
+          title={`Contact ${contactType === "client" ? "Client" : "Talent"}`}
+          contactName={
+            contactType === "client"
+              ? request.client?.company_name || ""
+              : request.talent?.name || ""
+          }
+          contactEmail={
+            contactType === "client"
+              ? request.client?.company_email_address || ""
+              : request.talent?.email || ""
+          }
+          contactPhone={
+            contactType === "client"
+              ? request.client?.company_phone || ""
+              : request.talent?.phone_number || ""
+          }
+          receiverId={
+            contactType === "client" ? request.client?.id || 0 : request.talent?.id || 0
+          }
+          requestId={request.id}
+          isTalent={contactType === "talent"}
+          onMessageSent={handleMessageSent}
+        />
+      )}
+      <ScheduleInterviewModal
+        open={scheduleModalOpen}
+        onClose={() => setScheduleModalOpen(false)}
+        request={request}
+      />
+      <CancelRequestModal
+        open={cancelModalOpen}
+        onClose={() => setCancelModalOpen(false)}
+        request={request}
+        onConfirm={handleCancelConfirm}
+      />
     </Dialog>
   );
 }
@@ -140,9 +278,8 @@ interface ContactModalProps {
   receiverId: number;
   requestId: number;
   isTalent: boolean;
-  onMessageSent: (success: boolean, message: string) => void; // Callback for toast
+  onMessageSent: (success: boolean, message: string) => void;
 }
-
 
 export function ContactModal({
   open,
@@ -186,7 +323,6 @@ export function ContactModal({
       setLoading(true);
       let attachmentUrl: string | null = null;
 
-      // Upload PDF if selected and recipient is a talent
       if (isTalent && file) {
         console.log("Uploading file:", file.name);
         const formData = new FormData();
@@ -241,8 +377,8 @@ export function ContactModal({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{title}</DialogTitle>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth aria-labelledby="contact-dialog-title">
+      <DialogTitle id="contact-dialog-title">{title}</DialogTitle>
       <DialogContent>
         <Box sx={{ py: 2 }}>
           <Typography variant="body1" sx={{ mb: 3 }}>
@@ -321,6 +457,7 @@ export function ContactModal({
     </Dialog>
   );
 }
+
 interface ScheduleInterviewModalProps {
   open: boolean;
   onClose: () => void;
@@ -357,7 +494,7 @@ export function ScheduleInterviewModal({ open, onClose, request }: ScheduleInter
     { id: "CAND002", name: "Michael Chen" },
     { id: "CAND003", name: "Emily Rodriguez" },
     { id: "CAND004", name: "David Kim" },
-    { id: request.talent?.id.toString(), name: request.talent?.name || "N/A" },
+    { id: request.talent?.id.toString() || "", name: request.talent?.name || "" },
   ];
 
   const handleInputChange = (field: string, value: string) => {
@@ -370,12 +507,12 @@ export function ScheduleInterviewModal({ open, onClose, request }: ScheduleInter
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Schedule Interview</DialogTitle>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth aria-labelledby="schedule-interview-dialog-title">
+      <DialogTitle id="schedule-interview-dialog-title">Schedule Interview</DialogTitle>
       <DialogContent>
         <Box sx={{ py: 2 }}>
           <Typography variant="body1" sx={{ mb: 3 }}>
-            Schedule an interview for {request.talent?.name || "N/A"} with {request.client?.company_name || "N/A"}
+            Schedule an interview for {request.talent?.name || ""} with {request.client?.company_name || ""}
           </Typography>
 
           <Grid container spacing={3}>
@@ -387,7 +524,7 @@ export function ScheduleInterviewModal({ open, onClose, request }: ScheduleInter
                   label="Select Job"
                   onChange={(e) => handleInputChange("selectedJob", e.target.value)}
                 >
-                  {jobs.concat({ id: request.job_title || "N/A", title: request.job_title || "N/A" }).map((job) => (
+                  {jobs.concat({ id: request.job_title || "", title: request.job_title || "" }).map((job) => (
                     <MenuItem key={job.id} value={job.id}>
                       {job.title}
                     </MenuItem>
@@ -579,13 +716,13 @@ export function CancelRequestModal({ open, onClose, request, onConfirm }: Cancel
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Cancel Request</DialogTitle>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth aria-labelledby="cancel-request-dialog-title">
+      <DialogTitle id="cancel-request-dialog-title">Cancel Request</DialogTitle>
       <DialogContent>
         <Box sx={{ py: 2 }}>
           <Typography variant="body1" sx={{ mb: 3 }}>
-            Are you sure you want to cancel the request for <strong>{request.talent?.name || "N/A"}</strong> for the position of{" "}
-            <strong>{request.job_title || "N/A"}</strong> at <strong>{request.client?.company_name || "N/A"}</strong>?
+            Are you sure you want to cancel the request for <strong>{request.talent?.name || ""}</strong> for the position of{" "}
+            <strong>{request.job_title || ""}</strong> at <strong>{request.client?.company_name || ""}</strong>?
           </Typography>
           <TextField
             label="Cancellation Reason"

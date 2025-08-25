@@ -70,12 +70,13 @@ interface ApplicationViewModalProps {
   open: boolean;
   onClose: () => void;
 }
+
 export function ApplicationViewModal({ application, open, onClose }: ApplicationViewModalProps) {
   const [interestNotes, setInterestNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [showContactDetails, setShowContactDetails] = useState(false);
+  const [showCandidateDetails, setShowCandidateDetails] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -151,6 +152,10 @@ export function ApplicationViewModal({ application, open, onClose }: Application
     } else {
       setError(null);
     }
+  };
+
+  const toggleCandidateDetails = () => {
+    setShowCandidateDetails((prev) => !prev);
   };
 
   const avatarSrc = application.companyLogo || application.profile_image || undefined;
@@ -260,23 +265,13 @@ export function ApplicationViewModal({ application, open, onClose }: Application
           </Card>
 
           {/* Company Information */}
-          <Card sx={{ mb: 3 }}>
+          {/* <Card sx={{ mb: 3 }}>
             <CardContent>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2, justifyContent: "space-between" }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <BusinessIcon sx={{ color: "primary.main" }} />
                   <Typography variant="subtitle2">Company Information</Typography>
                 </Box>
-                {(application.companyEmail || application.companyPhone) && (
-                  <Button
-                    variant="text"
-                    size="small"
-                    onClick={() => setShowContactDetails(!showContactDetails)}
-                    startIcon={showContactDetails ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                  >
-                    {showContactDetails ? "Hide Details" : "Show Details"}
-                  </Button>
-                )}
               </Box>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
@@ -285,38 +280,48 @@ export function ApplicationViewModal({ application, open, onClose }: Application
                 {application.companyEmail && (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <EmailIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                    <Typography
-                      variant="body2"
-                      sx={{ filter: showContactDetails ? "none" : "blur(4px)", userSelect: showContactDetails ? "auto" : "none" }}
-                    >
-                      {application.companyEmail}
-                    </Typography>
+                    <Typography variant="body2">{application.companyEmail}</Typography>
                   </Box>
                 )}
                 {application.companyPhone && (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <PhoneIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                    <Typography
-                      variant="body2"
-                      sx={{ filter: showContactDetails ? "none" : "blur(4px)", userSelect: showContactDetails ? "auto" : "none" }}
-                    >
-                      {application.companyPhone}
-                    </Typography>
+                    <Typography variant="body2">{application.companyPhone}</Typography>
                   </Box>
                 )}
               </Box>
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Candidate Information */}
           <Card sx={{ mb: 3 }}>
             <CardContent>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-                <BusinessIcon sx={{ color: "primary.main" }} />
-                <Typography variant="subtitle2">Candidate Information</Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2, justifyContent: "space-between" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <BusinessIcon sx={{ color: "primary.main" }} />
+                  <Typography variant="subtitle2">Candidate Information</Typography>
+                </Box>
+                {/* {application.category === "Recommended" && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={toggleCandidateDetails}
+                    startIcon={showCandidateDetails ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    aria-label={showCandidateDetails ? "Hide candidate details" : "Show candidate details"}
+                  >
+                    {showCandidateDetails ? "Hide Details" : "Show Details"}
+                  </Button>
+                )} */}
               </Box>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 500,
+                    filter: application.category === "Recommended" && !showCandidateDetails ? "blur(4px)" : "none",
+                    userSelect: application.category === "Recommended" && !showCandidateDetails ? "none" : "auto",
+                  }}
+                >
                   {application.category === "Applied"
                     ? application.applicant_name
                     : application.talent_name || application.name || "Unknown"}
@@ -324,19 +329,43 @@ export function ApplicationViewModal({ application, open, onClose }: Application
                 {application.email && (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <EmailIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                    <Typography variant="body2">{application.email}</Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        filter: application.category === "Recommended" && !showCandidateDetails ? "blur(4px)" : "none",
+                        userSelect: application.category === "Recommended" && !showCandidateDetails ? "none" : "auto",
+                      }}
+                    >
+                      {application.email}
+                    </Typography>
                   </Box>
                 )}
                 {application.designation && (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <WorkIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                    <Typography variant="body2">{application.designation}</Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        filter: application.category === "Recommended" && !showCandidateDetails ? "blur(4px)" : "none",
+                        userSelect: application.category === "Recommended" && !showCandidateDetails ? "none" : "auto",
+                      }}
+                    >
+                      {application.designation}
+                    </Typography>
                   </Box>
                 )}
                 {application.years_experience !== null && (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <CalendarIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                    <Typography variant="body2">{application.years_experience} years experience</Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        filter: application.category === "Recommended" && !showCandidateDetails ? "blur(4px)" : "none",
+                        userSelect: application.category === "Recommended" && !showCandidateDetails ? "none" : "auto",
+                      }}
+                    >
+                      {application.years_experience} years experience
+                    </Typography>
                   </Box>
                 )}
               </Box>
@@ -356,31 +385,6 @@ export function ApplicationViewModal({ application, open, onClose }: Application
               </CardContent>
             </Card>
           )}
-
-          {/* Express Interest for Recommendations */}
-          {application.category === "Recommended" && (
-            <Card sx={{ mt: 3 }}>
-              <CardContent>
-                <Typography variant="subtitle2" sx={{ mb: 2 }}>
-                  Express Interest
-                </Typography>
-                <TextField
-                  label="Additional Notes (Optional)"
-                  fullWidth
-                  multiline
-                  rows={3}
-                  value={interestNotes}
-                  onChange={(e) => setInterestNotes(e.target.value)}
-                  placeholder="Add any comments for expressing interest..."
-                />
-                {error && (
-                  <Typography variant="body2" color="error" sx={{ mt: 2 }}>
-                    {error}
-                  </Typography>
-                )}
-              </CardContent>
-            </Card>
-          )}
         </Box>
       </DialogContent>
       <DialogActions sx={{ p: 3, pt: 0 }}>
@@ -394,7 +398,7 @@ export function ApplicationViewModal({ application, open, onClose }: Application
             onClick={handleExpressInterest}
             disabled={isSubmitting}
           >
-            {isSubmitting ? <CircularProgress size={24} /> : "Express Interest"}
+            {isSubmitting ? <CircularProgress size={24} /> : "I am Interested"}
           </Button>
         )}
       </DialogActions>

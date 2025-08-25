@@ -93,7 +93,7 @@ interface Recommendation {
 }
 
 interface UnifiedApplication {
-  id: number; // Keep as number to match API
+  id: number;
   companyName: string;
   roleAppliedFor: string;
   dateOfApplication: string;
@@ -116,7 +116,6 @@ interface UnifiedApplication {
   companyEmail?: string;
   companyPhone?: string;
   applicationNotes?: string;
-  // Fields for recommendations
   job_id?: number;
   talent_id?: number;
   name?: string;
@@ -275,11 +274,22 @@ export default function ApplicationsPage() {
   const filteredApplications = useMemo(() => {
     const filtered = allData.filter((application) => {
       const matchesTab = activeTab === 0 || application.category === tabs[activeTab];
+
+      // For the "Applied" tab (activeTab === 1), only include applications with status SHORTLISTED, INTERVIEWED, or HIRED
+      const validStatuses = ["Shortlisted", "Interviewed", "Hired"];
+      const matchesStatusForAppliedTab =
+        activeTab === 1
+          ? validStatuses.includes(application.status)
+          : true; // For other tabs, no status restriction unless specified by statusFilter
+
       const matchesSearch =
         (application.companyName?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
         (application.roleAppliedFor?.toLowerCase() || "").includes(searchQuery.toLowerCase());
-      const matchesStatus = statusFilter === "All" || application.status.toLowerCase() === statusFilter.toLowerCase();
-      return matchesTab && matchesSearch && matchesStatus;
+
+      const matchesStatus =
+        statusFilter === "All" || application.status.toLowerCase() === statusFilter.toLowerCase();
+
+      return matchesTab && matchesSearch && matchesStatus && matchesStatusForAppliedTab;
     });
     console.log("Filtered Applications:", filtered, { activeTab, searchQuery, statusFilter });
     return filtered;
