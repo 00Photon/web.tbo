@@ -114,36 +114,43 @@ const JobListTable = () => {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<number | null>(null);
 
-  const stats = [
-    {
-      title: "Total Openings",
-      value: jobs.length.toString(),
-      icon: WorkIcon,
-      color: "#10B981",
-      bgcolor: "#ECFDF5",
-    },
-    {
-      title: "Applications",
-      value: jobs.reduce((sum, job) => sum + job.applicant_count, 0).toString(),
-      icon: DescriptionIcon,
-      color: "#8B5CF6",
-      bgcolor: "#F3E8FF",
-    },
-    {
-      title: "Active Jobs",
-      value: jobs.filter((job) => job.status.toLowerCase() === "active").length.toString(),
-      icon: ActiveIcon,
-      color: "#F59E0B",
-      bgcolor: "#FFFBEB",
-    },
-    {
-      title: "Inactive Jobs",
-      value: jobs.filter((job) => job.status.toLowerCase() === "inactive").length.toString(),
-      icon: InactiveIcon,
-      color: "#EF4444",
-      bgcolor: "#FEF2F2",
-    },
-  ];
+const stats = [
+  {
+    title: "Total Openings",
+    value: jobs.length.toString(),
+    icon: WorkIcon,
+    color: "#10B981",
+    bgcolor: "#ECFDF5",
+  },
+  {
+    title: "Applications",
+    value: jobs.reduce((sum, job) => sum + job.applicant_count, 0).toString(),
+    icon: DescriptionIcon,
+    color: "#8B5CF6",
+    bgcolor: "#F3E8FF",
+  },
+  {
+    title: "Active Jobs",
+    value: jobs.filter((job) => job.status.toLowerCase() === "active").length.toString(),
+    icon: ActiveIcon,
+    color: "#F59E0B",
+    bgcolor: "#FFFBEB",
+  },
+  {
+    title: "Pending Jobs",
+    value: jobs.filter((job) => job.status.toLowerCase() === "pending").length.toString(),
+    icon: InactiveIcon, // You can replace with a more suitable icon if needed
+    color: "#3B82F6",
+    bgcolor: "#EFF6FF",
+  },
+  {
+    title: "Rejected Jobs",
+    value: jobs.filter((job) => job.status.toLowerCase() === "rejected").length.toString(),
+    icon: InactiveIcon, // You can replace with a more suitable icon if needed
+    color: "#EF4444",
+    bgcolor: "#FEF2F2",
+  },
+];
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -250,18 +257,18 @@ const JobListTable = () => {
     toast.success("Job updated successfully!");
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "active":
-        return { bgcolor: "#ECFDF5", color: "#065F46" };
-      case "inactive":
-        return { bgcolor: "#FEF2F2", color: "#991B1B" };
-      case "rejected":
-        return { bgcolor: "#FFFBEB", color: "#92400E" };
-      default:
-        return { bgcolor: "#F3F4F6", color: "#374151" };
-    }
-  };
+ const getStatusColor = (status: string) => {
+  switch (status.toLowerCase()) {
+    case "active":
+      return { bgcolor: "#ECFDF5", color: "#065F46" };
+    case "pending":
+      return { bgcolor: "#EFF6FF", color: "#1E40AF" };
+    case "rejected":
+      return { bgcolor: "#FEF2F2", color: "#991B1B" };
+    default:
+      return { bgcolor: "#F3F4F6", color: "#374151" };
+  }
+};
 
   if (loading) {
     return (
@@ -344,15 +351,15 @@ const JobListTable = () => {
                   ),
                 }}
               />
-              <FormControl size="small" sx={{ minWidth: 150 }}>
-                <InputLabel>Filter by Status</InputLabel>
-                <Select value={statusFilter} label="Filter by Status" onChange={(e) => setStatusFilter(e.target.value)}>
-                  <MenuItem value="All">All</MenuItem>
-                  <MenuItem value="active">Active</MenuItem>
-                  <MenuItem value="inactive">Inactive</MenuItem>
-                  <MenuItem value="rejected">Rejected</MenuItem>
-                </Select>
-              </FormControl>
+             <FormControl size="small" sx={{ minWidth: 150 }}>
+            <InputLabel>Filter by Status</InputLabel>
+            <Select value={statusFilter} label="Filter by Status" onChange={(e) => setStatusFilter(e.target.value)}>
+              <MenuItem value="All">All</MenuItem>
+              <MenuItem value="active">Active</MenuItem>
+              <MenuItem value="pending">Pending</MenuItem>
+              <MenuItem value="rejected">Rejected</MenuItem>
+            </Select>
+          </FormControl>
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}

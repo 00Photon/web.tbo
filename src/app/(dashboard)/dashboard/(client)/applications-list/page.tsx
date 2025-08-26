@@ -146,7 +146,8 @@ export default function ApplicationsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const tabs = ["All", "Applied", "Invited", "Recommended"];
-  const statusFilters = ["All", "Pending", "Shortlisted", "Interviewed", "Hired"];
+// Replace the existing statusFilters array with this:
+const statusFilters = ["All", "Pending", "Shortlisted", "Interviewed", "Hired", "Rejected"];
 
   // Fetch data from API
   useEffect(() => {
@@ -193,7 +194,7 @@ export default function ApplicationsPage() {
         companyName: applicant.job_title,
         roleAppliedFor: applicant.job_title,
         dateOfApplication: applicant.applied_date,
-        applicationType: "Direct Application",
+        applicationType: "Applied", // Changed from "Direct Application"
         status: applicant.status, // "PENDING" remains as is
         companyLogo: "",
         jobDescription: "No description available",
@@ -208,7 +209,7 @@ export default function ApplicationsPage() {
         companyName: interest.job_title,
         roleAppliedFor: interest.job_title,
         dateOfApplication: interest.request_date,
-        applicationType: interest.request_type,
+        applicationType: interest.request_type === "Direct Hire" ? "Invited" : interest.request_type, // Changed "Direct Hire" to "Invited"
         status: interest.status === "Processing" ? "Pending" : interest.status, // Map "Processing" to "Pending"
         companyLogo: "",
         jobDescription: interest.notes || "No description available",
@@ -373,9 +374,10 @@ export default function ApplicationsPage() {
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case "Direct Hire":
-      case "Direct Application":
+      case "Applied": // Changed from "Direct Application"
         return { bgcolor: "#EFF6FF", color: "#1E40AF" };
+      case "Invited": // Changed from "Direct Hire"
+        return { bgcolor: "#FEF3C7", color: "#92400E" };
       case "Recommendation":
         return { bgcolor: "#ECFDF5", color: "#065F46" };
       case "Contract":
@@ -551,7 +553,7 @@ export default function ApplicationsPage() {
         <MenuItemComponent onClick={handleViewApplication}>View</MenuItemComponent>
         {selectedApplication?.category === "Applied" && (
           <>
-            <MenuItemComponent onClick={handleAcceptApplication} sx={{ color: "success.main" }}>
+            {/* <MenuItemComponent onClick={handleAcceptApplication} sx={{ color: "success.main" }}>
               Accept
             </MenuItemComponent>
             <MenuItemComponent onClick={handleRejectApplication} sx={{ color: "error.main" }}>
@@ -559,7 +561,7 @@ export default function ApplicationsPage() {
             </MenuItemComponent>
             <MenuItemComponent onClick={handleCancelApplication} sx={{ color: "error.main" }}>
               Cancel
-            </MenuItemComponent>
+            </MenuItemComponent> */}
           </>
         )}
       </Menu>

@@ -159,10 +159,10 @@ const TalentsTabs = ({ tab }: TabProps) => {
   const tabContentList = {
     all: <Unreviewed />,
     // underReview: <Unreviewed />,
-    reviewed: <Reviewed />,
-    interviewed: <Interviewed />,
-    shortlisted: <Shortlisted />,
-    hired: <Hired />,
+    // reviewed: <Reviewed />,
+    // interviewed: <Interviewed />,
+    // shortlisted: <Shortlisted />,
+    // hired: <Hired />,
   };
 
   return (
@@ -236,7 +236,7 @@ const TalentsTabs = ({ tab }: TabProps) => {
                         }
                       /> */}
                      
-                     
+{/*                      
                       <Tab
                         value="interviewed"
                         label={
@@ -300,7 +300,7 @@ const TalentsTabs = ({ tab }: TabProps) => {
                             {!hideText && "Hired"}
                           </Box>
                         }
-                      />
+                      /> */}
                     </TabList>
                   </Grid>
                 </Box>

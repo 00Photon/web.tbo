@@ -223,7 +223,7 @@ export function ApplicationViewModal({ application, open, onClose }: Application
                 {application.jobDescription}
               </Typography>
               <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md= {6}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <SalaryIcon sx={{ fontSize: 16, color: "text.secondary" }} />
                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
@@ -264,35 +264,6 @@ export function ApplicationViewModal({ application, open, onClose }: Application
             </CardContent>
           </Card>
 
-          {/* Company Information */}
-          {/* <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2, justifyContent: "space-between" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <BusinessIcon sx={{ color: "primary.main" }} />
-                  <Typography variant="subtitle2">Company Information</Typography>
-                </Box>
-              </Box>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  {application.companyName}
-                </Typography>
-                {application.companyEmail && (
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <EmailIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                    <Typography variant="body2">{application.companyEmail}</Typography>
-                  </Box>
-                )}
-                {application.companyPhone && (
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <PhoneIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                    <Typography variant="body2">{application.companyPhone}</Typography>
-                  </Box>
-                )}
-              </Box>
-            </CardContent>
-          </Card> */}
-
           {/* Candidate Information */}
           <Card sx={{ mb: 3 }}>
             <CardContent>
@@ -301,25 +272,14 @@ export function ApplicationViewModal({ application, open, onClose }: Application
                   <BusinessIcon sx={{ color: "primary.main" }} />
                   <Typography variant="subtitle2">Candidate Information</Typography>
                 </Box>
-                {/* {application.category === "Recommended" && (
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={toggleCandidateDetails}
-                    startIcon={showCandidateDetails ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                    aria-label={showCandidateDetails ? "Hide candidate details" : "Show candidate details"}
-                  >
-                    {showCandidateDetails ? "Hide Details" : "Show Details"}
-                  </Button>
-                )} */}
               </Box>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                 <Typography
                   variant="body2"
                   sx={{
                     fontWeight: 500,
-                    filter: application.category === "Recommended" && !showCandidateDetails ? "blur(4px)" : "none",
-                    userSelect: application.category === "Recommended" && !showCandidateDetails ? "none" : "auto",
+                    filter: application.category === "Recommended" && !showCandidateDetails ? "blur(4px)" : "blur(4px)",
+                    userSelect: application.category === "Recommended" && !showCandidateDetails ? "none" : "none",
                   }}
                 >
                   {application.category === "Applied"
@@ -332,8 +292,8 @@ export function ApplicationViewModal({ application, open, onClose }: Application
                     <Typography
                       variant="body2"
                       sx={{
-                        filter: application.category === "Recommended" && !showCandidateDetails ? "blur(4px)" : "none",
-                        userSelect: application.category === "Recommended" && !showCandidateDetails ? "none" : "auto",
+                        filter: application.category === "Recommended" && !showCandidateDetails ? "blur(4px)" : "blur(4px)",
+                        userSelect: application.category === "Recommended" && !showCandidateDetails ? "none" : "none",
                       }}
                     >
                       {application.email}
