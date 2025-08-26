@@ -46,8 +46,8 @@ export function TalentTable({ talents, onViewProfile }: TalentTableProps) {
           <TableRow>
             <TableCell>Talent Name</TableCell>
             <TableCell>Designation</TableCell>
-            <TableCell>Location</TableCell>
-            <TableCell>Experience</TableCell>
+            {/* <TableCell>Location</TableCell>
+            <TableCell>Experience</TableCell> */}
             <TableCell>Status</TableCell>
             <TableCell>Action</TableCell>
           </TableRow>
@@ -73,12 +73,12 @@ export function TalentTable({ talents, onViewProfile }: TalentTableProps) {
                 </Box>
               </TableCell>
               <TableCell>{talent.designation || "N/A"}</TableCell>
-              <TableCell>{talent.location || "N/A"}</TableCell>
+              {/* <TableCell>{talent.location || "N/A"}</TableCell>
               <TableCell>
                 {talent.years_experience !== null && talent.years_experience !== undefined
                   ? `${talent.years_experience} years`
                   : "N/A"}
-              </TableCell>
+              </TableCell> */}
               <TableCell>
                 <Chip
                   label={talent.status || "N/A"}

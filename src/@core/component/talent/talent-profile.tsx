@@ -273,7 +273,7 @@ export function TalentProfile({
               </Grid>
             </Grid>
 
-            <Card sx={{ bgcolor: "#F9FAFB" }}>
+            {/* <Card sx={{ bgcolor: "#F9FAFB" }}>
               <CardContent>
                 <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
                   Resume/CV
@@ -296,7 +296,7 @@ export function TalentProfile({
                   </Typography>
                 )}
               </CardContent>
-            </Card>
+            </Card> */}
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 3, pt: 0 }}>

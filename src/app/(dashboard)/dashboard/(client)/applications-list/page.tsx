@@ -194,7 +194,7 @@ export default function ApplicationsPage() {
         roleAppliedFor: applicant.job_title,
         dateOfApplication: applicant.applied_date,
         applicationType: "Direct Application",
-        status: applicant.status,
+        status: applicant.status, // "PENDING" remains as is
         companyLogo: "",
         jobDescription: "No description available",
         salary: "Not specified",
@@ -209,7 +209,7 @@ export default function ApplicationsPage() {
         roleAppliedFor: interest.job_title,
         dateOfApplication: interest.request_date,
         applicationType: interest.request_type,
-        status: interest.status,
+        status: interest.status === "Processing" ? "Pending" : interest.status, // Map "Processing" to "Pending"
         companyLogo: "",
         jobDescription: interest.notes || "No description available",
         salary: "Not specified",
@@ -222,9 +222,9 @@ export default function ApplicationsPage() {
         id: recommendation.talent_id,
         companyName: recommendation.job_title,
         roleAppliedFor: recommendation.job_title,
-        dateOfApplication: new Date().toISOString().split("T")[0],
+        dateOfApplication: "N/A", // No date provided in JSON
         applicationType: "Recommendation",
-        status: "Recommended",
+        status: "Pending", // Map "Recommended" to "Pending"
         companyLogo: recommendation.profile_image || "",
         jobDescription: recommendation.professional_summary || "No description available",
         salary: "Not specified",
@@ -274,22 +274,12 @@ export default function ApplicationsPage() {
   const filteredApplications = useMemo(() => {
     const filtered = allData.filter((application) => {
       const matchesTab = activeTab === 0 || application.category === tabs[activeTab];
-
-      // For the "Applied" tab (activeTab === 1), only include applications with status SHORTLISTED, INTERVIEWED, or HIRED
-      const validStatuses = ["Shortlisted", "Interviewed", "Hired"];
-      const matchesStatusForAppliedTab =
-        activeTab === 1
-          ? validStatuses.includes(application.status)
-          : true; // For other tabs, no status restriction unless specified by statusFilter
-
       const matchesSearch =
         (application.companyName?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
         (application.roleAppliedFor?.toLowerCase() || "").includes(searchQuery.toLowerCase());
-
       const matchesStatus =
         statusFilter === "All" || application.status.toLowerCase() === statusFilter.toLowerCase();
-
-      return matchesTab && matchesSearch && matchesStatus && matchesStatusForAppliedTab;
+      return matchesTab && matchesSearch && matchesStatus;
     });
     console.log("Filtered Applications:", filtered, { activeTab, searchQuery, statusFilter });
     return filtered;
@@ -376,10 +366,6 @@ export default function ApplicationsPage() {
         return { bgcolor: "#FFFBEB", color: "#92400E" };
       case "Pending":
         return { bgcolor: "#F3F4F6", color: "#374151" };
-      case "Recommended":
-        return { bgcolor: "#F3E8FF", color: "#6B46C1" };
-      case "Processing":
-        return { bgcolor: "#FEF3C7", color: "#92400E" };
       default:
         return { bgcolor: "#F3F4F6", color: "#374151" };
     }

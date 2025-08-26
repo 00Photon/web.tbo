@@ -48,7 +48,7 @@ const JobApplicationsTable: React.FC<JobApplicationsTableProps> = ({ searchQuery
   );
 
   const headerFields = [
-    'Company Name',
+    // 'Company Name',
     'Role Applied For',
     'Date of Application',
     'Application Status',
@@ -126,7 +126,7 @@ const JobApplicationsTable: React.FC<JobApplicationsTableProps> = ({ searchQuery
         <TableBody>
           {filteredJobs.map((job) => (
             <TableRow key={job.id}>
-              {companyNameField(job.job.client.company_name ?? 'Unknown')}
+              {/* {companyNameField(job.job.client.company_name ?? 'Unknown')} */}
               {textOnlyField(job.job.title)}
               {textOnlyField(formatDate(job.created_at))}
               {applicationStatusField(job.status)}

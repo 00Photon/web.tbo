@@ -323,85 +323,77 @@ export function OpportunityDetailModal({
             </CardContent>
           </Card>
 
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
-              <Card sx={{ height: "100%" }}>
-                <CardContent sx={{ p: 3 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: "#E61C31" }}>
-                    Requirements
-                  </Typography>
-                  <List dense>
-                    {requirements.map((requirement, index) => (
-                      <ListItem key={index} sx={{ px: 0, py: 0.5 }}>
-                        <ListItemIcon sx={{ minWidth: 24 }}>
-                          <CheckCircleIcon sx={{ fontSize: 16, color: "#10B981" }} />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={requirement}
-                          primaryTypographyProps={{
-                            variant: "body2",
-                            color: "text.secondary",
-                          }}
-                        />
-                      </ListItem>
-                    ))}
-                  </List>
-                </CardContent>
-              </Card>
-            </Grid>
+          <Card sx={{ mb: 3 }}>
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: "#E61C31" }}>
+                Requirements
+              </Typography>
+              <List dense>
+                {requirements.map((requirement, index) => (
+                  <ListItem key={index} sx={{ px: 0, py: 0.5 }}>
+                    <ListItemIcon sx={{ minWidth: 24 }}>
+                      <CheckCircleIcon sx={{ fontSize: 16, color: "#10B981" }} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={requirement}
+                      primaryTypographyProps={{
+                        variant: "body2",
+                        color: "text.secondary",
+                      }}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </CardContent>
+          </Card>
 
-            <Grid item xs={12} md={4}>
-              <Card sx={{ height: "100%" }}>
-                <CardContent sx={{ p: 3 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: "#E61C31" }}>
-                    Responsibilities
-                  </Typography>
-                  <List dense>
-                    {responsibilities.map((responsibility, index) => (
-                      <ListItem key={index} sx={{ px: 0, py: 0.5 }}>
-                        <ListItemIcon sx={{ minWidth: 24 }}>
-                          <CheckCircleIcon sx={{ fontSize: 16, color: "#3B82F6" }} />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={responsibility}
-                          primaryTypographyProps={{
-                            variant: "body2",
-                            color: "text.secondary",
-                          }}
-                        />
-                      </ListItem>
-                    ))}
-                  </List>
-                </CardContent>
-              </Card>
-            </Grid>
+          <Card sx={{ mb: 3 }}>
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: "#E61C31" }}>
+                Responsibilities
+              </Typography>
+              <List dense>
+                {responsibilities.map((responsibility, index) => (
+                  <ListItem key={index} sx={{ px: 0, py: 0.5 }}>
+                    <ListItemIcon sx={{ minWidth: 24 }}>
+                      <CheckCircleIcon sx={{ fontSize: 16, color: "#3B82F6" }} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={responsibility}
+                      primaryTypographyProps={{
+                        variant: "body2",
+                        color: "text.secondary",
+                      }}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </CardContent>
+          </Card>
 
-            <Grid item xs={12} md={4}>
-              <Card sx={{ height: "100%" }}>
-                <CardContent sx={{ p: 3 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: "#E61C31" }}>
-                    Benefits
-                  </Typography>
-                  <List dense>
-                    {benefits.map((benefit, index) => (
-                      <ListItem key={index} sx={{ px: 0, py: 0.5 }}>
-                        <ListItemIcon sx={{ minWidth: 24 }}>
-                          <CheckCircleIcon sx={{ fontSize: 16, color: "#F59E0B" }} />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={benefit}
-                          primaryTypographyProps={{
-                            variant: "body2",
-                            color: "text.secondary",
-                          }}
-                        />
-                      </ListItem>
-                    ))}
-                  </List>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
+          <Card sx={{ mb: 3 }}>
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: "#E61C31" }}>
+                Benefits
+              </Typography>
+              <List dense>
+                {benefits.map((benefit, index) => (
+                  <ListItem key={index} sx={{ px: 0, py: 0.5 }}>
+                    <ListItemIcon sx={{ minWidth: 24 }}>
+                      <CheckCircleIcon sx={{ fontSize: 16, color: "#F59E0B" }} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={benefit}
+                      primaryTypographyProps={{
+                        variant: "body2",
+                        color: "text.secondary",
+                      }}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </CardContent>
+          </Card>
 
           <Card sx={{ mt: 3 }}>
             <CardContent sx={{ p: 3 }}>

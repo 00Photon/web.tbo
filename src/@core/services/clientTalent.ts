@@ -6,10 +6,10 @@ import { getSession } from "next-auth/react";
 export interface TalentPoolData {
   status: boolean;
   stats: {
-    total_talents: number;
-    open_to_work: number;
-    passive: number;
-    avg_experience: string;
+    total_talent: number;
+    active_talent: number;
+    inactive_talent: number;
+    avg_year_exp: string;
   };
   talents: {
     id: number;

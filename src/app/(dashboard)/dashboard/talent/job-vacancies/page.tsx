@@ -204,20 +204,21 @@ useEffect(() => {
   fetchOpportunities();
 }, []);
 
-  const filteredOpportunities = useMemo(() => {
-    return opportunities.filter((opportunity) => {
-      const matchesSearch =
-        opportunity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        opportunity.client?.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        opportunity.description.toLowerCase().includes(searchQuery.toLowerCase());
+const filteredOpportunities = useMemo(() => {
+  return opportunities.filter((opportunity) => {
+    const matchesSearch =
+      opportunity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      opportunity.client?.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      opportunity.description.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesJobType = jobTypeFilters.length === 0 || jobTypeFilters.includes(opportunity.job_type);
-      const matchesLocation = locationFilters.length === 0 || locationFilters.includes(opportunity.location);
+    const matchesJobType =
+      jobTypeFilters.length === 0 ||
+      jobTypeFilters.some((filter) => filter.toLowerCase() === opportunity.job_type.toLowerCase());
+    const matchesLocation = locationFilters.length === 0 || locationFilters.includes(opportunity.location);
 
-      return matchesSearch && matchesJobType && matchesLocation;
-    });
-  }, [searchQuery, jobTypeFilters, locationFilters, opportunities]);
-
+    return matchesSearch && matchesJobType && matchesLocation;
+  });
+}, [searchQuery, jobTypeFilters, locationFilters, opportunities]);
   const pageCount = Math.ceil(filteredOpportunities.length / itemsPerPage);
   const paginatedOpportunities = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;

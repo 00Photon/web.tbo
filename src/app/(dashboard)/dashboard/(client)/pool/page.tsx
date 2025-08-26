@@ -72,10 +72,10 @@ interface ExtendedTalentPoolData {
     [key: string]: any;
   }>;
   stats: {
-    total_talents: string | number;
-    open_to_work: string | number;
-    passive: string | number;
-    avg_experience: string | number;
+    total_talent: string | number;
+    active_talent: string | number;
+    inactive_talent: string | number;
+    avg_year_exp: string | number;
   } | null;
 }
 
@@ -246,10 +246,10 @@ export default function TalentPool() {
 
   // Calculate stats if not available from API (fallback)
   const displayStats = stats || {
-    total_talents: talents.length.toString(),
-    open_to_work: talents.filter((t) => t.status === "open_to_work").length.toString(),
-    passive: talents.filter((t) => t.status === "passive").length.toString(),
-    avg_experience: `${Math.round(
+    total_talent: talents.length.toString(),
+    active_talent: talents.filter((t) => t.status === "active_talent").length.toString(),
+    inactive_talent: talents.filter((t) => t.status === "inactive_talent").length.toString(),
+    avg_year_exp: `${Math.round(
       talents.reduce((acc, t) => acc + (t.years_experience || 0), 0) / (talents.length || 1)
     )}y`,
   };
@@ -275,28 +275,28 @@ export default function TalentPool() {
             {[
               {
                 title: "Total Talents",
-                value: displayStats.total_talents,
+                value: displayStats.total_talent,
                 icon: PeopleIcon,
                 color: "#3B82F6",
                 bgcolor: "#EFF6FF",
               },
               {
                 title: "Open to Work",
-                value: displayStats.open_to_work,
+                value: displayStats.active_talent,
                 icon: FavoriteIcon,
                 color: "#10B981",
                 bgcolor: "#ECFDF5",
               },
               {
-                title: "Passive",
-                value: displayStats.passive,
+                title: "inactive_talent",
+                value: displayStats.inactive_talent,
                 icon: VisibilityIcon,
                 color: "#F59E0B",
                 bgcolor: "#FFFBEB",
               },
               {
                 title: "Avg Experience",
-                value: displayStats.avg_experience,
+                value: displayStats.avg_year_exp,
                 icon: CalendarIcon,
                 color: "#8B5CF6",
                 bgcolor: "#F3E8FF",
@@ -336,9 +336,9 @@ export default function TalentPool() {
                 value={searchQuery}
                 onChange={setSearchQuery}
               />
-              <Button variant="outlined" startIcon={<FilterIcon />} size="small">
+              {/* <Button variant="outlined" startIcon={<FilterIcon />} size="small">
                 Filter
-              </Button>
+              </Button> */}
             
             </Box>
           </Box>

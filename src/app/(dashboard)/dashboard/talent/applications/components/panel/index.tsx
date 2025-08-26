@@ -21,7 +21,7 @@ const JobApplicationsPanel: React.FC<JobApplicationsPanelProps> = ({ searchQuery
     >
       <Box sx={{ flexGrow: 1 }}>
         <TextField
-          placeholder="Company Name, Role Applied For, or Anything"
+          placeholder="Role Applied For"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           InputProps={{

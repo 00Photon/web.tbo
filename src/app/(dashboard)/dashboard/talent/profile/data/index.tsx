@@ -25,10 +25,10 @@ export const profileTabs = [
     icon: <Badge />,
     name: "Password Management",
   },
-  {
-    icon: <Badge />,
-    name: "Account Settings",
-  },
+  // {
+  //   icon: <Badge />,
+  //   name: "Account Settings",
+  // },
 ];
 
 export default profileTabs;

@@ -14,8 +14,8 @@ export const profileTabs = [
     icon: <LockReset />,
     name: "Password Management",
   },
-  {
-    icon: <NotificationsRounded />,
-    name: "Account Settings",
-  },
+  // {
+  //   icon: <NotificationsRounded />,
+  //   name: "Account Settings",
+  // },
 ];

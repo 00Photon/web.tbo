@@ -56,7 +56,7 @@ export default function TalentProfilePage() {
           {activeTab === 3 && <MyportTab />}
           {activeTab === 4 && <AllProfile />}
           {activeTab === 5 && <PasswordManagementTab />}
-          {activeTab === 6 && <NotificationsTab />}
+          {/* {activeTab === 6 && <NotificationsTab />} */}
         </Box>
       </section>
     </main>
