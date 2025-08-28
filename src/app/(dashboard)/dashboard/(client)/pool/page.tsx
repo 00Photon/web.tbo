@@ -281,14 +281,14 @@ export default function TalentPool() {
                 bgcolor: "#EFF6FF",
               },
               {
-                title: "Open to Work",
+                title: "Active Talents",
                 value: displayStats.active_talent,
                 icon: FavoriteIcon,
                 color: "#10B981",
                 bgcolor: "#ECFDF5",
               },
               {
-                title: "inactive_talent",
+                title: "In Active Talents",
                 value: displayStats.inactive_talent,
                 icon: VisibilityIcon,
                 color: "#F59E0B",

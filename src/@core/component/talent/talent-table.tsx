@@ -17,7 +17,7 @@ import {
 import { Visibility as VisibilityIcon } from "@mui/icons-material";
 
 export interface TalentData {
-  id: number; // Change to number
+  id: number;
   name: string;
   designation: string;
   location: string;
@@ -27,7 +27,6 @@ export interface TalentData {
   email?: string;
   phone?: string;
   professional_summary?: string;
-  
   skills?: string[];
   education?: string;
   current_company?: string;
@@ -35,7 +34,7 @@ export interface TalentData {
 
 interface TalentTableProps {
   talents: TalentData[];
-  onViewProfile: (id: number) => void; // Update to expect number
+  onViewProfile: (id: number) => void;
 }
 
 export function TalentTable({ talents, onViewProfile }: TalentTableProps) {
@@ -46,8 +45,6 @@ export function TalentTable({ talents, onViewProfile }: TalentTableProps) {
           <TableRow>
             <TableCell>Talent Name</TableCell>
             <TableCell>Designation</TableCell>
-            {/* <TableCell>Location</TableCell>
-            <TableCell>Experience</TableCell> */}
             <TableCell>Status</TableCell>
             <TableCell>Action</TableCell>
           </TableRow>
@@ -59,26 +56,15 @@ export function TalentTable({ talents, onViewProfile }: TalentTableProps) {
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                   <Avatar sx={{ width: 32, height: 32 }}>
                     {talent.name
-                      ? talent.name
-                          .split(" ")
-                          .filter((part) => part)
-                          .map((part) => part[0])
-                          .join("")
-                          .slice(0, 2)
+                      ? talent.name.split(" ")[0].charAt(0).toUpperCase()
                       : "T"}
                   </Avatar>
                   <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {talent.name || "Unnamed Talent"}
+                    {talent.name ? talent.name.split(" ")[0] : "Unnamed Talent"}
                   </Typography>
                 </Box>
               </TableCell>
               <TableCell>{talent.designation || "N/A"}</TableCell>
-              {/* <TableCell>{talent.location || "N/A"}</TableCell>
-              <TableCell>
-                {talent.years_experience !== null && talent.years_experience !== undefined
-                  ? `${talent.years_experience} years`
-                  : "N/A"}
-              </TableCell> */}
               <TableCell>
                 <Chip
                   label={talent.status || "N/A"}
@@ -97,7 +83,7 @@ export function TalentTable({ talents, onViewProfile }: TalentTableProps) {
                   variant="outlined"
                   size="small"
                   startIcon={<VisibilityIcon />}
-                  onClick={() => onViewProfile(Number(talent.id))} // Convert string to number
+                  onClick={() => onViewProfile(Number(talent.id))}
                   disabled={!talent.id || isNaN(Number(talent.id))}
                 >
                   View Profile

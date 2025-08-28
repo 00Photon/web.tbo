@@ -66,6 +66,25 @@ export function TalentProfile({
   const [selectedJob, setSelectedJob] = useState("");
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
+  // Helper function to get the first name
+  const getFirstName = (name: string | undefined): string => {
+    if (!name || name.trim() === "") return "Unnamed Talent";
+    return name.split(" ")[0].trim() || "Unnamed Talent";
+  };
+
+  // Helper function to get the second name (if any) for blurring
+  const getSecondName = (name: string | undefined): string | null => {
+    if (!name || name.trim() === "") return null;
+    const parts = name.split(" ");
+    return parts.length > 1 ? parts.slice(1).join(" ").trim() : null;
+  };
+
+  // Helper function to get the avatar initial
+  const getAvatarInitial = (name: string | undefined): string => {
+    if (!name || name.trim() === "") return "T";
+    return name.split(" ")[0].charAt(0).toUpperCase() || "T";
+  };
+
   const handleInterestedClick = () => {
     setInterestModalOpen(true);
   };
@@ -89,7 +108,7 @@ export function TalentProfile({
       });
       setJobSelectionModalOpen(false);
       setShowSuccessMessage(true);
-      toast.success(`Successfully added ${talent.name} to an existing job`, { toastId: "add-existing-job" });
+      toast.success(`Successfully added ${getFirstName(talent.name)} to an existing job`, { toastId: "add-existing-job" });
       setTimeout(() => {
         setShowSuccessMessage(false);
         onClose();
@@ -105,7 +124,7 @@ export function TalentProfile({
     });
     setNewJobMessageModalOpen(false);
     setShowSuccessMessage(true);
-    toast.success(`Successfully expressed interest in ${talent.name} for a new job`, { toastId: "add-new-job" });
+    toast.success(`Successfully expressed interest in ${getFirstName(talent.name)} for a new job`, { toastId: "add-new-job" });
     setTimeout(() => {
       setShowSuccessMessage(false);
       onClose();
@@ -144,11 +163,16 @@ export function TalentProfile({
           <Box sx={{ py: 2 }}>
             <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2, mb: 3 }}>
               <Avatar sx={{ width: 64, height: 64 }}>
-                {talent.name?.[0] || "T"}
+                {getAvatarInitial(talent.name)}
               </Avatar>
               <Box sx={{ flex: 1 }}>
                 <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-                  {talent.name}
+                  {getFirstName(talent.name)}
+                  {getSecondName(talent.name) && (
+                    <span style={{ filter: "blur(5px)", marginLeft: "8px" }}>
+                      {getSecondName(talent.name)}
+                    </span>
+                  )}
                 </Typography>
                 <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
                   {talent.designation}
@@ -272,31 +296,6 @@ export function TalentProfile({
                 </Card>
               </Grid>
             </Grid>
-
-            {/* <Card sx={{ bgcolor: "#F9FAFB" }}>
-              <CardContent>
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
-                  Resume/CV
-                </Typography>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <DescriptionIcon sx={{ fontSize: 16, color: "text.disabled" }} />
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      filter: talent.resume_url ? "none" : "blur(2px)",
-                      color: talent.resume_url ? "text.primary" : "text.disabled",
-                    }}
-                  >
-                    {talent.resume_url || "████████_Resume.pdf"}
-                  </Typography>
-                </Box>
-                {!talent.resume_url && (
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-                    Full resume available after expressing interest
-                  </Typography>
-                )}
-              </CardContent>
-            </Card> */}
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 3, pt: 0 }}>
@@ -324,7 +323,7 @@ export function TalentProfile({
         onClose={() => setInterestModalOpen(false)}
         onNewJob={handleNewJobClick}
         onExistingJob={handleExistingJobClick}
-        talentName={talent.name || ""}
+        talentName={getFirstName(talent.name)}
       />
 
       <NewJobMessageModal
@@ -343,10 +342,10 @@ export function TalentProfile({
         selectedJob={selectedJob}
         onJobChange={setSelectedJob}
         jobs={jobs}
-        talentName={talent.name || ""}
+        talentName={getFirstName(talent.name)}
       />
 
-      <SuccessModal open={showSuccessMessage} talentName={talent.name || ""} />
+      <SuccessModal open={showSuccessMessage} talentName={getFirstName(talent.name)} />
     </>
   );
 }

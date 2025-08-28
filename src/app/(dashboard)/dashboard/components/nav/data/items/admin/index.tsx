@@ -32,7 +32,7 @@ export const adminNavItemsData = [
   },
   {
     icon: <People />,
-    name: "Candidates",
+    name: "Talents",
     path: "/dashboard/candidates",
   },
   {

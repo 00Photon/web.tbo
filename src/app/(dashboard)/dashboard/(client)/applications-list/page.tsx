@@ -224,7 +224,7 @@ const statusFilters = ["All", "Pending", "Shortlisted", "Interviewed", "Hired", 
         companyName: recommendation.job_title,
         roleAppliedFor: recommendation.job_title,
         dateOfApplication: "N/A", // No date provided in JSON
-        applicationType: "Recommendation",
+        applicationType: "Recommended",
         status: "Pending", // Map "Recommended" to "Pending"
         companyLogo: recommendation.profile_image || "",
         jobDescription: recommendation.professional_summary || "No description available",
@@ -378,7 +378,7 @@ const statusFilters = ["All", "Pending", "Shortlisted", "Interviewed", "Hired", 
         return { bgcolor: "#EFF6FF", color: "#1E40AF" };
       case "Invited": // Changed from "Direct Hire"
         return { bgcolor: "#FEF3C7", color: "#92400E" };
-      case "Recommendation":
+      case "Recommended":
         return { bgcolor: "#ECFDF5", color: "#065F46" };
       case "Contract":
       case "Interest":
@@ -555,7 +555,6 @@ const statusFilters = ["All", "Pending", "Shortlisted", "Interviewed", "Hired", 
           <>
             {/* <MenuItemComponent onClick={handleAcceptApplication} sx={{ color: "success.main" }}>
               Accept
-            </MenuItemComponent>
             <MenuItemComponent onClick={handleRejectApplication} sx={{ color: "error.main" }}>
               Reject
             </MenuItemComponent>
